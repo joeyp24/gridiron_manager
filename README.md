@@ -1,6 +1,6 @@
 # Gridiron Manager
 
-Gridiron Manager is an extensible American football management simulation built with Godot 4.7. The current prototype supports a complete fictional season: choose a club, manage contracts, cap space, personnel, depth charts, and tactics, then play or simulate each week in pursuit of a league championship.
+Gridiron Manager is an extensible American football management simulation built with Godot 4.7. The current prototype supports a persistent multi-season career: choose a club, manage contracts, cap space, personnel, depth charts, and tactics, then play or simulate every campaign while building a lasting club history.
 
 ## Prototype features
 
@@ -8,16 +8,20 @@ Gridiron Manager is an extensible American football management simulation built 
 - Full 41-player prototype rosters with offensive, defensive, and specialist position groups
 - Editable depth charts with active/inactive status, player energy, and injuries
 - Player contracts with annual salary, term, guarantees, role, and expiration year
+- Contract extensions, annual contract rollover, expirations, and dead-cap relief
 - A $280 million team salary cap, 35-to-45-player roster rules, and release dead money
 - Free-agent negotiation shaped by quality, age, position value, projected role, market demand, term, and offer strength
-- AI-controlled roster moves plus persistent league transaction history and news
+- AI-controlled in-season moves, re-signing decisions, and legal offseason roster building
+- A staged offseason with season review, re-signing, player development, and new-league-year readiness
+- Player potential, deterministic age curves, attribute growth/regression, and squad development reports
+- Permanent season history with champions, title-game results, final standings, and managed-club records
 - Persistent offensive and defensive strategy covering run balance, tempo, passing depth, fourth-down aggression, blitz frequency, and coverage preference
 - Seven-week round-robin regular season followed by a conference-winner championship
 - Weekly schedule, results, standings, club record, league leaders, injury report, and news feed
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Live play-by-play, field visualization, and team statistics
-- Versioned JSON career saves with automatic version-one migration and saving after management actions and completed weeks
+- Versioned JSON career saves with automatic version-one and version-two migration
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -37,7 +41,7 @@ From the repository root:
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-The checks cover deterministic matches, legal game state, stat invariants, rosters and depth charts, injury substitutions, contract negotiation, salary-cap and roster legality, free-agent transactions, AI roster moves, the round-robin schedule, full-season advancement, championship completion, serialization, and save migration.
+The checks cover deterministic matches and development, legal game state, stat invariants, rosters and depth charts, injury substitutions, contract negotiation and expiration, salary-cap and roster legality, free-agent transactions, AI roster building, schedule regeneration, three-season advancement, season history, serialization, and save migration.
 
 ## Architecture
 
@@ -51,12 +55,12 @@ scripts/
 `-- ui/           # Theme, reusable components, responsive screens, and routing
 ```
 
-The simulation and career layers do not depend on scenes or controls. Future systems such as drafting, scouting, progression, trades, staff, and finances can build on stable IDs and serialized domain state without replacing the current interface or match engine.
+The simulation and career layers do not depend on scenes or controls. Future systems such as drafting, scouting, trades, staff, and finances can build on stable IDs and serialized domain state without replacing the current interface or match engine.
 
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 
 ## Current limitations
 
-This is a career and front-office foundation, not a complete franchise simulation. Trades, offseason contract progression, drafting, scouting uncertainty, staff, facilities, broader finances, penalties, detailed player statistics, and animated 11-on-11 presentation are intentionally deferred.
+This is a career and front-office foundation, not a complete franchise simulation. Drafting, scouting uncertainty, retirements, trades, staff, facilities, broader finances, penalties, detailed player statistics, and animated 11-on-11 presentation are intentionally deferred.
 
 All clubs and players are fictional. No league, club, or athlete trademarks are included.

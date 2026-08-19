@@ -7,6 +7,7 @@ signal roster_requested
 signal strategy_requested
 signal front_office_requested
 signal free_agency_requested
+signal offseason_requested
 signal save_requested
 
 var _career: CareerSession
@@ -72,19 +73,24 @@ func _build_interface() -> void:
 	save.pressed.connect(func(): save_requested.emit())
 	actions.add_child(save)
 	var matchup := _career.current_matchup()
-	var can_play := matchup != null and not matchup.played and _career.league.phase != "Complete"
+	var can_play := matchup != null and not matchup.played and not _career.league.is_offseason()
 	var has_active_game := _career.active_simulator != null
-	var play := UIFactory.button("RESUME GAME" if has_active_game else "PLAY GAME", "SecondaryButton")
-	play.disabled = not can_play
-	play.pressed.connect(func(): play_requested.emit())
-	actions.add_child(play)
-	var simulate := UIFactory.button(
-		"SIMULATE CHAMPIONSHIP  →" if _career.league.phase == "Championship" else "SIMULATE WEEK  →",
-		"PrimaryButton"
-	)
-	simulate.disabled = _career.league.phase == "Complete" or has_active_game
-	simulate.pressed.connect(func(): simulate_requested.emit())
-	actions.add_child(simulate)
+	if _career.league.is_offseason():
+		var offseason := UIFactory.button("OPEN OFFSEASON  ->", "PrimaryButton")
+		offseason.pressed.connect(func(): offseason_requested.emit())
+		actions.add_child(offseason)
+	else:
+		var play := UIFactory.button("RESUME GAME" if has_active_game else "PLAY GAME", "SecondaryButton")
+		play.disabled = not can_play
+		play.pressed.connect(func(): play_requested.emit())
+		actions.add_child(play)
+		var simulate := UIFactory.button(
+			"SIMULATE CHAMPIONSHIP  ->" if _career.league.phase == LeagueState.PHASE_CHAMPIONSHIP else "SIMULATE WEEK  ->",
+			"PrimaryButton"
+		)
+		simulate.disabled = has_active_game
+		simulate.pressed.connect(func(): simulate_requested.emit())
+		actions.add_child(simulate)
 	page.add_child(actions)
 
 	_dashboard_grid = GridContainer.new()
@@ -107,12 +113,13 @@ func _build_next_game_card() -> PanelContainer:
 	var row := UIFactory.hbox(18)
 	card.add_child(row)
 	var league := _career.league
-	if league.phase == "Complete":
-		var champion := league.team_by_id(league.champion_team_id)
+	if league.is_offseason():
+		var record := league.latest_season_record()
+		var champion := league.team_by_id(record.champion_team_id) if record != null else league.team_by_id(league.champion_team_id)
 		var copy := UIFactory.vbox(3)
-		copy.add_child(UIFactory.label("SEASON COMPLETE", "EyebrowLabel"))
+		copy.add_child(UIFactory.label(league.phase.to_upper(), "EyebrowLabel"))
 		copy.add_child(UIFactory.label("%s are league champions" % champion.display_name(), "SectionTitleLabel"))
-		copy.add_child(UIFactory.label("The inaugural career season is in the books.", "MutedLabel"))
+		copy.add_child(UIFactory.label("Open the offseason control room to prepare for %d." % (league.season_year + 1), "MutedLabel"))
 		row.add_child(copy)
 		row.add_child(UIFactory.spacer())
 		row.add_child(UIFactory.badge(champion.abbreviation, champion.primary_color))

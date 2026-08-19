@@ -64,6 +64,28 @@ static func create_free_agents() -> Array[PlayerData]:
 	return free_agents
 
 
+static func create_replacement_player(position_name: String, season_year: int, market_index: int) -> PlayerData:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = season_year * 10007 + position_name.hash() * 31 + market_index * 97
+	var overall := rng.randi_range(55, 63)
+	var attributes := _attributes_for_position(position_name, overall, rng)
+	var name_cursor := absi(season_year * 19 + position_name.hash() + market_index * 7)
+	var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
+	var last := LAST_NAMES[(name_cursor * 11 + season_year) % LAST_NAMES.size()]
+	return PlayerData.new(
+		"replacement_%d_%s_%d" % [season_year, position_name.to_lower(), market_index],
+		"%s %s" % [first, last],
+		position_name,
+		overall,
+		attributes["speed"],
+		attributes["power"],
+		attributes["technique"],
+		attributes["awareness"],
+		rng.randi_range(23, 29),
+		attributes["durability"]
+	)
+
+
 static func _profile(
 	id: String,
 	city: String,

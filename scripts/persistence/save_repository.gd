@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -68,6 +68,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 1:
 		migrated = _migrate_v1_to_v2(migrated)
 		current_version = 2
+	if current_version == 2:
+		migrated = _migrate_v2_to_v3(migrated)
+		current_version = 3
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -101,3 +104,32 @@ func _migrate_v1_to_v2(payload: Dictionary) -> Dictionary:
 	payload["career"] = career_data
 	payload["save_version"] = 2
 	return payload
+
+
+func _migrate_v2_to_v3(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var team_data_list: Array = league_data.get("teams", [])
+	for team_data: Dictionary in team_data_list:
+		for player_data: Dictionary in team_data.get("players", []):
+			_add_v3_player_fields(player_data)
+	for player_data: Dictionary in league_data.get("free_agents", []):
+		_add_v3_player_fields(player_data)
+	league_data["season_history"] = league_data.get("season_history", [])
+	league_data["development_reports"] = league_data.get("development_reports", [])
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 3
+	return payload
+
+
+func _add_v3_player_fields(player_data: Dictionary) -> void:
+	if not player_data.has("potential"):
+		player_data["potential"] = PlayerData.initial_potential(
+			str(player_data.get("id", "")),
+			int(player_data.get("overall", 50)),
+			int(player_data.get("age", 24))
+		)
+	var contract_data = player_data.get("contract")
+	if contract_data is Dictionary and not contract_data.has("expires_after_year"):
+		contract_data["expires_after_year"] = int(contract_data.get("signed_year", 2026)) + int(contract_data.get("years_remaining", 1)) - 1

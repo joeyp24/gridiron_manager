@@ -2,10 +2,14 @@ class_name ScheduleGenerator
 extends RefCounted
 
 
-static func round_robin(teams: Array[TeamData]) -> Array[MatchupData]:
+static func round_robin(teams: Array[TeamData], season_year: int = 0, seed: int = 0) -> Array[MatchupData]:
 	var rotation: Array[String] = []
 	for team in teams:
 		rotation.append(team.id)
+	if season_year > 0 and not rotation.is_empty():
+		var offset := absi(seed + season_year * 17) % rotation.size()
+		for index in range(offset):
+			rotation.append(rotation.pop_front())
 	if rotation.size() % 2 != 0:
 		rotation.append("BYE")
 	var schedule: Array[MatchupData] = []
@@ -19,11 +23,11 @@ static func round_robin(teams: Array[TeamData]) -> Array[MatchupData]:
 				continue
 			var away_id := first
 			var home_id := second
-			if (round_index + pair_index) % 2 == 0:
+			if (round_index + pair_index + season_year) % 2 == 0:
 				away_id = second
 				home_id = first
 			schedule.append(MatchupData.new(
-				"week_%d_%s_%s" % [round_index + 1, away_id, home_id],
+				"%sweek_%d_%s_%s" % ["season_%d_" % season_year if season_year > 0 else "", round_index + 1, away_id, home_id],
 				round_index + 1,
 				away_id,
 				home_id

@@ -17,9 +17,13 @@ func _init() -> void:
 	_test_free_agent_signing_and_release()
 	_test_ai_roster_management()
 	_test_complete_career_season()
+	_test_offseason_extensions_and_expiration()
+	_test_player_development_is_deterministic()
+	_test_multi_season_career_loop()
 	_test_career_serialization_round_trip()
 	_test_save_repository_round_trip()
 	_test_version_one_save_migration()
+	_test_version_two_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -196,16 +200,79 @@ func _test_ai_roster_management() -> void:
 func _test_complete_career_season() -> void:
 	var career := CareerSession.new_career("boston_sentinels", 555123)
 	var guard := 0
-	while career.league.phase != "Complete" and guard < 12:
+	while not career.league.is_offseason() and guard < 12:
 		career.simulate_current_week()
 		guard += 1
-	_check(career.league.phase == "Complete", "A career should advance through the championship")
+	_check(career.league.phase == LeagueState.PHASE_SEASON_REVIEW, "A career should advance from the championship into season review")
 	_check(not career.league.champion_team_id.is_empty(), "A completed season should crown a champion")
+	_check(career.league.season_history.size() == 1, "A completed season should create one history record")
+	_check(career.league.latest_season_record().user_record == career.league.standing_for(career.league.user_team_id).record_label(), "Season history should preserve the managed club record")
 	_check(career.league.schedule.size() == 29, "A season should add one championship matchup")
 	for team in career.league.teams:
 		_check(career.league.standing_for(team.id).games_played() == 7, "%s should have seven regular-season decisions" % team.abbreviation)
 	var championship := career.league.matchups_for_week(LeagueState.CHAMPIONSHIP_WEEK)
 	_check(championship.size() == 1 and championship.front().played, "The championship should be played")
+
+
+func _test_offseason_extensions_and_expiration() -> void:
+	var career := CareerSession.new_career("austin_outlaws", 200211)
+	var team := career.user_team()
+	var renewed := team.players[0]
+	var expired := team.players[1]
+	renewed.contract = PlayerContract.new(4_000_000, 1, 1_000_000, 2026, "Starter")
+	expired.contract = PlayerContract.new(2_000_000, 1, 400_000, 2026, "Rotation")
+	_complete_season(career)
+	_check(career.league.latest_season_record().season_year == 2026, "Season review should archive the completed year")
+	var re_signing := career.advance_offseason()
+	_check(bool(re_signing.get("ok", false)) and career.league.phase == LeagueState.PHASE_RE_SIGNING, "Season review should advance to re-signing")
+	var extension := career.extend_player(renewed.id, 3, 1.10)
+	_check(bool(extension.get("ok", false)), "An expiring player should accept a premium extension")
+	_check(renewed.contract.signed_year == 2027 and renewed.contract.expiration_year() == 2029, "An extension should begin next year and retain a fixed expiration")
+	var development := career.advance_offseason()
+	_check(bool(development.get("ok", false)) and career.league.phase == LeagueState.PHASE_PLAYER_DEVELOPMENT, "Re-signing should finalize contracts and run development")
+	_check(team.player_by_id(renewed.id) != null, "An extended player should remain on the roster")
+	_check(career.league.free_agent_by_id(expired.id) != null, "An unextended player should reach free agency")
+	_check(renewed.contract.years_remaining == 3 and renewed.contract.expiration_year() == 2029, "A future-starting extension should not lose a contract year early")
+	_check(career.league.development_reports_for(team.id, 2027).size() == team.players.size(), "Development should produce one report per roster player")
+	_make_user_roster_legal(career)
+	var rollover := career.advance_offseason()
+	_check(bool(rollover.get("ok", false)), "A legal roster should be able to begin the next league year")
+	_check(career.league.season_year == 2027 and career.league.phase == LeagueState.PHASE_REGULAR_SEASON, "The new league year should reset the regular season")
+	_check(career.league.schedule.size() == 28 and career.league.current_week == 1, "The new league year should generate a fresh week-one schedule")
+	_check(team.dead_cap == 0, "Dead cap should expire at the new league year")
+
+
+func _test_player_development_is_deterministic() -> void:
+	var first := CareerSession.new_career("seattle_orcas", 310031)
+	_complete_season(first)
+	first.advance_offseason()
+	var second := CareerSession.from_dict(JSON.parse_string(JSON.stringify(first.to_dict())))
+	first.advance_offseason()
+	second.advance_offseason()
+	var first_reports := first.league.development_reports_for(first.league.user_team_id, 2027)
+	var second_reports := second.league.development_reports_for(second.league.user_team_id, 2027)
+	_check(first_reports.size() == second_reports.size() and not first_reports.is_empty(), "Cloned careers should produce matching development report counts")
+	if not first_reports.is_empty() and not second_reports.is_empty():
+		_check(first_reports.front().player_id == second_reports.front().player_id, "Deterministic development should preserve report ordering")
+		_check(first_reports.front().new_overall == second_reports.front().new_overall, "Identical career seeds should produce identical overall development")
+		_check(first_reports.front().attribute_changes == second_reports.front().attribute_changes, "Identical career seeds should produce identical attribute development")
+
+
+func _test_multi_season_career_loop() -> void:
+	var career := CareerSession.new_career("miami_nightjars", 808017)
+	for season_index in range(3):
+		_complete_season(career)
+		_check(career.league.season_history.size() == season_index + 1, "Each completed season should add exactly one history record")
+		career.advance_offseason()
+		career.advance_offseason()
+		_make_user_roster_legal(career)
+		var rollover := career.advance_offseason()
+		_check(bool(rollover.get("ok", false)), "Season %d should roll into a legal new league year" % (2026 + season_index))
+		for team in career.league.teams:
+			_check(RosterValidator.validate_team(team).is_empty(), "%s should begin season %d with a legal roster" % [team.abbreviation, career.league.season_year])
+	_check(career.league.season_year == 2029, "Three completed offseasons should advance the career to 2029")
+	_check(career.league.season_history.size() == 3, "Multi-season careers should retain complete season history")
+	_check(career.league.development_reports_for(career.league.user_team_id).size() > career.user_team().players.size(), "Development history should persist across multiple seasons")
 
 
 func _test_career_serialization_round_trip() -> void:
@@ -270,6 +337,77 @@ func _test_version_one_save_migration() -> void:
 		_check(loaded.user_team().players.front().contract != null, "Migrated careers should receive player contracts")
 		_check(RosterValidator.validate_team(loaded.user_team()).is_empty(), "Migrated careers should produce a legal roster")
 	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_two_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v2_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("chicago_foundry", 51991)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("season_history")
+	league_data.erase("development_reports")
+	for team_data: Dictionary in league_data["teams"]:
+		for player_data: Dictionary in team_data["players"]:
+			player_data.erase("potential")
+			var contract_data: Dictionary = player_data["contract"]
+			contract_data.erase("expires_after_year")
+	for player_data: Dictionary in league_data["free_agents"]:
+		player_data.erase("potential")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 2, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-two career should migrate successfully")
+	if loaded != null:
+		var player: PlayerData = loaded.user_team().players.front()
+		_check(player.potential >= player.overall, "Version-two players should receive deterministic potential")
+		_check(player.contract.expiration_year() >= loaded.league.season_year, "Version-two contracts should receive a fixed expiration year")
+		_check(loaded.league.season_history.is_empty() and loaded.league.development_reports.is_empty(), "Version-two careers should receive empty history collections")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _complete_season(career: CareerSession) -> void:
+	var guard := 0
+	while not career.league.is_offseason() and guard < 12:
+		career.simulate_current_week()
+		guard += 1
+
+
+func _make_user_roster_legal(career: CareerSession) -> void:
+	var team := career.user_team()
+	for position_name in TeamData.ROSTER_POSITIONS:
+		if not team.players_at(position_name).is_empty():
+			continue
+		var required_candidate: PlayerData
+		var required_salary := 0
+		for player in career.league.free_agents:
+			if player.position != position_name:
+				continue
+			var offer := TransactionService.market_offer(career.league, team, player, 1, 1.10)
+			if offer.annual_salary <= team.cap_space() and (required_candidate == null or offer.annual_salary < required_salary):
+				required_candidate = player
+				required_salary = offer.annual_salary
+		if required_candidate != null:
+			career.sign_free_agent(required_candidate.id, 1, 1.10)
+	var guard := 0
+	while team.players.size() < TeamData.MIN_ROSTER_SIZE and guard < 80:
+		var candidate: PlayerData
+		var candidate_salary := 0
+		for player in career.league.free_agents:
+			var offer := TransactionService.market_offer(career.league, team, player, 1, 1.10)
+			if offer.annual_salary <= team.cap_space() and (candidate == null or offer.annual_salary < candidate_salary):
+				candidate = player
+				candidate_salary = offer.annual_salary
+		var signed := false
+		if candidate != null:
+			var result := career.sign_free_agent(candidate.id, 1, 1.10)
+			signed = bool(result.get("ok", false))
+		if not signed:
+			break
+		guard += 1
 
 
 func _check(condition: bool, message: String) -> void:

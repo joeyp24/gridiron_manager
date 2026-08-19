@@ -3,10 +3,15 @@ extends RefCounted
 
 const REGULAR_SEASON_WEEKS := 7
 const CHAMPIONSHIP_WEEK := 8
+const PHASE_REGULAR_SEASON := "Regular Season"
+const PHASE_CHAMPIONSHIP := "Championship"
+const PHASE_SEASON_REVIEW := "Season Review"
+const PHASE_RE_SIGNING := "Re-signing"
+const PHASE_PLAYER_DEVELOPMENT := "Player Development"
 
 var season_year := 2026
 var current_week := 1
-var phase := "Regular Season"
+var phase := PHASE_REGULAR_SEASON
 var user_team_id: String
 var champion_team_id := ""
 var season_seed := 0
@@ -17,6 +22,8 @@ var standings: Dictionary = {}
 var news: Array[String] = []
 var free_agents: Array[PlayerData] = []
 var transactions: Array[TransactionData] = []
+var season_history: Array[SeasonHistoryData] = []
+var development_reports: Array[DevelopmentReportData] = []
 
 
 func _init(league_teams: Array[TeamData] = [], selected_team_id: String = "", seed: int = 0) -> void:
@@ -36,6 +43,14 @@ func team_by_id(team_id: String) -> TeamData:
 
 func user_team() -> TeamData:
 	return team_by_id(user_team_id)
+
+
+func is_offseason() -> bool:
+	return phase in [PHASE_SEASON_REVIEW, PHASE_RE_SIGNING, PHASE_PLAYER_DEVELOPMENT, "Complete"]
+
+
+func contract_start_year() -> int:
+	return season_year + 1 if is_offseason() else season_year
 
 
 func free_agent_by_id(player_id: String) -> PlayerData:
@@ -67,6 +82,8 @@ func matchups_for_week(week_number: int) -> Array[MatchupData]:
 
 
 func current_user_matchup() -> MatchupData:
+	if is_offseason():
+		return null
 	for matchup in matchups_for_week(current_week):
 		if matchup.includes(user_team_id):
 			return matchup
@@ -163,12 +180,30 @@ func advance_after_completed_week() -> void:
 	if current_week == REGULAR_SEASON_WEEKS:
 		ensure_championship_matchup()
 		current_week = CHAMPIONSHIP_WEEK
-		phase = "Championship"
+		phase = PHASE_CHAMPIONSHIP
 		return
 	var championship := matchups_for_week(CHAMPIONSHIP_WEEK)
 	if not championship.is_empty():
 		champion_team_id = championship.front().winner_id()
-	phase = "Complete"
+	_archive_current_season()
+	phase = PHASE_SEASON_REVIEW
+
+
+func latest_season_record() -> SeasonHistoryData:
+	return season_history.back() if not season_history.is_empty() else null
+
+
+func development_reports_for(team_id: String, year: int = 0) -> Array[DevelopmentReportData]:
+	var reports: Array[DevelopmentReportData] = []
+	for report in development_reports:
+		if report.team_id == team_id and (year <= 0 or report.season_year == year):
+			reports.append(report)
+	reports.sort_custom(func(a: DevelopmentReportData, b: DevelopmentReportData):
+		if a.overall_change() != b.overall_change():
+			return a.overall_change() > b.overall_change()
+		return a.new_overall > b.new_overall
+	)
+	return reports
 
 
 func recent_results(limit: int = 6) -> Array[MatchupData]:
@@ -210,6 +245,12 @@ func to_dict() -> Dictionary:
 	var transaction_data: Array[Dictionary] = []
 	for transaction in transactions:
 		transaction_data.append(transaction.to_dict())
+	var history_data: Array[Dictionary] = []
+	for record in season_history:
+		history_data.append(record.to_dict())
+	var development_data: Array[Dictionary] = []
+	for report in development_reports:
+		development_data.append(report.to_dict())
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -224,6 +265,8 @@ func to_dict() -> Dictionary:
 		"news": news.duplicate(),
 		"free_agents": free_agent_data,
 		"transactions": transaction_data,
+		"season_history": history_data,
+		"development_reports": development_data,
 	}
 
 
@@ -254,4 +297,50 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.free_agents.append(PlayerData.from_dict(free_agent_data))
 	for transaction_data in data.get("transactions", []):
 		league.transactions.append(TransactionData.from_dict(transaction_data))
+	for history_data in data.get("season_history", []):
+		league.season_history.append(SeasonHistoryData.from_dict(history_data))
+	for report_data in data.get("development_reports", []):
+		league.development_reports.append(DevelopmentReportData.from_dict(report_data))
+	if league.phase == "Complete":
+		league._archive_current_season()
+		league.phase = PHASE_SEASON_REVIEW
 	return league
+
+
+func _archive_current_season() -> void:
+	for existing in season_history:
+		if existing.season_year == season_year:
+			return
+	var championship_games := matchups_for_week(CHAMPIONSHIP_WEEK)
+	if championship_games.is_empty() or not championship_games.front().played:
+		return
+	var title_game: MatchupData = championship_games.front()
+	var runner_up_id := title_game.home_team_id if champion_team_id == title_game.away_team_id else title_game.away_team_id
+	var user_standing := standing_for(user_team_id)
+	var record := SeasonHistoryData.new(
+		season_year,
+		user_team_id,
+		champion_team_id,
+		runner_up_id,
+		user_standing.record_label() if user_standing != null else "0-0",
+		"%s %d - %d %s" % [
+			team_by_id(title_game.away_team_id).abbreviation,
+			title_game.away_score,
+			title_game.home_score,
+			team_by_id(title_game.home_team_id).abbreviation,
+		]
+	)
+	for standing in sorted_standings():
+		var team := team_by_id(standing.team_id)
+		record.standings.append({
+			"team_id": team.id,
+			"team_name": team.display_name(),
+			"abbreviation": team.abbreviation,
+			"conference": team.conference,
+			"record": standing.record_label(),
+			"wins": standing.wins,
+			"losses": standing.losses,
+			"ties": standing.ties,
+			"point_differential": standing.point_differential(),
+		})
+	season_history.append(record)
