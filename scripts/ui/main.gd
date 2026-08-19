@@ -3,18 +3,31 @@ extends Control
 const MAIN_MENU_SCENE := preload("res://scenes/screens/main_menu.tscn")
 const TEAM_SELECT_SCENE := preload("res://scenes/screens/team_select.tscn")
 const MATCH_CENTER_SCENE := preload("res://scenes/screens/match_center.tscn")
+const CAREER_SELECT_SCENE := preload("res://scenes/screens/career_select.tscn")
+const CAREER_DASHBOARD_SCENE := preload("res://scenes/screens/career_dashboard.tscn")
+const ROSTER_SCENE := preload("res://scenes/screens/roster_screen.tscn")
+const STRATEGY_SCENE := preload("res://scenes/screens/strategy_screen.tscn")
 
-var _session := GameSession.new()
+var _exhibition_session := GameSession.new()
+var _career: CareerSession
+var _save_repository := SaveRepository.new()
 var _route_host: Control
 var _section_label: Label
-var _portal_button: Button
-var _club_button: Button
+var _brand: VBoxContainer
+var _version_badge: PanelContainer
+var _content_margin: MarginContainer
+var _top_margin: MarginContainer
+var _career_button: Button
+var _roster_button: Button
+var _strategy_button: Button
 var _match_button: Button
 
 
 func _ready() -> void:
 	theme = GridironTheme.build()
 	_build_shell()
+	resized.connect(_apply_responsive_shell)
+	_apply_responsive_shell()
 	_show_main_menu()
 
 
@@ -30,102 +43,230 @@ func _build_shell() -> void:
 	add_child(shell)
 
 	var top_bar := UIFactory.card("TopBarPanel")
-	top_bar.custom_minimum_size = Vector2(0, 74)
+	top_bar.custom_minimum_size = Vector2(0, 68)
 	shell.add_child(top_bar)
+	_top_margin = MarginContainer.new()
+	_top_margin.add_theme_constant_override("margin_left", 24)
+	_top_margin.add_theme_constant_override("margin_right", 24)
+	_top_margin.add_theme_constant_override("margin_top", 10)
+	_top_margin.add_theme_constant_override("margin_bottom", 10)
+	top_bar.add_child(_top_margin)
 
-	var top_margin := MarginContainer.new()
-	top_margin.add_theme_constant_override("margin_left", 32)
-	top_margin.add_theme_constant_override("margin_right", 32)
-	top_margin.add_theme_constant_override("margin_top", 12)
-	top_margin.add_theme_constant_override("margin_bottom", 12)
-	top_bar.add_child(top_margin)
-
-	var top_row := UIFactory.hbox(12)
+	var top_row := UIFactory.hbox(8)
 	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_margin.add_child(top_row)
-
+	_top_margin.add_child(top_row)
 	var mark := TextureRect.new()
 	mark.texture = load("res://assets/branding/gridiron_mark.svg")
 	mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	mark.custom_minimum_size = Vector2(42, 42)
+	mark.custom_minimum_size = Vector2(40, 40)
 	top_row.add_child(mark)
+	_brand = UIFactory.vbox(0)
+	_brand.custom_minimum_size = Vector2(170, 0)
+	_brand.add_child(UIFactory.label("GRIDIRON", "SectionTitleLabel"))
+	_brand.add_child(UIFactory.label("MANAGER", "CaptionLabel"))
+	top_row.add_child(_brand)
 
-	var brand := UIFactory.vbox(0)
-	brand.custom_minimum_size = Vector2(196, 0)
-	brand.add_child(UIFactory.label("GRIDIRON", "SectionTitleLabel"))
-	brand.add_child(UIFactory.label("MANAGER", "CaptionLabel"))
-	top_row.add_child(brand)
-
-	_portal_button = UIFactory.button("PORTAL", "GhostButton")
-	_portal_button.pressed.connect(_show_main_menu)
-	top_row.add_child(_portal_button)
-	_club_button = UIFactory.button("CLUB", "GhostButton")
-	_club_button.pressed.connect(_show_team_select)
-	top_row.add_child(_club_button)
+	var portal := UIFactory.button("PORTAL", "GhostButton")
+	portal.pressed.connect(_show_main_menu)
+	top_row.add_child(portal)
+	_career_button = UIFactory.button("CAREER", "GhostButton")
+	_career_button.disabled = true
+	_career_button.pressed.connect(_show_career_dashboard)
+	top_row.add_child(_career_button)
+	_roster_button = UIFactory.button("ROSTER", "GhostButton")
+	_roster_button.disabled = true
+	_roster_button.pressed.connect(_show_roster)
+	top_row.add_child(_roster_button)
+	_strategy_button = UIFactory.button("STRATEGY", "GhostButton")
+	_strategy_button.disabled = true
+	_strategy_button.pressed.connect(_show_strategy)
+	top_row.add_child(_strategy_button)
 	_match_button = UIFactory.button("MATCHDAY", "GhostButton")
 	_match_button.disabled = true
 	_match_button.pressed.connect(_show_current_match)
 	top_row.add_child(_match_button)
 	top_row.add_child(UIFactory.spacer())
-
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	top_row.add_child(UIFactory.badge("PROTOTYPE 0.1", GridironTheme.ACCENT))
+	_version_badge = UIFactory.badge("CAREER 0.2", GridironTheme.ACCENT)
+	top_row.add_child(_version_badge)
 
-	var content_margin := MarginContainer.new()
-	content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content_margin.add_theme_constant_override("margin_left", 32)
-	content_margin.add_theme_constant_override("margin_right", 32)
-	content_margin.add_theme_constant_override("margin_top", 24)
-	content_margin.add_theme_constant_override("margin_bottom", 28)
-	shell.add_child(content_margin)
-
+	_content_margin = MarginContainer.new()
+	_content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	shell.add_child(_content_margin)
 	_route_host = Control.new()
 	_route_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_route_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content_margin.add_child(_route_host)
+	_content_margin.add_child(_route_host)
 
 
 func _show_main_menu() -> void:
 	_section_label.text = "PORTAL"
-	_mount(MAIN_MENU_SCENE.instantiate())
-	var screen := _route_host.get_child(0)
-	screen.new_exhibition_requested.connect(_show_team_select)
-
-
-func _show_team_select() -> void:
-	_section_label.text = "CLUB / EXHIBITION SETUP"
-	var screen := TEAM_SELECT_SCENE.instantiate()
-	screen.setup(_session.teams)
-	screen.back_requested.connect(_show_main_menu)
-	screen.game_requested.connect(_start_game)
+	var screen := MAIN_MENU_SCENE.instantiate()
+	screen.setup(_save_repository.has_save())
+	screen.new_career_requested.connect(_show_career_select)
+	screen.continue_career_requested.connect(_continue_career)
+	screen.exhibition_requested.connect(_show_team_select)
 	_mount(screen)
 
 
-func _start_game(team: TeamData, opponent: TeamData, strategy: Dictionary) -> void:
-	var game_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
-	_session.start_exhibition(team, opponent, strategy, game_seed)
-	_match_button.disabled = false
-	_show_current_match()
+func _show_career_select() -> void:
+	_section_label.text = "CAREER / CLUB SELECTION"
+	var screen := CAREER_SELECT_SCENE.instantiate()
+	screen.setup(SampleLeague.create_teams())
+	screen.back_requested.connect(_show_main_menu)
+	screen.career_requested.connect(_start_new_career)
+	_mount(screen)
 
 
-func _show_current_match() -> void:
-	if _session.simulator == null:
+func _start_new_career(team_id: String) -> void:
+	var season_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
+	_career = CareerSession.new_career(team_id, season_seed)
+	_enable_career_navigation()
+	_save_career()
+	_show_career_dashboard()
+
+
+func _continue_career() -> void:
+	var loaded := _save_repository.load_career()
+	if loaded == null:
+		_show_main_menu()
 		return
-	_section_label.text = "MATCHDAY / LIVE CENTER"
+	_career = loaded
+	_enable_career_navigation()
+	_show_career_dashboard()
+
+
+func _show_career_dashboard() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / HUB"
+	var screen := CAREER_DASHBOARD_SCENE.instantiate()
+	screen.setup(_career)
+	screen.portal_requested.connect(_show_main_menu)
+	screen.play_requested.connect(_begin_career_game)
+	screen.simulate_requested.connect(_simulate_career_week)
+	screen.roster_requested.connect(_show_roster)
+	screen.strategy_requested.connect(_show_strategy)
+	screen.save_requested.connect(_save_career)
+	_mount(screen)
+
+
+func _show_roster() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / DEPTH CHART"
+	var screen := ROSTER_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.roster_changed.connect(_save_career)
+	_mount(screen)
+
+
+func _show_strategy() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / STRATEGY"
+	var screen := STRATEGY_SCENE.instantiate()
+	screen.setup(_career.user_team())
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.strategy_saved.connect(_save_strategy)
+	_mount(screen)
+
+
+func _save_strategy(values: Dictionary) -> void:
+	_career.user_team().set_strategy(values)
+	_save_career()
+	_show_career_dashboard()
+
+
+func _simulate_career_week() -> void:
+	_career.simulate_current_week()
+	_save_career()
+	_show_career_dashboard()
+
+
+func _begin_career_game() -> void:
+	var simulator := _career.begin_user_game()
+	if simulator == null:
+		return
+	_show_career_match()
+
+
+func _show_career_match() -> void:
+	if _career == null or _career.active_simulator == null:
+		return
+	_section_label.text = "CAREER / MATCHDAY"
+	_match_button.disabled = false
 	var screen := MATCH_CENTER_SCENE.instantiate()
-	screen.setup(_session.simulator, _session.user_team)
+	screen.setup(_career.active_simulator, _career.user_team(), true)
+	screen.career_game_finished.connect(_finish_career_game)
+	_mount(screen)
+
+
+func _finish_career_game() -> void:
+	_career.complete_user_game()
+	_match_button.disabled = true
+	_save_career()
+	_show_career_dashboard()
+
+
+func _save_career() -> void:
+	if _career != null:
+		_save_repository.save_career(_career)
+
+
+func _show_team_select() -> void:
+	_section_label.text = "EXHIBITION / SETUP"
+	var screen := TEAM_SELECT_SCENE.instantiate()
+	screen.setup(_exhibition_session.teams)
+	screen.back_requested.connect(_show_main_menu)
+	screen.game_requested.connect(_start_exhibition)
+	_mount(screen)
+
+
+func _start_exhibition(team: TeamData, opponent: TeamData, strategy: Dictionary) -> void:
+	var game_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
+	_exhibition_session.start_exhibition(team, opponent, strategy, game_seed)
+	_match_button.disabled = false
+	_show_exhibition_match()
+
+
+func _show_exhibition_match() -> void:
+	if _exhibition_session.simulator == null:
+		return
+	_section_label.text = "EXHIBITION / MATCHDAY"
+	var screen := MATCH_CENTER_SCENE.instantiate()
+	screen.setup(_exhibition_session.simulator, _exhibition_session.user_team, false)
 	screen.exit_requested.connect(_show_team_select)
 	screen.rematch_requested.connect(_start_rematch)
 	_mount(screen)
 
 
+func _show_current_match() -> void:
+	if _career != null and _career.active_simulator != null:
+		_show_career_match()
+	else:
+		_show_exhibition_match()
+
+
 func _start_rematch() -> void:
 	var game_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
-	_session.start_exhibition(_session.user_team, _session.opponent_team, _session.strategy, game_seed)
-	_show_current_match()
+	_exhibition_session.start_exhibition(
+		_exhibition_session.user_team,
+		_exhibition_session.opponent_team,
+		_exhibition_session.strategy,
+		game_seed
+	)
+	_show_exhibition_match()
+
+
+func _enable_career_navigation() -> void:
+	_career_button.disabled = false
+	_roster_button.disabled = false
+	_strategy_button.disabled = false
 
 
 func _mount(screen: Control) -> void:
@@ -133,3 +274,20 @@ func _mount(screen: Control) -> void:
 		_route_host.remove_child(child)
 		child.queue_free()
 	_route_host.add_child(screen)
+
+
+func _apply_responsive_shell() -> void:
+	if _content_margin == null:
+		return
+	var compact := size.x < 1050
+	var margin := 14 if compact else 28
+	_content_margin.add_theme_constant_override("margin_left", margin)
+	_content_margin.add_theme_constant_override("margin_right", margin)
+	_content_margin.add_theme_constant_override("margin_top", 16 if compact else 22)
+	_content_margin.add_theme_constant_override("margin_bottom", 16 if compact else 24)
+	_top_margin.add_theme_constant_override("margin_left", margin)
+	_top_margin.add_theme_constant_override("margin_right", margin)
+	_brand.custom_minimum_size.x = 112 if compact else 170
+	_brand.get_child(1).visible = not compact
+	_section_label.visible = not compact
+	_version_badge.visible = size.x >= 880

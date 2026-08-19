@@ -5,7 +5,7 @@ var game_state: GameStateData
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(520, 245)
+	custom_minimum_size = Vector2(320, 220)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 

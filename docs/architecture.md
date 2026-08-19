@@ -1,72 +1,80 @@
 # Architecture
 
-Gridiron Manager uses a layered architecture so prototype systems can mature without forcing the interface, simulation, and career state to be rewritten together.
+Gridiron Manager uses a layered architecture so the game can grow without coupling career rules, match simulation, persistence, and interface code.
 
 ## Dependency direction
 
 ```text
-UI screens → application session → simulation services → domain models
-                         data providers ↗
+UI screens -> application sessions -> simulation services -> domain models
+                         |                    ^
+                         `-> persistence      |
+data providers ------------------------------'
 ```
 
-Dependencies point inward. Domain models never import UI scripts or scenes, and the football simulator never reads controls. The current sample league is a replaceable content provider rather than a source of game rules.
+Dependencies point inward. Domain models never import UI scripts or scenes, and simulation services never read controls. The fictional sample league is a replaceable content provider rather than a source of game rules.
 
 ## Layers
 
 ### Domain
 
-`scripts/domain` contains the data structures that describe football concepts:
+`scripts/domain` contains lightweight runtime models with stable IDs:
 
-- `PlayerData`
-- `TeamData`
-- `GameStateData`
-- `PlayResult`
+- `PlayerData` stores ratings, position, energy, active status, and injury state.
+- `TeamData` owns roster order, depth charts, colors, conference identity, and tactics.
+- `MatchupData` describes a scheduled or completed game.
+- `StandingData` tracks regular-season records and tiebreak metrics.
+- `LeagueState` owns the calendar, standings, news, phase, and championship state.
+- `GameStateData` and `PlayResult` describe a live match.
 
-These are lightweight runtime models with stable IDs. Future save files and league databases should refer to entities by ID rather than by node path or object identity.
+Stable IDs are the boundary between runtime objects, schedules, depth charts, and save files. New systems should preserve that rule instead of relying on node paths or object identity.
 
 ### Simulation
 
-`scripts/simulation/football_simulator.gd` owns game rules and seeded outcome resolution. It exposes commands such as `simulate_next_play`, `simulate_drive`, and `simulate_to_end`, all of which operate without a scene tree.
+The simulation layer contains focused, UI-independent services:
 
-New football detail should generally be introduced through focused collaborators instead of allowing this class to grow indefinitely. Likely additions include:
+- `FootballSimulator` resolves seeded plays, drives, regulation, and overtime.
+- `ScheduleGenerator` builds the seven-week round robin.
+- `LeagueSimulator` coordinates AI games, weekly recovery, fatigue, and injuries.
 
-- `PlayCaller`
-- `ClockManager`
-- `PenaltyResolver`
-- `InjuryResolver`
-- `SpecialTeamsResolver`
-- `GameRules`
-
-The public commands and `GameStateData` can remain stable while those responsibilities move behind the simulator boundary.
+As match detail grows, play calling, penalties, injuries, clock rules, and special teams can move into narrower collaborators while the existing public commands remain stable.
 
 ### Application
 
-`GameSession` coordinates the current user selection, game plan, and live simulator. It is the composition point between content and presentation. Career mode can expand this layer with a `CareerSession` that owns the league calendar, active club, and persistence services.
+- `GameSession` coordinates quick exhibitions.
+- `CareerSession` coordinates the managed club, weekly flow, user match, AI results, news, and phase advancement.
+
+Application sessions are the composition point between content, simulation, saves, and presentation. UI screens request actions from these sessions rather than calculating outcomes themselves.
+
+### Persistence
+
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 1 and has a migration boundary ready for future save formats. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
-`SampleLeague` provides the fictional prototype content. It can later be replaced by resource-backed or JSON-backed repositories without changing simulation callers:
+`SampleLeague` generates the eight fictional clubs and their 41-player rosters. It can later be replaced by resource-backed or JSON-backed repositories without changing the career or simulation callers:
 
 ```text
 TeamRepository
-├── ResourceTeamRepository
-├── JsonTeamRepository
-└── GeneratedLeagueRepository
+|-- ResourceTeamRepository
+|-- JsonTeamRepository
+`-- GeneratedLeagueRepository
 ```
 
-Static definitions and mutable career state should remain separate. A team archetype is content; its active roster, finances, injuries, and record belong to the career save.
+Static definitions and mutable career state should remain separate. A club archetype is content; its record, active roster, injuries, energy, and strategy belong to the career save.
 
 ### Presentation
 
-`scripts/ui` contains reusable visual components, a centralized theme, and route-level screens. Screens consume application and domain state but do not calculate football outcomes. The top-level `main.gd` currently handles simple route changes; it can later be replaced by a dedicated navigation service without touching the screens' underlying models.
+`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
 
 ## Intended expansion path
 
-1. Add `LeagueState`, schedules, standings, and week advancement.
-2. Add roster slots, depth charts, fatigue, and injuries.
-3. Introduce contracts, transactions, free agency, and the draft.
-4. Replace perfect ratings with scouting knowledge and uncertainty.
-5. Add persistence behind a versioned `SaveRepository` interface.
-6. Break detailed play resolution into specialized simulation services.
+The season, standings, depth-chart, fatigue, injury, tactical, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
-Each milestone should add tests at the lowest applicable layer. League simulations should remain runnable headlessly so balancing can use thousands of seasons rather than manual playthroughs.
+1. Contracts, salary rules, transactions, and free agency.
+2. Offseason flow, draft classes, and a playable draft.
+3. Scouting knowledge, uncertainty, and player development.
+4. Staff, facilities, finances, objectives, and job security.
+5. More detailed player and season statistics, records, awards, and history.
+6. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
+
+Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.

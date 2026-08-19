@@ -3,12 +3,14 @@ extends RefCounted
 
 var state: GameStateData
 var seed: int
+var require_winner: bool
 
 var _rng := RandomNumberGenerator.new()
 
 
-func _init(home: TeamData, away: TeamData, game_seed: int) -> void:
+func _init(home: TeamData, away: TeamData, game_seed: int, game_requires_winner: bool = false) -> void:
 	seed = game_seed
+	require_winner = game_requires_winner
 	_rng.seed = game_seed
 	state = GameStateData.new(home, away)
 	if _rng.randf() >= 0.5:
@@ -65,10 +67,10 @@ func _resolve_run(result: PlayResult) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
 	var runner := offense.player_at("RB")
-	var blocking_edge := float(offense.offense_rating - defense.defense_rating) * 0.07
+	var blocking_edge := float(offense.effective_offense_rating() - defense.effective_defense_rating()) * 0.07
 	var skill_edge := float(runner.power + runner.speed - 160) * 0.025
 	var yards := clampi(roundi(_rng.randfn(4.2 + blocking_edge + skill_edge, 4.3)), -6, 32)
-	var fumble_chance := clampf(0.010 + float(defense.defense_rating - runner.awareness) * 0.0005, 0.004, 0.030)
+	var fumble_chance := clampf(0.010 + float(defense.effective_defense_rating() - runner.awareness) * 0.0005, 0.004, 0.030)
 
 	result.play_type = "run"
 	result.title = "Run"
@@ -81,7 +83,7 @@ func _resolve_run(result: PlayResult) -> void:
 		result.description = "%s loses the football after a %d-yard run. %s recovers." % [runner.full_name, yards, defense.display_name()]
 		result.drive_ended = true
 		result.possession_changed = true
-		_consume_clock(_rng.randi_range(22, 38), offense.id)
+		_consume_clock(_tempo_clock(_rng.randi_range(22, 38), offense), offense.id)
 		state.switch_possession()
 		return
 
@@ -93,7 +95,7 @@ func _resolve_run(result: PlayResult) -> void:
 	]
 	_record_yards(offense.id, "run", yards)
 	_apply_standard_gain(result, yards)
-	_consume_clock(_rng.randi_range(27, 43), offense.id)
+	_consume_clock(_tempo_clock(_rng.randi_range(27, 43), offense), offense.id)
 
 
 func _resolve_pass(result: PlayResult) -> void:
@@ -103,7 +105,21 @@ func _resolve_pass(result: PlayResult) -> void:
 	var receiver := offense.player_at("WR")
 	var edge := defense.player_at("EDGE")
 	var corner := defense.player_at("CB")
-	var pressure_edge := float(defense.defense_rating - offense.offense_rating)
+	var safety := defense.player_at("S")
+	var coverage_completion_adjustment := 0.0
+	var coverage_interception_adjustment := 0.0
+	var coverage_yards_adjustment := 0.0
+	match defense.coverage_preference:
+		"Zone":
+			coverage_completion_adjustment = float(quarterback.awareness - safety.awareness) * 0.0012
+			coverage_interception_adjustment = 0.004 + float(safety.awareness - quarterback.awareness) * 0.0004
+			coverage_yards_adjustment = -1.0
+		"Man":
+			coverage_completion_adjustment = float(receiver.speed - corner.speed) * 0.0014
+			coverage_interception_adjustment = float(corner.technique - receiver.technique) * 0.0003
+			coverage_yards_adjustment = 1.0
+	var pressure_edge := float(defense.effective_defense_rating() - offense.effective_offense_rating())
+	pressure_edge += (defense.blitz_rate - 0.42) * 15.0
 	var sack_chance := clampf(0.055 + pressure_edge * 0.0022 + float(edge.technique - 82) * 0.001, 0.025, 0.15)
 
 	result.play_type = "pass"
@@ -117,13 +133,14 @@ func _resolve_pass(result: PlayResult) -> void:
 		result.description = "%s breaks through and drops %s for a loss of %d." % [edge.full_name, quarterback.full_name, absi(sack_yards)]
 		_record_yards(offense.id, "pass", sack_yards)
 		_apply_standard_gain(result, sack_yards)
-		_consume_clock(_rng.randi_range(20, 34), offense.id)
+		_consume_clock(_tempo_clock(_rng.randi_range(20, 34), offense), offense.id)
 		return
 
 	var interception_chance := clampf(
 		0.017
-		+ float(defense.defense_rating - quarterback.awareness) * 0.0012
-		+ offense.aggression * 0.010,
+		+ float(defense.effective_defense_rating() - quarterback.awareness) * 0.0012
+		+ offense.aggression * 0.010
+		+ coverage_interception_adjustment,
 		0.008,
 		0.060
 	)
@@ -137,15 +154,17 @@ func _resolve_pass(result: PlayResult) -> void:
 		result.description = "%s reads the throw and intercepts %s." % [corner.full_name, quarterback.full_name]
 		result.drive_ended = true
 		result.possession_changed = true
-		_consume_clock(_rng.randi_range(8, 18), offense.id)
+		_consume_clock(_tempo_clock(_rng.randi_range(8, 18), offense), offense.id)
 		state.switch_possession()
 		return
 
 	var completion_chance := clampf(
 		0.60
-		+ float(quarterback.technique - defense.defense_rating) * 0.004
+		+ float(quarterback.technique - defense.effective_defense_rating()) * 0.004
 		+ float(receiver.technique - corner.technique) * 0.0025
-		- offense.aggression * 0.035,
+		- offense.aggression * 0.035
+		- (offense.passing_depth - 0.50) * 0.10
+		+ coverage_completion_adjustment,
 		0.34,
 		0.79
 	)
@@ -155,11 +174,11 @@ func _resolve_pass(result: PlayResult) -> void:
 		result.title = "Incomplete"
 		result.description = "%s looks for %s, but the pass falls incomplete." % [quarterback.full_name, receiver.full_name]
 		_advance_down_after_no_gain(result)
-		_consume_clock(_rng.randi_range(5, 9), offense.id)
+		_consume_clock(_tempo_clock(_rng.randi_range(5, 9), offense), offense.id)
 		return
 
 	var yards := clampi(
-		roundi(_rng.randfn(8.5 + float(offense.offense_rating - defense.defense_rating) * 0.08 + offense.aggression * 3.0, 7.0)),
+		roundi(_rng.randfn(8.5 + float(offense.effective_offense_rating() - defense.effective_defense_rating()) * 0.08 + offense.aggression * 3.0 + (offense.passing_depth - 0.50) * 12.0 + coverage_yards_adjustment, 7.0)),
 		-2,
 		42
 	)
@@ -167,7 +186,7 @@ func _resolve_pass(result: PlayResult) -> void:
 	result.description = "%s connects with %s %s." % [quarterback.full_name, receiver.full_name, _for_yards(yards)]
 	_record_yards(offense.id, "pass", yards)
 	_apply_standard_gain(result, yards)
-	_consume_clock(_rng.randi_range(17, 34), offense.id)
+	_consume_clock(_tempo_clock(_rng.randi_range(17, 34), offense), offense.id)
 
 
 func _resolve_punt(result: PlayResult) -> void:
@@ -180,7 +199,7 @@ func _resolve_punt(result: PlayResult) -> void:
 	result.yards = punt_distance
 	result.drive_ended = true
 	result.possession_changed = true
-	_consume_clock(_rng.randi_range(9, 14), offense.id)
+	_consume_clock(_tempo_clock(_rng.randi_range(9, 14), offense), offense.id)
 	if landing_position >= 100:
 		result.description = "%s punts into the end zone. %s starts at its 25." % [offense.display_name(), defense.abbreviation]
 		state.switch_possession(true)
@@ -196,7 +215,7 @@ func _resolve_field_goal(result: PlayResult) -> void:
 	var kick_distance := 117 - state.field_position
 	var kick_chance := clampf(
 		0.94
-		+ float(offense.special_teams_rating - 80) * 0.007
+		+ float(offense.effective_special_teams_rating() - 80) * 0.007
 		- float(maxi(kick_distance - 35, 0)) * 0.018,
 		0.18,
 		0.97
@@ -204,7 +223,7 @@ func _resolve_field_goal(result: PlayResult) -> void:
 	result.play_type = "field_goal"
 	result.drive_ended = true
 	result.possession_changed = true
-	_consume_clock(_rng.randi_range(5, 9), offense.id)
+	_consume_clock(_tempo_clock(_rng.randi_range(5, 9), offense), offense.id)
 	if _rng.randf() < kick_chance:
 		state.add_score(offense.id, 3)
 		result.title = "Field goal"
@@ -277,6 +296,11 @@ func _consume_clock(seconds: int, offense_id: String) -> void:
 	state.stats[offense_id]["possession_seconds"] += consumed
 
 
+func _tempo_clock(seconds: int, offense: TeamData) -> int:
+	var multiplier := lerpf(1.18, 0.76, clampf(offense.tempo, 0.0, 1.0))
+	return maxi(3, roundi(float(seconds) * multiplier))
+
+
 func _advance_period_if_needed() -> void:
 	if state.clock_seconds > 0:
 		return
@@ -297,6 +321,11 @@ func _advance_period_if_needed() -> void:
 		return
 	if state.quarter == 4 and state.home_score == state.away_score:
 		state.quarter = 5
+		state.clock_seconds = 600
+		state.switch_possession(true)
+		return
+	if state.quarter > 4 and require_winner and state.home_score == state.away_score:
+		state.quarter += 1
 		state.clock_seconds = 600
 		state.switch_possession(true)
 		return
