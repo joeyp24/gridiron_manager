@@ -8,6 +8,9 @@ const PHASE_CHAMPIONSHIP := "Championship"
 const PHASE_SEASON_REVIEW := "Season Review"
 const PHASE_RE_SIGNING := "Re-signing"
 const PHASE_PLAYER_DEVELOPMENT := "Player Development"
+const PHASE_DRAFT_PREPARATION := "Draft Preparation"
+const PHASE_DRAFT := "Draft"
+const PHASE_ROSTER_DECISIONS := "Roster Decisions"
 
 var season_year := 2026
 var current_week := 1
@@ -24,6 +27,8 @@ var free_agents: Array[PlayerData] = []
 var transactions: Array[TransactionData] = []
 var season_history: Array[SeasonHistoryData] = []
 var development_reports: Array[DevelopmentReportData] = []
+var current_draft: DraftStateData
+var draft_history: Array[DraftStateData] = []
 
 
 func _init(league_teams: Array[TeamData] = [], selected_team_id: String = "", seed: int = 0) -> void:
@@ -46,7 +51,15 @@ func user_team() -> TeamData:
 
 
 func is_offseason() -> bool:
-	return phase in [PHASE_SEASON_REVIEW, PHASE_RE_SIGNING, PHASE_PLAYER_DEVELOPMENT, "Complete"]
+	return phase in [
+		PHASE_SEASON_REVIEW,
+		PHASE_RE_SIGNING,
+		PHASE_PLAYER_DEVELOPMENT,
+		PHASE_DRAFT_PREPARATION,
+		PHASE_DRAFT,
+		PHASE_ROSTER_DECISIONS,
+		"Complete",
+	]
 
 
 func contract_start_year() -> int:
@@ -251,6 +264,9 @@ func to_dict() -> Dictionary:
 	var development_data: Array[Dictionary] = []
 	for report in development_reports:
 		development_data.append(report.to_dict())
+	var draft_history_data: Array[Dictionary] = []
+	for draft in draft_history:
+		draft_history_data.append(draft.to_dict())
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -267,6 +283,8 @@ func to_dict() -> Dictionary:
 		"transactions": transaction_data,
 		"season_history": history_data,
 		"development_reports": development_data,
+		"current_draft": current_draft.to_dict() if current_draft != null else null,
+		"draft_history": draft_history_data,
 	}
 
 
@@ -301,6 +319,11 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.season_history.append(SeasonHistoryData.from_dict(history_data))
 	for report_data in data.get("development_reports", []):
 		league.development_reports.append(DevelopmentReportData.from_dict(report_data))
+	var current_draft_data = data.get("current_draft")
+	if current_draft_data is Dictionary:
+		league.current_draft = DraftStateData.from_dict(current_draft_data)
+	for draft_data in data.get("draft_history", []):
+		league.draft_history.append(DraftStateData.from_dict(draft_data))
 	if league.phase == "Complete":
 		league._archive_current_season()
 		league.phase = PHASE_SEASON_REVIEW

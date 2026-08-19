@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -71,6 +71,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 2:
 		migrated = _migrate_v2_to_v3(migrated)
 		current_version = 3
+	if current_version == 3:
+		migrated = _migrate_v3_to_v4(migrated)
+		current_version = 4
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -133,3 +136,14 @@ func _add_v3_player_fields(player_data: Dictionary) -> void:
 	var contract_data = player_data.get("contract")
 	if contract_data is Dictionary and not contract_data.has("expires_after_year"):
 		contract_data["expires_after_year"] = int(contract_data.get("signed_year", 2026)) + int(contract_data.get("years_remaining", 1)) - 1
+
+
+func _migrate_v3_to_v4(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	league_data["current_draft"] = league_data.get("current_draft", null)
+	league_data["draft_history"] = league_data.get("draft_history", [])
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 4
+	return payload

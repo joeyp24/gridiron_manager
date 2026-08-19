@@ -20,7 +20,18 @@ static func advance_stage(league: LeagueState) -> Dictionary:
 			_trim_news(league)
 			return _success("Contract decisions are final and development reports are ready.")
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
-			run_ai_offseason_roster_building(league)
+			if league.current_draft == null:
+				league.current_draft = DraftService.create_draft(league)
+			league.phase = LeagueState.PHASE_DRAFT_PREPARATION
+			league.news.push_front("The %d rookie class is available. Scouting assignments are now open." % league.current_draft.draft_year)
+			_trim_news(league)
+			return _success("Draft preparation is open. Scout the class and build your board.")
+		LeagueState.PHASE_DRAFT_PREPARATION:
+			return DraftService.start_draft(league)
+		LeagueState.PHASE_DRAFT:
+			return {"ok": false, "message": "Complete your selections in the Draft Center before advancing."}
+		LeagueState.PHASE_ROSTER_DECISIONS:
+			prepare_post_draft_ai_rosters(league)
 			var errors := RosterValidator.validate_team(league.user_team())
 			if not errors.is_empty():
 				return {"ok": false, "message": "Your roster is not ready for the new league year.", "errors": errors}
@@ -100,6 +111,12 @@ static func run_ai_offseason_roster_building(league: LeagueState) -> int:
 		for position_name in TeamData.ROSTER_POSITIONS:
 			if not team.players_at(position_name).is_empty():
 				continue
+			if not team.has_roster_space():
+				var release_candidate := _best_ai_release_candidate(team)
+				if release_candidate != null:
+					var release_result := TransactionService.release_player(league, team.id, release_candidate.id)
+					if bool(release_result.get("ok", false)):
+						move_count += 1
 			var required_candidate := _best_affordable_candidate(league, team, position_name, true)
 			if required_candidate != null and _ai_sign(league, team, required_candidate):
 				move_count += 1
@@ -110,6 +127,26 @@ static func run_ai_offseason_roster_building(league: LeagueState) -> int:
 				break
 			move_count += 1
 			guard += 1
+	return move_count
+
+
+static func prepare_post_draft_ai_rosters(league: LeagueState) -> int:
+	var move_count := 0
+	for team in league.teams:
+		if team.id == league.user_team_id:
+			continue
+		var guard := 0
+		while (team.players.size() > team.roster_limit or team.cap_space() < 0) and guard < 80:
+			var candidate := _best_ai_release_candidate(team)
+			if candidate == null:
+				break
+			var result := TransactionService.release_player(league, team.id, candidate.id)
+			if not bool(result.get("ok", false)):
+				break
+			move_count += 1
+			guard += 1
+	ensure_replacement_market(league)
+	move_count += run_ai_offseason_roster_building(league)
 	return move_count
 
 
@@ -148,6 +185,17 @@ static func ensure_replacement_market(league: LeagueState) -> int:
 
 
 static func start_new_league_year(league: LeagueState) -> void:
+	if league.current_draft != null and league.current_draft.is_complete():
+		var already_archived := false
+		for archived in league.draft_history:
+			if archived.draft_year == league.current_draft.draft_year:
+				already_archived = true
+				break
+		if not already_archived:
+			league.draft_history.append(league.current_draft)
+		while league.draft_history.size() > 10:
+			league.draft_history.pop_front()
+	league.current_draft = null
 	league.season_year += 1
 	league.current_week = 1
 	league.prepared_week = 0
@@ -238,6 +286,26 @@ static func _best_affordable_candidate(
 			best = player
 			best_salary = offer.annual_salary
 	return best
+
+
+static func _best_ai_release_candidate(team: TeamData) -> PlayerData:
+	var candidate: PlayerData
+	var candidate_score := -9999.0
+	for player in team.players:
+		if player.contract != null and player.contract.role == "Rookie":
+			continue
+		if team.players_at(player.position).size() <= 1:
+			continue
+		var salary := player.contract.annual_salary if player.contract != null else 0
+		var penalty := player.contract.release_penalty() if player.contract != null else 0
+		var savings := maxi(salary - penalty, 0)
+		var score := float(100 - player.overall) + float(savings) / 1_000_000.0 * 1.8
+		if player.age >= 31:
+			score += float(player.age - 30) * 1.5
+		if candidate == null or score > candidate_score:
+			candidate = player
+			candidate_score = score
+	return candidate
 
 
 static func _unique_replacement(league: LeagueState, position_name: String, starting_index: int) -> PlayerData:
