@@ -20,7 +20,9 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 `scripts/domain` contains lightweight runtime models with stable IDs:
 
 - `PlayerData` stores ratings, position, energy, active status, and injury state.
-- `TeamData` owns roster order, depth charts, colors, conference identity, and tactics.
+- `PlayerContract` stores salary, term, guarantees, signing year, and projected role.
+- `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference identity, and tactics.
+- `TransactionData` records signings and releases for history, news, and saves.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
 - `LeagueState` owns the calendar, standings, news, phase, and championship state.
@@ -42,12 +44,14 @@ As match detail grows, play calling, penalties, injuries, clock rules, and speci
 
 - `GameSession` coordinates quick exhibitions.
 - `CareerSession` coordinates the managed club, weekly flow, user match, AI results, news, and phase advancement.
+- `TransactionService` prices offers, evaluates player expectations, performs signings and releases, and runs basic AI roster improvement.
+- `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
 
 Application sessions are the composition point between content, simulation, saves, and presentation. UI screens request actions from these sessions rather than calculating outcomes themselves.
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 1 and has a migration boundary ready for future save formats. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 2; version-one careers are migrated with generated contracts, cap defaults, a free-agent market, and transaction storage. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
@@ -60,7 +64,7 @@ TeamRepository
 `-- GeneratedLeagueRepository
 ```
 
-Static definitions and mutable career state should remain separate. A club archetype is content; its record, active roster, injuries, energy, and strategy belong to the career save.
+Static definitions and mutable career state should remain separate. A club archetype is content; its record, active roster, contracts, cap charges, transactions, injuries, energy, and strategy belong to the career save.
 
 ### Presentation
 
@@ -68,11 +72,11 @@ Static definitions and mutable career state should remain separate. A club arche
 
 ## Intended expansion path
 
-The season, standings, depth-chart, fatigue, injury, tactical, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The season, standings, depth-chart, health, tactics, contracts, cap, free-agency, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
-1. Contracts, salary rules, transactions, and free agency.
-2. Offseason flow, draft classes, and a playable draft.
-3. Scouting knowledge, uncertainty, and player development.
+1. Offseason flow, contract-year advancement, expirations, and player progression.
+2. Draft classes, scouting uncertainty, and a playable draft.
+3. Trades, draft-pick assets, and deeper AI roster valuation.
 4. Staff, facilities, finances, objectives, and job security.
 5. More detailed player and season statistics, records, awards, and history.
 6. Focused match services for penalties, play calling, special teams, and richer tactical interaction.

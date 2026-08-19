@@ -4,6 +4,9 @@ extends RefCounted
 const OFFENSIVE_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"]
 const DEFENSIVE_POSITIONS: Array[String] = ["EDGE", "DT", "LB", "CB", "S"]
 const ROSTER_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"]
+const DEFAULT_SALARY_CAP := 280_000_000
+const MIN_ROSTER_SIZE := 35
+const DEFAULT_ROSTER_LIMIT := 45
 
 var id: String
 var city: String
@@ -23,6 +26,9 @@ var blitz_rate := 0.42
 var coverage_preference := "Balanced"
 var players: Array[PlayerData] = []
 var depth_chart: Dictionary = {}
+var salary_cap := DEFAULT_SALARY_CAP
+var roster_limit := DEFAULT_ROSTER_LIMIT
+var dead_cap := 0
 
 
 func _init(
@@ -118,6 +124,49 @@ func player_by_id(player_id: String) -> PlayerData:
 	return null
 
 
+func add_player(player: PlayerData) -> bool:
+	if player == null or player_by_id(player.id) != null or players.size() >= roster_limit:
+		return false
+	players.append(player)
+	var ids: Array = depth_chart.get(player.position, [])
+	var insert_index := ids.size()
+	for index in range(ids.size()):
+		var depth_player := player_by_id(str(ids[index]))
+		if depth_player != null and player.overall > depth_player.overall:
+			insert_index = index
+			break
+	ids.insert(insert_index, player.id)
+	depth_chart[player.position] = ids
+	return true
+
+
+func remove_player(player_id: String) -> PlayerData:
+	var player := player_by_id(player_id)
+	if player == null:
+		return null
+	players.erase(player)
+	var ids: Array = depth_chart.get(player.position, [])
+	ids.erase(player.id)
+	depth_chart[player.position] = ids
+	return player
+
+
+func payroll() -> int:
+	var total := dead_cap
+	for player in players:
+		if player.contract != null:
+			total += player.contract.annual_salary
+	return total
+
+
+func cap_space() -> int:
+	return salary_cap - payroll()
+
+
+func has_roster_space() -> bool:
+	return players.size() < roster_limit
+
+
 func move_on_depth_chart(position_name: String, player_id: String, direction: int) -> bool:
 	var ids: Array = depth_chart.get(position_name, [])
 	var current_index := ids.find(player_id)
@@ -162,6 +211,9 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 		offense_rating, defense_rating, special_teams_rating, cloned_players
 	)
 	clone.depth_chart = depth_chart.duplicate(true)
+	clone.salary_cap = salary_cap
+	clone.roster_limit = roster_limit
+	clone.dead_cap = dead_cap
 	clone.set_strategy(strategy_dict())
 	clone.set_strategy(strategy)
 	return clone
@@ -216,6 +268,9 @@ func to_dict() -> Dictionary:
 		"strategy": strategy_dict(),
 		"players": serialized_players,
 		"depth_chart": depth_chart.duplicate(true),
+		"salary_cap": salary_cap,
+		"roster_limit": roster_limit,
+		"dead_cap": dead_cap,
 	}
 
 
@@ -238,6 +293,9 @@ static func from_dict(data: Dictionary) -> TeamData:
 	)
 	team.set_strategy(data.get("strategy", {}))
 	team.depth_chart = data.get("depth_chart", team.depth_chart).duplicate(true)
+	team.salary_cap = int(data.get("salary_cap", DEFAULT_SALARY_CAP))
+	team.roster_limit = int(data.get("roster_limit", DEFAULT_ROSTER_LIMIT))
+	team.dead_cap = int(data.get("dead_cap", 0))
 	return team
 
 

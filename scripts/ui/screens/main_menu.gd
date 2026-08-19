@@ -85,15 +85,16 @@ func _build_interface() -> void:
 	overview_column.add_child(_feature_row("41", "Players per roster", "Depth, energy, and availability"))
 
 	var lower_grid := GridContainer.new()
-	lower_grid.columns = 3
+	lower_grid.columns = 4
 	lower_grid.add_theme_constant_override("h_separation", 16)
 	lower_grid.add_theme_constant_override("v_separation", 16)
 	lower_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(lower_grid)
 	lower_grid.add_child(_info_card("SEASON MODE", "Every week matters", "Play your matchup or simulate the slate, then track the standings and the championship race."))
 	lower_grid.add_child(_info_card("ROSTER CONTROL", "Build the depth chart", "Order starters and backups, manage active status, and respond when injuries change the plan."))
-	lower_grid.add_child(_info_card("PERSISTENT CAREER", "Continue where you left off", "Versioned saves preserve the schedule, results, tactics, depth chart, fatigue, and injuries."))
-	resized.connect(func(): lower_grid.columns = 3 if size.x >= 1080 else (2 if size.x >= 720 else 1))
+	lower_grid.add_child(_info_card("FRONT OFFICE", "Build within the cap", "Negotiate contracts, sign free agents, release players, and follow every league transaction."))
+	lower_grid.add_child(_info_card("PERSISTENT CAREER", "Continue where you left off", "Versioned saves preserve results, tactics, contracts, cap state, transactions, fatigue, and injuries."))
+	resized.connect(func(): lower_grid.columns = 4 if size.x >= 1180 else (2 if size.x >= 720 else 1))
 
 
 func _feature_row(metric: String, title: String, detail: String) -> HBoxContainer:

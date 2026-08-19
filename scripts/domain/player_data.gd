@@ -15,6 +15,7 @@ var energy := 100
 var is_active := true
 var injury_type := ""
 var injury_weeks := 0
+var contract: PlayerContract
 
 
 func _init(
@@ -99,6 +100,10 @@ func availability_label() -> String:
 	return "Available · %d%%" % energy
 
 
+func is_free_agent() -> bool:
+	return contract == null
+
+
 func to_dict() -> Dictionary:
 	return {
 		"id": id,
@@ -115,6 +120,7 @@ func to_dict() -> Dictionary:
 		"is_active": is_active,
 		"injury_type": injury_type,
 		"injury_weeks": injury_weeks,
+		"contract": contract.to_dict() if contract != null else null,
 	}
 
 
@@ -135,4 +141,7 @@ static func from_dict(data: Dictionary) -> PlayerData:
 	player.is_active = bool(data.get("is_active", true))
 	player.injury_type = str(data.get("injury_type", ""))
 	player.injury_weeks = int(data.get("injury_weeks", 0))
+	var contract_data = data.get("contract")
+	if contract_data is Dictionary:
+		player.contract = PlayerContract.from_dict(contract_data)
 	return player

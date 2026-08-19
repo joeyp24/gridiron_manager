@@ -15,6 +15,8 @@ var teams: Array[TeamData] = []
 var schedule: Array[MatchupData] = []
 var standings: Dictionary = {}
 var news: Array[String] = []
+var free_agents: Array[PlayerData] = []
+var transactions: Array[TransactionData] = []
 
 
 func _init(league_teams: Array[TeamData] = [], selected_team_id: String = "", seed: int = 0) -> void:
@@ -34,6 +36,26 @@ func team_by_id(team_id: String) -> TeamData:
 
 func user_team() -> TeamData:
 	return team_by_id(user_team_id)
+
+
+func free_agent_by_id(player_id: String) -> PlayerData:
+	for player in free_agents:
+		if player.id == player_id:
+			return player
+	return null
+
+
+func record_transaction(transaction: TransactionData, headline: String) -> void:
+	transactions.push_front(transaction)
+	news.push_front(headline)
+	while transactions.size() > 100:
+		transactions.pop_back()
+	while news.size() > 12:
+		news.pop_back()
+
+
+func recent_transactions(limit: int = 12) -> Array[TransactionData]:
+	return transactions.slice(0, mini(limit, transactions.size()))
 
 
 func matchups_for_week(week_number: int) -> Array[MatchupData]:
@@ -182,6 +204,12 @@ func to_dict() -> Dictionary:
 	var standing_data: Dictionary = {}
 	for team_id: String in standings:
 		standing_data[team_id] = standing_for(team_id).to_dict()
+	var free_agent_data: Array[Dictionary] = []
+	for player in free_agents:
+		free_agent_data.append(player.to_dict())
+	var transaction_data: Array[Dictionary] = []
+	for transaction in transactions:
+		transaction_data.append(transaction.to_dict())
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -194,6 +222,8 @@ func to_dict() -> Dictionary:
 		"schedule": matchup_data,
 		"standings": standing_data,
 		"news": news.duplicate(),
+		"free_agents": free_agent_data,
+		"transactions": transaction_data,
 	}
 
 
@@ -220,4 +250,8 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.standings[team.id] = StandingData.from_dict(saved_standings.get(team.id, {"team_id": team.id}))
 	for item in data.get("news", []):
 		league.news.append(str(item))
+	for free_agent_data in data.get("free_agents", []):
+		league.free_agents.append(PlayerData.from_dict(free_agent_data))
+	for transaction_data in data.get("transactions", []):
+		league.transactions.append(TransactionData.from_dict(transaction_data))
 	return league

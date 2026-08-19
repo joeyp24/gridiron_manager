@@ -7,6 +7,8 @@ const CAREER_SELECT_SCENE := preload("res://scenes/screens/career_select.tscn")
 const CAREER_DASHBOARD_SCENE := preload("res://scenes/screens/career_dashboard.tscn")
 const ROSTER_SCENE := preload("res://scenes/screens/roster_screen.tscn")
 const STRATEGY_SCENE := preload("res://scenes/screens/strategy_screen.tscn")
+const FRONT_OFFICE_SCENE := preload("res://scenes/screens/front_office_screen.tscn")
+const FREE_AGENCY_SCENE := preload("res://scenes/screens/free_agency_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -20,6 +22,7 @@ var _top_margin: MarginContainer
 var _career_button: Button
 var _roster_button: Button
 var _strategy_button: Button
+var _office_button: Button
 var _match_button: Button
 
 
@@ -82,6 +85,10 @@ func _build_shell() -> void:
 	_strategy_button.disabled = true
 	_strategy_button.pressed.connect(_show_strategy)
 	top_row.add_child(_strategy_button)
+	_office_button = UIFactory.button("OFFICE", "GhostButton")
+	_office_button.disabled = true
+	_office_button.pressed.connect(_show_front_office)
+	top_row.add_child(_office_button)
 	_match_button = UIFactory.button("MATCHDAY", "GhostButton")
 	_match_button.disabled = true
 	_match_button.pressed.connect(_show_current_match)
@@ -90,7 +97,7 @@ func _build_shell() -> void:
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.2", GridironTheme.ACCENT)
+	_version_badge = UIFactory.badge("CAREER 0.3", GridironTheme.ACCENT)
 	top_row.add_child(_version_badge)
 
 	_content_margin = MarginContainer.new()
@@ -136,6 +143,7 @@ func _continue_career() -> void:
 		return
 	_career = loaded
 	_enable_career_navigation()
+	_save_career()
 	_show_career_dashboard()
 
 
@@ -150,6 +158,8 @@ func _show_career_dashboard() -> void:
 	screen.simulate_requested.connect(_simulate_career_week)
 	screen.roster_requested.connect(_show_roster)
 	screen.strategy_requested.connect(_show_strategy)
+	screen.front_office_requested.connect(_show_front_office)
+	screen.free_agency_requested.connect(_show_free_agency)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
 
@@ -173,6 +183,30 @@ func _show_strategy() -> void:
 	screen.setup(_career.user_team())
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.strategy_saved.connect(_save_strategy)
+	_mount(screen)
+
+
+func _show_front_office() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / FRONT OFFICE"
+	var screen := FRONT_OFFICE_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.free_agency_requested.connect(_show_free_agency)
+	screen.front_office_changed.connect(_save_career)
+	_mount(screen)
+
+
+func _show_free_agency() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / FREE AGENCY"
+	var screen := FREE_AGENCY_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.front_office_requested.connect(_show_front_office)
+	screen.market_changed.connect(_save_career)
 	_mount(screen)
 
 
@@ -267,6 +301,7 @@ func _enable_career_navigation() -> void:
 	_career_button.disabled = false
 	_roster_button.disabled = false
 	_strategy_button.disabled = false
+	_office_button.disabled = false
 
 
 func _mount(screen: Control) -> void:
@@ -291,3 +326,5 @@ func _apply_responsive_shell() -> void:
 	_brand.get_child(1).visible = not compact
 	_section_label.visible = not compact
 	_version_badge.visible = size.x >= 880
+	_strategy_button.visible = size.x >= 900
+	_match_button.visible = not compact or not _match_button.disabled

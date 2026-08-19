@@ -10,6 +10,7 @@ static func create_season(user_team_id: String, seed: int) -> LeagueState:
 	var teams := SampleLeague.create_teams()
 	var league := LeagueState.new(teams, user_team_id, seed)
 	league.schedule = ScheduleGenerator.round_robin(teams)
+	league.free_agents = SampleLeague.create_free_agents()
 	league.news.append("The 2026 Gridiron League season is ready for kickoff.")
 	return league
 
