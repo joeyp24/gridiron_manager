@@ -61,6 +61,28 @@ func advance_offseason() -> Dictionary:
 	return OffseasonService.advance_stage(league)
 
 
+func scout_prospect(prospect_id: String) -> Dictionary:
+	return DraftService.scout_prospect(league, prospect_id)
+
+
+func toggle_draft_favorite(prospect_id: String) -> Dictionary:
+	return DraftService.toggle_favorite(league, prospect_id)
+
+
+func select_draft_prospect(prospect_id: String) -> Dictionary:
+	var result := DraftService.select_user_prospect(league, prospect_id)
+	if bool(result.get("ok", false)) and league.phase == LeagueState.PHASE_ROSTER_DECISIONS:
+		OffseasonService.prepare_post_draft_ai_rosters(league)
+	return result
+
+
+func auto_pick_draft_selection() -> Dictionary:
+	var result := DraftService.auto_pick_user(league)
+	if bool(result.get("ok", false)) and league.phase == LeagueState.PHASE_ROSTER_DECISIONS:
+		OffseasonService.prepare_post_draft_ai_rosters(league)
+	return result
+
+
 func expiring_players() -> Array[PlayerData]:
 	var players: Array[PlayerData] = []
 	for player in user_team().players:

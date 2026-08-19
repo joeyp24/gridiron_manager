@@ -79,6 +79,15 @@ static func initial_contract(player: PlayerData, season_year: int, depth_index: 
 	return PlayerContract.new(salary, years, roundi(float(salary * years) * guarantee_rate), season_year, role_name)
 
 
+static func rookie_contract(draft_year: int, round_number: int, pick_in_round: int) -> PlayerContract:
+	var round_salaries := [5_600_000, 3_800_000, 2_700_000, 2_000_000, 1_500_000, 1_200_000, 1_000_000]
+	var round_index := clampi(round_number - 1, 0, round_salaries.size() - 1)
+	var salary := roundi(float(int(round_salaries[round_index])) * (1.0 - float(maxi(pick_in_round - 1, 0)) * 0.025) / 50_000.0) * 50_000
+	var years := 4 if round_number <= 3 else 3
+	var guarantee_rate := 0.70 if round_number == 1 else (0.50 if round_number <= 3 else (0.30 if round_number <= 5 else 0.15))
+	return PlayerContract.new(salary, years, roundi(float(salary * years) * guarantee_rate), draft_year, "Rookie")
+
+
 static func money_label(amount: int) -> String:
 	if absi(amount) >= 1_000_000:
 		return "$%.1fM" % (float(amount) / 1_000_000.0)

@@ -3,6 +3,7 @@ extends Control
 signal back_requested
 signal free_agency_requested
 signal front_office_requested
+signal draft_center_requested
 signal offseason_changed
 
 const OFFER_MULTIPLIERS: Array[float] = [0.90, 1.00, 1.10]
@@ -70,6 +71,12 @@ func _rebuild() -> void:
 			_build_re_signing()
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
 			_build_development()
+		LeagueState.PHASE_DRAFT_PREPARATION:
+			_build_draft_preparation()
+		LeagueState.PHASE_DRAFT:
+			_build_live_draft()
+		LeagueState.PHASE_ROSTER_DECISIONS:
+			_build_roster_decisions()
 	_apply_responsive_layout()
 
 
@@ -99,7 +106,9 @@ func _build_stage_tracker() -> void:
 		{"phase": LeagueState.PHASE_SEASON_REVIEW, "label": "01  SEASON REVIEW"},
 		{"phase": LeagueState.PHASE_RE_SIGNING, "label": "02  RE-SIGNING"},
 		{"phase": LeagueState.PHASE_PLAYER_DEVELOPMENT, "label": "03  DEVELOPMENT"},
-		{"phase": "New League Year", "label": "04  NEW LEAGUE YEAR"},
+		{"phase": LeagueState.PHASE_DRAFT_PREPARATION, "label": "04  SCOUTING"},
+		{"phase": LeagueState.PHASE_DRAFT, "label": "05  DRAFT"},
+		{"phase": LeagueState.PHASE_ROSTER_DECISIONS, "label": "06  ROSTER"},
 	]
 	var active_index := _stage_index(_career.league.phase)
 	for index in range(stages.size()):
@@ -261,24 +270,12 @@ func _build_development() -> void:
 
 	var side := UIFactory.vbox(14)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var roster_errors := RosterValidator.validate_team(_team)
-	var readiness := _card_column("LEAGUE YEAR READINESS", "Roster and cap audit")
-	if roster_errors.is_empty():
-		var ready := UIFactory.label("READY FOR KICKOFF", "EyebrowLabel")
-		ready.modulate = GridironTheme.ACCENT
-		readiness.column.add_child(ready)
-		readiness.column.add_child(UIFactory.wrapped_label("The roster is legal. Starting the new year clears dead cap, resets health, and generates a fresh schedule.", "MutedLabel"))
-	else:
-		var action := UIFactory.label("ACTION REQUIRED", "EyebrowLabel")
-		action.modulate = GridironTheme.DANGER
-		readiness.column.add_child(action)
-		for error in roster_errors:
-			readiness.column.add_child(UIFactory.wrapped_label("- " + error, "MutedLabel"))
-	var market := UIFactory.button("OPEN FREE AGENCY", "SecondaryButton")
-	market.pressed.connect(func(): free_agency_requested.emit())
-	readiness.column.add_child(market)
-	var advance := UIFactory.button("START %d SEASON  ->" % (_career.league.season_year + 1), "PrimaryButton")
-	advance.disabled = not roster_errors.is_empty()
+	var readiness := _card_column("NEXT: DRAFT PREPARATION", "Turn development results into a roster plan")
+	var ready := UIFactory.label("ROOKIE CLASS READY", "EyebrowLabel")
+	ready.modulate = GridironTheme.ACCENT
+	readiness.column.add_child(ready)
+	readiness.column.add_child(UIFactory.wrapped_label("Generate the incoming class, receive baseline reports, and spend targeted scouting assignments before draft night.", "MutedLabel"))
+	var advance := UIFactory.button("BUILD %d DRAFT CLASS  ->" % (_career.league.season_year + 1), "PrimaryButton")
 	advance.pressed.connect(_advance_stage)
 	readiness.column.add_child(advance)
 	side.add_child(readiness.card)
@@ -302,8 +299,112 @@ func _development_summary(reports: Array[DevelopmentReportData]) -> PanelContain
 	metrics.add_child(_metric("FALLERS", str(fallers)))
 	metrics.add_child(_metric("NET OVR", "%+d" % net_change))
 	built.column.add_child(metrics)
-	built.column.add_child(UIFactory.wrapped_label("Potential drives early-career growth; age increasingly affects speed and overall development. Retirements remain deferred until the draft pipeline is added.", "MutedLabel"))
+	built.column.add_child(UIFactory.wrapped_label("Potential drives early-career growth; age increasingly affects speed and overall development. These results should shape your scouting priorities.", "MutedLabel"))
 	return built.card
+
+
+func _build_draft_preparation() -> void:
+	var draft := _career.league.current_draft
+	var overview := _card_column("DRAFT PREPARATION", "A fictional class with uncertainty, combine data, production, and personality")
+	overview.card.custom_minimum_size = Vector2(520, 420)
+	var first_pick := draft.next_pick_for(_team.id) if draft != null else null
+	var metrics := GridContainer.new()
+	metrics.columns = 2
+	metrics.add_theme_constant_override("h_separation", 10)
+	metrics.add_theme_constant_override("v_separation", 10)
+	metrics.add_child(_metric("PROSPECTS", str(draft.prospects.size()) if draft != null else "0"))
+	metrics.add_child(_metric("SCOUTING", "%d pts" % draft.scouting_points_remaining if draft != null else "0 pts"))
+	metrics.add_child(_metric("FIRST PICK", first_pick.pick_label() if first_pick != null else "N/A"))
+	metrics.add_child(_metric("TEAM NEEDS", " · ".join(DraftService.team_needs(_team, 3))))
+	overview.column.add_child(metrics)
+	overview.column.add_child(UIFactory.wrapped_label("Baseline reports intentionally show ranges. Targeted assignments narrow OVR and potential estimates and reveal verified position-specific traits.", "MutedLabel"))
+	var open := UIFactory.button("OPEN DRAFT CENTER  ->", "PrimaryButton")
+	open.pressed.connect(func(): draft_center_requested.emit())
+	overview.column.add_child(open)
+	_body_grid.add_child(overview.card)
+
+	var side := UIFactory.vbox(14)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var plan := _card_column("WAR ROOM PLAN", "Recommended preparation sequence")
+	for item in ["1  Filter the board by your highest roster needs.", "2  Favorite priority targets across multiple rounds.", "3  Spend assignments on uncertain or high-upside players.", "4  Compare every target with your current starter."]:
+		plan.column.add_child(UIFactory.wrapped_label(item, "MutedLabel"))
+	side.add_child(plan.card)
+	var begin := _card_column("DRAFT NIGHT", "Scouting closes when the draft begins")
+	begin.column.add_child(UIFactory.wrapped_label("AI clubs will select between your turns using talent, roster need, depth, potential, and positional value.", "MutedLabel"))
+	var advance := UIFactory.button("BEGIN SEVEN-ROUND DRAFT", "SecondaryButton")
+	advance.pressed.connect(_advance_stage)
+	begin.column.add_child(advance)
+	side.add_child(begin.card)
+	_body_grid.add_child(side)
+
+
+func _build_live_draft() -> void:
+	var draft := _career.league.current_draft
+	var live := _card_column("DRAFT IN PROGRESS", "Make each club selection in the dedicated Draft Center")
+	live.card.custom_minimum_size = Vector2(520, 360)
+	var current := draft.current_pick() if draft != null else null
+	var current_team := _career.league.team_by_id(current.owner_team_id) if current != null else null
+	var clock := UIFactory.label("YOU ARE ON THE CLOCK" if current_team != null and current_team.id == _team.id else "LEAGUE ON THE CLOCK", "EyebrowLabel")
+	clock.modulate = GridironTheme.WARM
+	live.column.add_child(clock)
+	live.column.add_child(UIFactory.label(current.pick_label() if current != null else "Draft complete", "MetricLabel"))
+	live.column.add_child(UIFactory.label(current_team.display_name() if current_team != null else "Selections complete", "SectionTitleLabel"))
+	var open := UIFactory.button("ENTER DRAFT CENTER  ->", "PrimaryButton")
+	open.pressed.connect(func(): draft_center_requested.emit())
+	live.column.add_child(open)
+	_body_grid.add_child(live.card)
+
+	var recap := _card_column("YOUR CLASS", "%d of 7 selections complete" % (draft.selections_for_team(_team.id).size() if draft != null else 0))
+	if draft != null:
+		for pick in draft.selections_for_team(_team.id):
+			var prospect := draft.prospect_by_id(pick.selected_prospect_id)
+			recap.column.add_child(UIFactory.label("%s  ·  %s %s" % [pick.pick_label(), prospect.position, prospect.full_name], "MutedLabel"))
+	_body_grid.add_child(recap.card)
+
+
+func _build_roster_decisions() -> void:
+	var draft := _career.league.current_draft
+	var class_card := _card_column("DRAFT RECAP", "%s draft grade · %d rookies signed" % [DraftService.team_draft_grade(draft, _team.id), draft.selections_for_team(_team.id).size()])
+	class_card.card.custom_minimum_size = Vector2(520, 420)
+	for pick in draft.selections_for_team(_team.id):
+		var prospect := draft.prospect_by_id(pick.selected_prospect_id)
+		class_card.column.add_child(UIFactory.label("%s  ·  %s %s  ·  %s  ·  Grade %s" % [pick.pick_label(), prospect.position, prospect.full_name, pick.value_label, pick.selection_grade], "MutedLabel"))
+	var recap := UIFactory.button("OPEN FULL DRAFT RECAP", "SecondaryButton")
+	recap.pressed.connect(func(): draft_center_requested.emit())
+	class_card.column.add_child(recap)
+	_body_grid.add_child(class_card.card)
+
+	var side := UIFactory.vbox(14)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var errors := RosterValidator.validate_team(_team)
+	var readiness := _card_column("ROSTER DECISIONS", "Reduce the offseason roster to the active limit and clear the cap audit")
+	if errors.is_empty():
+		var ready := UIFactory.label("READY FOR KICKOFF", "EyebrowLabel")
+		ready.modulate = GridironTheme.ACCENT
+		readiness.column.add_child(ready)
+		readiness.column.add_child(UIFactory.wrapped_label("Your depth chart, active roster, and payroll are legal for the new league year.", "MutedLabel"))
+	else:
+		var required := UIFactory.label("ACTION REQUIRED", "EyebrowLabel")
+		required.modulate = GridironTheme.DANGER
+		readiness.column.add_child(required)
+		for error in errors:
+			readiness.column.add_child(UIFactory.wrapped_label("• " + error, "MutedLabel"))
+	var office := UIFactory.button("OPEN FRONT OFFICE", "SecondaryButton")
+	office.pressed.connect(func(): front_office_requested.emit())
+	readiness.column.add_child(office)
+	var market := UIFactory.button("OPEN FREE AGENCY", "SecondaryButton")
+	market.pressed.connect(func(): free_agency_requested.emit())
+	readiness.column.add_child(market)
+	var advance := UIFactory.button("START %d SEASON  ->" % (_career.league.season_year + 1), "PrimaryButton")
+	advance.disabled = not errors.is_empty()
+	advance.pressed.connect(_advance_stage)
+	readiness.column.add_child(advance)
+	side.add_child(readiness.card)
+	var needs := _card_column("REMAINING NEEDS", "Post-draft depth priorities")
+	for position_name in DraftService.team_needs(_team, 6):
+		needs.column.add_child(UIFactory.label("%s  ·  %d rostered" % [position_name, _team.players_at(position_name).size()], "MutedLabel"))
+	side.add_child(needs.card)
+	_body_grid.add_child(side)
 
 
 func _development_row(report: DevelopmentReportData) -> PanelContainer:
@@ -381,6 +482,12 @@ func _stage_index(phase: String) -> int:
 			return 1
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
 			return 2
+		LeagueState.PHASE_DRAFT_PREPARATION:
+			return 3
+		LeagueState.PHASE_DRAFT:
+			return 4
+		LeagueState.PHASE_ROSTER_DECISIONS:
+			return 5
 	return 0
 
 

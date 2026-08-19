@@ -7,6 +7,7 @@ const ROSTER_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C"
 const DEFAULT_SALARY_CAP := 280_000_000
 const MIN_ROSTER_SIZE := 35
 const DEFAULT_ROSTER_LIMIT := 45
+const OFFSEASON_ROSTER_LIMIT := 52
 
 var id: String
 var city: String
@@ -124,8 +125,9 @@ func player_by_id(player_id: String) -> PlayerData:
 	return null
 
 
-func add_player(player: PlayerData) -> bool:
-	if player == null or player_by_id(player.id) != null or players.size() >= roster_limit:
+func add_player(player: PlayerData, allowed_limit: int = -1) -> bool:
+	var limit := roster_limit if allowed_limit < 0 else allowed_limit
+	if player == null or player_by_id(player.id) != null or players.size() >= limit:
 		return false
 	players.append(player)
 	var ids: Array = depth_chart.get(player.position, [])

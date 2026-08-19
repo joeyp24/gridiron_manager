@@ -19,11 +19,15 @@ func _init() -> void:
 	_test_complete_career_season()
 	_test_offseason_extensions_and_expiration()
 	_test_player_development_is_deterministic()
+	_test_draft_class_and_scouting()
+	_test_draft_order_and_pick_ownership()
+	_test_complete_seven_round_draft()
 	_test_multi_season_career_loop()
 	_test_career_serialization_round_trip()
 	_test_save_repository_round_trip()
 	_test_version_one_save_migration()
 	_test_version_two_save_migration()
+	_test_version_three_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -234,6 +238,12 @@ func _test_offseason_extensions_and_expiration() -> void:
 	_check(career.league.free_agent_by_id(expired.id) != null, "An unextended player should reach free agency")
 	_check(renewed.contract.years_remaining == 3 and renewed.contract.expiration_year() == 2029, "A future-starting extension should not lose a contract year early")
 	_check(career.league.development_reports_for(team.id, 2027).size() == team.players.size(), "Development should produce one report per roster player")
+	var preparation := career.advance_offseason()
+	_check(bool(preparation.get("ok", false)) and career.league.phase == LeagueState.PHASE_DRAFT_PREPARATION, "Development should advance into draft preparation")
+	_check(career.league.current_draft != null, "Draft preparation should generate the incoming class")
+	var draft_start := career.advance_offseason()
+	_check(bool(draft_start.get("ok", false)) and career.league.phase == LeagueState.PHASE_DRAFT, "Draft preparation should advance to the live draft")
+	_complete_draft(career)
 	_make_user_roster_legal(career)
 	var rollover := career.advance_offseason()
 	_check(bool(rollover.get("ok", false)), "A legal roster should be able to begin the next league year")
@@ -258,6 +268,85 @@ func _test_player_development_is_deterministic() -> void:
 		_check(first_reports.front().attribute_changes == second_reports.front().attribute_changes, "Identical career seeds should produce identical attribute development")
 
 
+func _test_draft_class_and_scouting() -> void:
+	var first := DraftClassGenerator.generate(2027, 61027)
+	var second := DraftClassGenerator.generate(2027, 61027)
+	_check(first.size() == 86, "Each draft class should provide enough prospects for seven rounds and priority free agents")
+	_check(JSON.stringify(first.front().to_dict()) == JSON.stringify(second.front().to_dict()), "Draft generation should be deterministic for a season seed")
+	var positions: Dictionary = {}
+	for prospect in first:
+		positions[prospect.position] = true
+	_check(positions.size() == TeamData.ROSTER_POSITIONS.size(), "Draft classes should cover every roster position")
+	var career := CareerSession.new_career("denver_summit", 61027)
+	_complete_season(career)
+	career.advance_offseason()
+	career.advance_offseason()
+	career.advance_offseason()
+	var draft: DraftStateData = career.league.current_draft
+	_check(career.league.phase == LeagueState.PHASE_DRAFT_PREPARATION and draft != null, "The offseason should expose a dedicated scouting stage")
+	var target: ProspectData = draft.prospects.front()
+	var report: ScoutingReportData = draft.report_for(career.league.user_team_id, target.id)
+	var original_width := report.overall_high - report.overall_low
+	var original_points := draft.scouting_points_remaining
+	var result := career.scout_prospect(target.id)
+	_check(bool(result.get("ok", false)), "A targeted scouting assignment should advance an incomplete report")
+	_check(report.confidence == 50 and report.overall_high - report.overall_low < original_width, "Targeted scouting should increase confidence and narrow the rating range")
+	_check(draft.scouting_points_remaining == original_points - 1, "Targeted scouting should consume one assignment")
+	career.toggle_draft_favorite(target.id)
+	_check(draft.is_favorite(target.id), "Prospects should be addable to a persistent favorites board")
+	var loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
+	var loaded_report: ScoutingReportData = loaded.league.current_draft.report_for(loaded.league.user_team_id, target.id)
+	_check(loaded_report.confidence == 50 and loaded.league.current_draft.is_favorite(target.id), "Scouting reports and favorites should survive serialization")
+	career.advance_offseason()
+	career.auto_pick_draft_selection()
+	var mid_draft_index := career.league.current_draft.current_pick_index
+	var mid_draft_loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
+	_check(mid_draft_loaded.league.phase == LeagueState.PHASE_DRAFT, "A save should restore the live draft phase")
+	_check(mid_draft_loaded.league.current_draft.current_pick_index == mid_draft_index, "A save should restore the live pick clock and completed selections")
+
+
+func _test_draft_order_and_pick_ownership() -> void:
+	var career := CareerSession.new_career("chicago_foundry", 72611)
+	_complete_season(career)
+	career.advance_offseason()
+	career.advance_offseason()
+	career.advance_offseason()
+	var draft: DraftStateData = career.league.current_draft
+	_check(draft.picks.size() == 56, "An eight-team, seven-round draft should contain 56 picks")
+	for round_index in range(7):
+		var final_pick: DraftPickData = draft.picks[round_index * career.league.teams.size() + career.league.teams.size() - 1]
+		_check(final_pick.owner_team_id == career.league.champion_team_id, "The reigning champion should pick last in round %d" % (round_index + 1))
+	for pick in draft.picks:
+		_check(pick.owner_team_id == pick.original_team_id, "Initial pick ownership should preserve both original and current owner IDs")
+
+
+func _test_complete_seven_round_draft() -> void:
+	var career := CareerSession.new_career("boston_sentinels", 91817)
+	_complete_season(career)
+	career.advance_offseason()
+	career.advance_offseason()
+	career.advance_offseason()
+	var draft: DraftStateData = career.league.current_draft
+	var free_agents_before := career.league.free_agents.size()
+	var start := career.advance_offseason()
+	_check(bool(start.get("ok", false)) and career.league.phase == LeagueState.PHASE_DRAFT, "Draft night should begin after preparation")
+	_complete_draft(career)
+	_check(career.league.phase == LeagueState.PHASE_ROSTER_DECISIONS and draft.is_complete(), "The final selection should advance the offseason into roster decisions")
+	_check(draft.current_pick_index == 56 and draft.available_prospects().size() == 30, "The draft should make 56 selections and retain 30 undrafted prospects")
+	_check(career.league.free_agents.size() >= free_agents_before + 30, "Undrafted prospects should enter the free-agent market")
+	for team in career.league.teams:
+		var selections := draft.selections_for_team(team.id)
+		_check(selections.size() == 7, "%s should make one selection in every round" % team.abbreviation)
+		for pick in selections:
+			var rookie := team.player_by_id(pick.selected_player_id)
+			_check(rookie != null and rookie.contract != null, "Every drafted prospect should join the selecting roster on a rookie contract")
+			if rookie != null and rookie.contract != null:
+				_check(rookie.contract.role == "Rookie" and rookie.contract.signed_year == draft.draft_year, "Rookie contracts should use the draft-year salary scale")
+		if team.id != career.league.user_team_id:
+			_check(RosterValidator.validate_team(team).is_empty(), "%s should complete automated post-draft roster decisions" % team.abbreviation)
+	_check(DraftService.team_draft_grade(draft, career.league.user_team_id) in ["A", "B", "C", "D"], "The managed club should receive a draft recap grade")
+
+
 func _test_multi_season_career_loop() -> void:
 	var career := CareerSession.new_career("miami_nightjars", 808017)
 	for season_index in range(3):
@@ -265,6 +354,9 @@ func _test_multi_season_career_loop() -> void:
 		_check(career.league.season_history.size() == season_index + 1, "Each completed season should add exactly one history record")
 		career.advance_offseason()
 		career.advance_offseason()
+		career.advance_offseason()
+		career.advance_offseason()
+		_complete_draft(career)
 		_make_user_roster_legal(career)
 		var rollover := career.advance_offseason()
 		_check(bool(rollover.get("ok", false)), "Season %d should roll into a legal new league year" % (2026 + season_index))
@@ -272,6 +364,7 @@ func _test_multi_season_career_loop() -> void:
 			_check(RosterValidator.validate_team(team).is_empty(), "%s should begin season %d with a legal roster" % [team.abbreviation, career.league.season_year])
 	_check(career.league.season_year == 2029, "Three completed offseasons should advance the career to 2029")
 	_check(career.league.season_history.size() == 3, "Multi-season careers should retain complete season history")
+	_check(career.league.draft_history.size() == 3, "Multi-season careers should retain complete draft history")
 	_check(career.league.development_reports_for(career.league.user_team_id).size() > career.user_team().players.size(), "Development history should persist across multiple seasons")
 
 
@@ -369,6 +462,26 @@ func _test_version_two_save_migration() -> void:
 	DirAccess.remove_absolute(absolute_path)
 
 
+func _test_version_three_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v3_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("seattle_orcas", 77881)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("current_draft")
+	league_data.erase("draft_history")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 3, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-three career should migrate successfully")
+	if loaded != null:
+		_check(loaded.league.current_draft == null and loaded.league.draft_history.is_empty(), "Version-three careers should receive empty draft state collections")
+	DirAccess.remove_absolute(absolute_path)
+
+
 func _complete_season(career: CareerSession) -> void:
 	var guard := 0
 	while not career.league.is_offseason() and guard < 12:
@@ -376,8 +489,36 @@ func _complete_season(career: CareerSession) -> void:
 		guard += 1
 
 
+func _complete_draft(career: CareerSession) -> void:
+	var guard := 0
+	while career.league.phase == LeagueState.PHASE_DRAFT and guard < 10:
+		var result := career.auto_pick_draft_selection()
+		_check(bool(result.get("ok", false)), "The managed club should be able to auto-pick from its scouted board")
+		guard += 1
+	_check(guard == 7, "A complete draft should require exactly seven managed-club selections")
+
+
 func _make_user_roster_legal(career: CareerSession) -> void:
 	var team := career.user_team()
+	var release_guard := 0
+	while (team.players.size() > team.roster_limit or team.cap_space() < 0) and release_guard < 80:
+		var release_candidate: PlayerData
+		var release_score := -9999.0
+		for player in team.players:
+			if team.players_at(player.position).size() <= 1:
+				continue
+			var salary := player.contract.annual_salary if player.contract != null else 0
+			var penalty := player.contract.release_penalty() if player.contract != null else 0
+			var score := float(100 - player.overall) + float(maxi(salary - penalty, 0)) / 1_000_000.0
+			if release_candidate == null or score > release_score:
+				release_candidate = player
+				release_score = score
+		if release_candidate == null:
+			break
+		var release_result := career.release_player(release_candidate.id)
+		if not bool(release_result.get("ok", false)):
+			break
+		release_guard += 1
 	for position_name in TeamData.ROSTER_POSITIONS:
 		if not team.players_at(position_name).is_empty():
 			continue
