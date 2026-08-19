@@ -1,0 +1,41 @@
+name: Validate prototype
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  godot-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GODOT_VERSION: 4.7.1
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          curl --fail --location --retry 3 \
+            --output godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          chmod +x "Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+
+      - name: Import project
+        run: |
+          "./Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless --path . --import
+
+      - name: Run domain and simulation checks
+        run: |
+          mkdir -p test-results
+          "./Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless --path . \
+            --log-file test-results/godot-test.log \
+            --script res://tests/run_tests.gd
