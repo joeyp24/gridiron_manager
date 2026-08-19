@@ -25,9 +25,70 @@ static func market_offer(
 		rounded_salary,
 		term,
 		roundi(float(rounded_salary * term) * guarantee_rate),
-		league.season_year,
+		league.contract_start_year(),
 		role_name
 	)
+
+
+static func extension_offer(
+	league: LeagueState,
+	team: TeamData,
+	player: PlayerData,
+	years: int,
+	offer_multiplier: float = 1.0
+) -> PlayerContract:
+	var contract := market_offer(league, team, player, years, offer_multiplier * 0.96)
+	contract.role = projected_role(team, player)
+	return contract
+
+
+static func minimum_extension_multiplier(player: PlayerData) -> float:
+	var threshold := 0.94
+	if player.overall >= 88:
+		threshold += 0.04
+	if player.age >= 32:
+		threshold -= 0.03
+	return clampf(threshold, 0.88, 1.02)
+
+
+static func extension_outlook(player: PlayerData, multiplier: float) -> String:
+	var threshold := minimum_extension_multiplier(player)
+	if multiplier + 0.001 >= threshold:
+		return "PLAYER IS PREPARED TO RE-SIGN"
+	if multiplier + 0.05 >= threshold:
+		return "OFFER NEEDS IMPROVEMENT"
+	return "PLAYER WILL TEST FREE AGENCY"
+
+
+static func extend_player(
+	league: LeagueState,
+	team_id: String,
+	player_id: String,
+	years: int,
+	offer_multiplier: float = 1.0
+) -> Dictionary:
+	var team := league.team_by_id(team_id)
+	var player := team.player_by_id(player_id) if team != null else null
+	if team == null or player == null or player.contract == null:
+		return _failure("The selected player is not under contract with this club.")
+	if not player.contract.is_expiring_after(league.season_year):
+		return _failure("Only expiring contracts can be renewed during this stage.")
+	if offer_multiplier + 0.001 < minimum_extension_multiplier(player):
+		return _failure("%s declined the extension and intends to test the market." % player.full_name)
+	var old_salary := player.contract.annual_salary
+	var contract := extension_offer(league, team, player, years, offer_multiplier)
+	var projected_payroll := team.payroll() - old_salary + contract.annual_salary
+	if projected_payroll > team.salary_cap:
+		return _failure("The extension needs %s more projected cap space." % PlayerContract.money_label(projected_payroll - team.salary_cap))
+	player.contract = contract
+	var details := "Extended %s on a %d-year, %s contract through %d." % [
+		player.full_name,
+		contract.years_remaining,
+		PlayerContract.money_label(contract.total_value()),
+		contract.expiration_year(),
+	]
+	_record(league, "Extension", team, player, details, contract.annual_salary - old_salary)
+	return {"ok": true, "message": details, "contract": contract}
 
 
 static func minimum_offer_multiplier(league: LeagueState, team: TeamData, player: PlayerData) -> float:
@@ -218,7 +279,11 @@ static func _record(
 		details,
 		cap_change
 	)
-	var verb := "sign" if type_name == "Signing" else "release"
+	var verb := "sign"
+	if type_name == "Release":
+		verb = "release"
+	elif type_name == "Extension":
+		verb = "extend"
 	league.record_transaction(transaction, "%s %s %s." % [team.display_name(), verb, player.full_name])
 
 

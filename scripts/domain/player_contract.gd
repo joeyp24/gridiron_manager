@@ -6,6 +6,7 @@ var years_remaining: int
 var guaranteed_money: int
 var signed_year: int
 var role: String
+var expires_after_year: int
 
 
 func _init(
@@ -13,13 +14,15 @@ func _init(
 	contract_years: int = 1,
 	contract_guarantee: int = 0,
 	contract_signed_year: int = 2026,
-	contract_role: String = "Depth"
+	contract_role: String = "Depth",
+	contract_expiration_year: int = 0
 ) -> void:
 	annual_salary = maxi(contract_salary, 0)
 	years_remaining = maxi(contract_years, 1)
 	guaranteed_money = maxi(contract_guarantee, 0)
 	signed_year = contract_signed_year
 	role = contract_role
+	expires_after_year = contract_expiration_year if contract_expiration_year > 0 else signed_year + years_remaining - 1
 
 
 func total_value() -> int:
@@ -27,7 +30,11 @@ func total_value() -> int:
 
 
 func expiration_year() -> int:
-	return signed_year + years_remaining - 1
+	return expires_after_year
+
+
+func is_expiring_after(season_year: int) -> bool:
+	return expires_after_year <= season_year
 
 
 func release_penalty() -> int:
@@ -45,6 +52,7 @@ func to_dict() -> Dictionary:
 		"guaranteed_money": guaranteed_money,
 		"signed_year": signed_year,
 		"role": role,
+		"expires_after_year": expires_after_year,
 	}
 
 
@@ -54,7 +62,8 @@ static func from_dict(data: Dictionary) -> PlayerContract:
 		int(data.get("years_remaining", 1)),
 		int(data.get("guaranteed_money", 0)),
 		int(data.get("signed_year", 2026)),
-		str(data.get("role", "Depth"))
+		str(data.get("role", "Depth")),
+		int(data.get("expires_after_year", int(data.get("signed_year", 2026)) + int(data.get("years_remaining", 1)) - 1))
 	)
 
 

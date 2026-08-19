@@ -9,6 +9,7 @@ const ROSTER_SCENE := preload("res://scenes/screens/roster_screen.tscn")
 const STRATEGY_SCENE := preload("res://scenes/screens/strategy_screen.tscn")
 const FRONT_OFFICE_SCENE := preload("res://scenes/screens/front_office_screen.tscn")
 const FREE_AGENCY_SCENE := preload("res://scenes/screens/free_agency_screen.tscn")
+const OFFSEASON_SCENE := preload("res://scenes/screens/offseason_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -97,7 +98,7 @@ func _build_shell() -> void:
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.3", GridironTheme.ACCENT)
+	_version_badge = UIFactory.badge("CAREER 0.4", GridironTheme.ACCENT)
 	top_row.add_child(_version_badge)
 
 	_content_margin = MarginContainer.new()
@@ -160,6 +161,7 @@ func _show_career_dashboard() -> void:
 	screen.strategy_requested.connect(_show_strategy)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.free_agency_requested.connect(_show_free_agency)
+	screen.offseason_requested.connect(_show_offseason)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
 
@@ -207,6 +209,19 @@ func _show_free_agency() -> void:
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.market_changed.connect(_save_career)
+	_mount(screen)
+
+
+func _show_offseason() -> void:
+	if _career == null or not _career.league.is_offseason():
+		return
+	_section_label.text = "CAREER / OFFSEASON"
+	var screen := OFFSEASON_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.free_agency_requested.connect(_show_free_agency)
+	screen.front_office_requested.connect(_show_front_office)
+	screen.offseason_changed.connect(_save_career)
 	_mount(screen)
 
 

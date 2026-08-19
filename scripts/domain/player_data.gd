@@ -11,6 +11,7 @@ var technique: int
 var awareness: int
 var durability: int
 var age: int
+var potential: int
 var energy := 100
 var is_active := true
 var injury_type := ""
@@ -28,7 +29,8 @@ func _init(
 	player_technique: int = 50,
 	player_awareness: int = 50,
 	player_age: int = 24,
-	player_durability: int = 78
+	player_durability: int = 78,
+	player_potential: int = -1
 ) -> void:
 	id = player_id
 	full_name = player_name
@@ -40,6 +42,7 @@ func _init(
 	awareness = player_awareness
 	age = player_age
 	durability = player_durability
+	potential = player_potential if player_potential >= 0 else initial_potential(player_id, player_overall, player_age)
 
 
 func rating_for(category: String) -> int:
@@ -116,6 +119,7 @@ func to_dict() -> Dictionary:
 		"awareness": awareness,
 		"durability": durability,
 		"age": age,
+		"potential": potential,
 		"energy": energy,
 		"is_active": is_active,
 		"injury_type": injury_type,
@@ -135,7 +139,8 @@ static func from_dict(data: Dictionary) -> PlayerData:
 		int(data.get("technique", 50)),
 		int(data.get("awareness", 50)),
 		int(data.get("age", 24)),
-		int(data.get("durability", 78))
+		int(data.get("durability", 78)),
+		int(data.get("potential", -1))
 	)
 	player.energy = int(data.get("energy", 100))
 	player.is_active = bool(data.get("is_active", true))
@@ -145,3 +150,9 @@ static func from_dict(data: Dictionary) -> PlayerData:
 	if contract_data is Dictionary:
 		player.contract = PlayerContract.from_dict(contract_data)
 	return player
+
+
+static func initial_potential(player_id: String, player_overall: int, player_age: int) -> int:
+	var youth_ceiling := 11 if player_age <= 22 else (8 if player_age <= 24 else (5 if player_age <= 27 else 2))
+	var deterministic_bonus := absi(player_id.hash()) % (youth_ceiling + 1)
+	return clampi(player_overall + deterministic_bonus, player_overall, 97)

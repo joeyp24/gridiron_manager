@@ -47,10 +47,33 @@ func release_player(player_id: String) -> Dictionary:
 	return TransactionService.release_player(league, league.user_team_id, player_id)
 
 
+func extend_player(player_id: String, years: int, offer_multiplier: float) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before negotiating a contract."}
+	if league.phase != LeagueState.PHASE_RE_SIGNING:
+		return {"ok": false, "message": "Extensions are available during the re-signing stage."}
+	return TransactionService.extend_player(league, league.user_team_id, player_id, years, offer_multiplier)
+
+
+func advance_offseason() -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before advancing the offseason."}
+	return OffseasonService.advance_stage(league)
+
+
+func expiring_players() -> Array[PlayerData]:
+	var players: Array[PlayerData] = []
+	for player in user_team().players:
+		if player.contract != null and player.contract.is_expiring_after(league.season_year):
+			players.append(player)
+	players.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+	return players
+
+
 func begin_user_game() -> FootballSimulator:
 	if active_simulator != null:
 		return active_simulator
-	if league.phase == "Complete":
+	if league.is_offseason():
 		return null
 	active_matchup = current_matchup()
 	if active_matchup == null or active_matchup.played:
@@ -77,7 +100,7 @@ func complete_user_game() -> void:
 
 
 func simulate_current_week() -> void:
-	if league.phase == "Complete" or active_simulator != null:
+	if league.is_offseason() or active_simulator != null:
 		return
 	var completed_week := league.current_week
 	LeagueSimulator.prepare_current_week(league)
@@ -88,9 +111,9 @@ func simulate_current_week() -> void:
 
 
 func current_week_label() -> String:
-	if league.phase == "Complete":
-		return "SEASON COMPLETE"
-	if league.phase == "Championship":
+	if league.is_offseason():
+		return league.phase.to_upper()
+	if league.phase == LeagueState.PHASE_CHAMPIONSHIP:
 		return "CHAMPIONSHIP WEEK"
 	return "WEEK %d OF %d" % [league.current_week, LeagueState.REGULAR_SEASON_WEEKS]
 

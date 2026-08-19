@@ -1,0 +1,287 @@
+class_name OffseasonService
+extends RefCounted
+
+
+static func advance_stage(league: LeagueState) -> Dictionary:
+	match league.phase:
+		LeagueState.PHASE_SEASON_REVIEW, "Complete":
+			_open_new_league_finances(league)
+			var extensions := run_ai_re_signing(league)
+			league.phase = LeagueState.PHASE_RE_SIGNING
+			league.news.push_front("Re-signing is open. %d league contract%s completed." % [extensions, " was" if extensions == 1 else "s were"])
+			_trim_news(league)
+			return _success("Re-signing is now open. Review your expiring contracts.")
+		LeagueState.PHASE_RE_SIGNING:
+			var expirations := advance_contracts(league)
+			ensure_replacement_market(league)
+			var reports := develop_players(league)
+			league.phase = LeagueState.PHASE_PLAYER_DEVELOPMENT
+			league.news.push_front("Development reviews are complete for %d players; %d contracts expired." % [reports, expirations])
+			_trim_news(league)
+			return _success("Contract decisions are final and development reports are ready.")
+		LeagueState.PHASE_PLAYER_DEVELOPMENT:
+			run_ai_offseason_roster_building(league)
+			var errors := RosterValidator.validate_team(league.user_team())
+			if not errors.is_empty():
+				return {"ok": false, "message": "Your roster is not ready for the new league year.", "errors": errors}
+			start_new_league_year(league)
+			return _success("The %d season is underway." % league.season_year)
+	return {"ok": false, "message": "The league is not currently in an offseason stage."}
+
+
+static func advance_contracts(league: LeagueState) -> int:
+	var expiration_count := 0
+	for team in league.teams:
+		for player in team.players.duplicate():
+			if player.contract == null or player.contract.signed_year > league.season_year:
+				continue
+			if player.contract.is_expiring_after(league.season_year):
+				team.remove_player(player.id)
+				player.contract = null
+				player.is_active = true
+				league.free_agents.append(player)
+				_record_expiration(league, team, player)
+				expiration_count += 1
+			else:
+				player.contract.years_remaining = maxi(1, player.contract.expiration_year() - league.season_year)
+	league.free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+	return expiration_count
+
+
+static func develop_players(league: LeagueState) -> int:
+	var report_year := league.season_year + 1
+	for existing in league.development_reports:
+		if existing.season_year == report_year:
+			return 0
+	var report_count := 0
+	for team in league.teams:
+		for player in team.players:
+			league.development_reports.append(_develop_player(league, player, team.id, report_year))
+			report_count += 1
+	for player in league.free_agents:
+		league.development_reports.append(_develop_player(league, player, "", report_year))
+		report_count += 1
+	while league.development_reports.size() > 2500:
+		league.development_reports.pop_front()
+	return report_count
+
+
+static func run_ai_re_signing(league: LeagueState) -> int:
+	var extension_count := 0
+	for team in league.teams:
+		if team.id == league.user_team_id:
+			continue
+		var expiring: Array[PlayerData] = []
+		for player in team.players:
+			if player.contract != null and player.contract.is_expiring_after(league.season_year):
+				expiring.append(player)
+		expiring.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+		for player in expiring:
+			var required_depth := team.players_at(player.position).size() <= 1
+			var age_threshold := 82 if player.age >= 33 else (76 if player.age >= 30 else 70)
+			if not required_depth and player.overall < age_threshold:
+				continue
+			var years := 1 if player.age >= 33 else (2 if player.age >= 30 else (3 if player.age >= 26 else 4))
+			var proposed := TransactionService.extension_offer(league, team, player, years, 1.05)
+			var projected_payroll := team.payroll() - player.contract.annual_salary + proposed.annual_salary
+			if projected_payroll > team.salary_cap - 15_000_000:
+				continue
+			var result := TransactionService.extend_player(league, team.id, player.id, years, 1.05)
+			if bool(result.get("ok", false)):
+				extension_count += 1
+	return extension_count
+
+
+static func run_ai_offseason_roster_building(league: LeagueState) -> int:
+	var move_count := 0
+	for team in league.teams:
+		if team.id == league.user_team_id:
+			continue
+		for position_name in TeamData.ROSTER_POSITIONS:
+			if not team.players_at(position_name).is_empty():
+				continue
+			var required_candidate := _best_affordable_candidate(league, team, position_name, true)
+			if required_candidate != null and _ai_sign(league, team, required_candidate):
+				move_count += 1
+		var guard := 0
+		while team.players.size() < TeamData.MIN_ROSTER_SIZE and guard < 60:
+			var candidate := _best_affordable_candidate(league, team, "", true)
+			if candidate == null or not _ai_sign(league, team, candidate):
+				break
+			move_count += 1
+			guard += 1
+	return move_count
+
+
+static func ensure_replacement_market(league: LeagueState) -> int:
+	var additions := 0
+	for position_name in TeamData.ROSTER_POSITIONS:
+		var missing_slots := 0
+		for team in league.teams:
+			if team.players_at(position_name).is_empty():
+				missing_slots += 1
+		var available := 0
+		for player in league.free_agents:
+			if player.position == position_name and player.overall <= 65:
+				available += 1
+		while available < missing_slots + 1:
+			var replacement := _unique_replacement(league, position_name, additions)
+			league.free_agents.append(replacement)
+			available += 1
+			additions += 1
+	var total_deficit := 0
+	for team in league.teams:
+		total_deficit += maxi(TeamData.MIN_ROSTER_SIZE - team.players.size(), 0)
+	var affordable_count := 0
+	for player in league.free_agents:
+		if player.overall <= 65:
+			affordable_count += 1
+	var position_index := 0
+	while affordable_count < total_deficit + league.teams.size():
+		var position_name := TeamData.ROSTER_POSITIONS[position_index % TeamData.ROSTER_POSITIONS.size()]
+		league.free_agents.append(_unique_replacement(league, position_name, additions))
+		additions += 1
+		affordable_count += 1
+		position_index += 1
+	league.free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+	return additions
+
+
+static func start_new_league_year(league: LeagueState) -> void:
+	league.season_year += 1
+	league.current_week = 1
+	league.prepared_week = 0
+	league.phase = LeagueState.PHASE_REGULAR_SEASON
+	league.champion_team_id = ""
+	league.season_seed = absi(league.season_seed * 31 + league.season_year * 7919) % 2_147_483_647
+	league.standings.clear()
+	for team in league.teams:
+		team.dead_cap = 0
+		for player in team.players:
+			player.energy = 100
+			player.injury_type = ""
+			player.injury_weeks = 0
+		team.initialize_depth_chart()
+		league.standings[team.id] = StandingData.new(team.id)
+	league.schedule = ScheduleGenerator.round_robin(league.teams, league.season_year, league.season_seed)
+	league.news.push_front("The %d Gridiron League season is ready for kickoff." % league.season_year)
+	_trim_news(league)
+
+
+static func _develop_player(league: LeagueState, player: PlayerData, team_id: String, report_year: int) -> DevelopmentReportData:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = league.season_seed + league.season_year * 104729 + player.id.hash()
+	var old_age := player.age
+	var old_overall := player.overall
+	var overall_delta := _development_delta(player, rng)
+	player.overall = clampi(player.overall + overall_delta, 45, 99)
+	if overall_delta > 0:
+		player.overall = mini(player.overall, player.potential)
+	var changes := {}
+	for attribute_name in ["speed", "power", "technique", "awareness", "durability"]:
+		var old_value := int(player.get(attribute_name))
+		var attribute_delta := overall_delta + rng.randi_range(-1, 1)
+		if attribute_name == "speed" and old_age >= 30:
+			attribute_delta -= 1
+		if attribute_name == "awareness" and old_age >= 27:
+			attribute_delta += rng.randi_range(0, 1)
+		var new_value := clampi(old_value + attribute_delta, 40, 99)
+		player.set(attribute_name, new_value)
+		changes[attribute_name] = new_value - old_value
+	player.age += 1
+	player.energy = 100
+	return DevelopmentReportData.new(
+		report_year,
+		player.id,
+		player.full_name,
+		team_id,
+		player.position,
+		old_age,
+		player.age,
+		old_overall,
+		player.overall,
+		player.potential,
+		changes
+	)
+
+
+static func _development_delta(player: PlayerData, rng: RandomNumberGenerator) -> int:
+	var upside := maxi(player.potential - player.overall, 0)
+	if player.age <= 22:
+		return rng.randi_range(1 if upside > 0 else 0, mini(4, upside)) if upside > 0 else 0
+	if player.age <= 25:
+		return rng.randi_range(0, mini(3, upside)) if upside > 0 else rng.randi_range(-1, 0)
+	if player.age <= 28:
+		return rng.randi_range(-1, mini(2, upside))
+	if player.age <= 31:
+		return rng.randi_range(-1, mini(1, upside))
+	if player.age <= 34:
+		return rng.randi_range(-2, 0)
+	return rng.randi_range(-3, -1)
+
+
+static func _best_affordable_candidate(
+	league: LeagueState,
+	team: TeamData,
+	position_name: String = "",
+	prefer_affordable: bool = false
+) -> PlayerData:
+	var best: PlayerData
+	var best_salary := 0
+	for player in league.free_agents:
+		if not position_name.is_empty() and player.position != position_name:
+			continue
+		var offer := TransactionService.market_offer(league, team, player, 1 if player.age >= 31 else 2, 1.10)
+		if offer.annual_salary > team.cap_space():
+			continue
+		if best == null or (prefer_affordable and offer.annual_salary < best_salary) or (not prefer_affordable and player.overall > best.overall):
+			best = player
+			best_salary = offer.annual_salary
+	return best
+
+
+static func _unique_replacement(league: LeagueState, position_name: String, starting_index: int) -> PlayerData:
+	var market_index := starting_index
+	while true:
+		var replacement := SampleLeague.create_replacement_player(position_name, league.season_year + 1, market_index)
+		if league.free_agent_by_id(replacement.id) == null:
+			return replacement
+		market_index += 1
+	return null
+
+
+static func _ai_sign(league: LeagueState, team: TeamData, player: PlayerData) -> bool:
+	var years := 1 if player.age >= 31 else (3 if player.age <= 26 else 2)
+	var result := TransactionService.sign_free_agent(league, team.id, player.id, years, 1.10)
+	return bool(result.get("ok", false))
+
+
+static func _record_expiration(league: LeagueState, team: TeamData, player: PlayerData) -> void:
+	var details := "%s's contract expired; the player entered free agency." % player.full_name
+	var transaction := TransactionData.new(
+		"transaction_%d_%d" % [league.season_year, league.transactions.size() + 1],
+		league.season_year,
+		league.current_week,
+		"Expiration",
+		team.id,
+		player.id,
+		player.full_name,
+		details,
+		0
+	)
+	league.record_transaction(transaction, "%s allows %s's contract to expire." % [team.display_name(), player.full_name])
+
+
+static func _open_new_league_finances(league: LeagueState) -> void:
+	for team in league.teams:
+		team.salary_cap = roundi(float(team.salary_cap) * 1.07 / 100_000.0) * 100_000
+		team.dead_cap = 0
+
+
+static func _trim_news(league: LeagueState) -> void:
+	while league.news.size() > 12:
+		league.news.pop_back()
+
+
+static func _success(message: String) -> Dictionary:
+	return {"ok": true, "message": message}
