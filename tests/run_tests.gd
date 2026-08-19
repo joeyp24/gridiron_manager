@@ -9,6 +9,13 @@ func _init() -> void:
 	_test_games_reach_a_legal_final_state()
 	_test_statistics_balance()
 	_test_strategy_cloning_is_isolated()
+	_test_full_rosters_and_depth_charts()
+	_test_round_robin_schedule()
+	_test_weekly_health_progression()
+	_test_active_career_game_is_resumable()
+	_test_complete_career_season()
+	_test_career_serialization_round_trip()
+	_test_save_repository_round_trip()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -61,6 +68,115 @@ func _test_strategy_cloning_is_isolated() -> void:
 	_check(is_equal_approx(adjusted.run_tendency, 0.72), "Cloned strategy did not apply run tendency")
 	_check(is_equal_approx(adjusted.aggression, 0.31), "Cloned strategy did not apply aggression")
 	_check(not is_equal_approx(original.run_tendency, adjusted.run_tendency), "Strategy clone mutated the source team")
+
+
+func _test_full_rosters_and_depth_charts() -> void:
+	var teams := SampleLeague.create_teams()
+	_check(teams.size() == 8, "The prototype league should contain eight teams")
+	for team in teams:
+		_check(team.players.size() == 41, "%s should have a 41-player prototype roster" % team.abbreviation)
+		for position_name in TeamData.ROSTER_POSITIONS:
+			_check(not team.depth_players(position_name).is_empty(), "%s is missing %s depth" % [team.abbreviation, position_name])
+	var team: TeamData = teams.front()
+	var original_starter: PlayerData = team.player_at("QB")
+	var backup: PlayerData = team.depth_players("QB")[1]
+	_check(team.move_on_depth_chart("QB", backup.id, -1), "A backup should be movable into the starting slot")
+	_check(team.player_at("QB").id == backup.id, "Depth-chart order should determine the starter")
+	backup.injure("Test injury", 2)
+	_check(team.player_at("QB").id == original_starter.id, "An injured starter should be replaced by the next available player")
+	original_starter.is_active = false
+	_check(team.player_at("QB").is_available(), "A depleted position should use an available emergency player")
+	_check(team.player_at("QB").position != "QB", "An empty quarterback room should fall back outside the position group")
+
+
+func _test_round_robin_schedule() -> void:
+	var teams := SampleLeague.create_teams()
+	var schedule := ScheduleGenerator.round_robin(teams)
+	_check(schedule.size() == 28, "An eight-team round robin should contain 28 games")
+	var pairings: Dictionary = {}
+	for week in range(1, 8):
+		var appearances: Dictionary = {}
+		var week_games := 0
+		for matchup in schedule:
+			if matchup.week != week:
+				continue
+			week_games += 1
+			appearances[matchup.away_team_id] = int(appearances.get(matchup.away_team_id, 0)) + 1
+			appearances[matchup.home_team_id] = int(appearances.get(matchup.home_team_id, 0)) + 1
+			var ids: Array[String] = [matchup.away_team_id, matchup.home_team_id]
+			ids.sort()
+			pairings["%s|%s" % ids] = true
+		_check(week_games == 4, "Week %d should contain four games" % week)
+		for team in teams:
+			_check(appearances.get(team.id, 0) == 1, "%s should play once in week %d" % [team.abbreviation, week])
+	_check(pairings.size() == 28, "Every pair of teams should meet exactly once")
+
+
+func _test_weekly_health_progression() -> void:
+	var player := SampleLeague.create_teams()[0].player_at("QB")
+	player.injure("Test injury", 1)
+	player.recover_for_new_week()
+	_check(not player.is_available(), "A one-week injury should keep a player out of the following game")
+	player.advance_injury_week()
+	_check(player.is_available(), "A one-week injury should clear after one missed game")
+
+
+func _test_active_career_game_is_resumable() -> void:
+	var career := CareerSession.new_career("austin_outlaws", 77119)
+	var first := career.begin_user_game()
+	var resumed := career.begin_user_game()
+	_check(first == resumed, "Starting an active career matchup again should resume the same game")
+	career.simulate_current_week()
+	_check(career.league.current_week == 1, "Simulate week should not replace an active user matchup")
+	first.simulate_to_end()
+	career.complete_user_game()
+	_check(career.league.current_week == 2, "Completing a resumed user matchup should advance the season")
+
+
+func _test_complete_career_season() -> void:
+	var career := CareerSession.new_career("boston_sentinels", 555123)
+	var guard := 0
+	while career.league.phase != "Complete" and guard < 12:
+		career.simulate_current_week()
+		guard += 1
+	_check(career.league.phase == "Complete", "A career should advance through the championship")
+	_check(not career.league.champion_team_id.is_empty(), "A completed season should crown a champion")
+	_check(career.league.schedule.size() == 29, "A season should add one championship matchup")
+	for team in career.league.teams:
+		_check(career.league.standing_for(team.id).games_played() == 7, "%s should have seven regular-season decisions" % team.abbreviation)
+	var championship := career.league.matchups_for_week(LeagueState.CHAMPIONSHIP_WEEK)
+	_check(championship.size() == 1 and championship.front().played, "The championship should be played")
+
+
+func _test_career_serialization_round_trip() -> void:
+	var career := CareerSession.new_career("seattle_orcas", 44001)
+	career.user_team().set_strategy({"run_tendency": 0.63, "coverage_preference": "Zone"})
+	career.user_team().move_on_depth_chart("RB", career.user_team().depth_players("RB")[1].id, -1)
+	career.simulate_current_week()
+	var encoded := JSON.stringify(career.to_dict())
+	var decoded: Dictionary = JSON.parse_string(encoded)
+	var loaded := CareerSession.from_dict(decoded)
+	_check(loaded.league.current_week == career.league.current_week, "Serialized career should retain its week")
+	_check(loaded.user_team().id == career.user_team().id, "Serialized career should retain the managed team")
+	_check(is_equal_approx(loaded.user_team().run_tendency, 0.63), "Serialized career should retain strategy")
+	_check(loaded.user_team().coverage_preference == "Zone", "Serialized career should retain coverage preference")
+	_check(loaded.user_team().player_at("RB").id == career.user_team().player_at("RB").id, "Serialized career should retain depth order")
+	_check(loaded.league.recent_results().size() == 4, "Serialized career should retain weekly results")
+
+
+func _test_save_repository_round_trip() -> void:
+	var path := "user://gridiron_manager/career_test.json"
+	var repository := SaveRepository.new(path)
+	var career := CareerSession.new_career("miami_nightjars", 91234)
+	career.simulate_current_week()
+	_check(repository.save_career(career), "Career repository should write a versioned save")
+	_check(repository.has_save(), "Career repository should find the written save")
+	var loaded := repository.load_career()
+	_check(loaded != null, "Career repository should load its save")
+	if loaded != null:
+		_check(loaded.league.current_week == 2, "Loaded save should retain week advancement")
+		_check(loaded.league.user_team_id == "miami_nightjars", "Loaded save should retain the managed club")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 
 
 func _check(condition: bool, message: String) -> void:

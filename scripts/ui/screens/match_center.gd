@@ -2,9 +2,11 @@ extends Control
 
 signal exit_requested
 signal rematch_requested
+signal career_game_finished
 
 var _simulator: FootballSimulator
 var _user_team: TeamData
+var _career_mode := false
 var _away_score: Label
 var _home_score: Label
 var _clock_label: Label
@@ -20,28 +22,38 @@ var _next_button: Button
 var _drive_button: Button
 var _finish_button: Button
 var _rematch_button: Button
+var _return_button: Button
 var _final_label: Label
+var _body_grid: GridContainer
 
 
-func setup(simulator: FootballSimulator, user_team: TeamData) -> void:
+func setup(simulator: FootballSimulator, user_team: TeamData, career_mode: bool = false) -> void:
 	_simulator = simulator
 	_user_team = user_team
+	_career_mode = career_mode
 
 
 func _ready() -> void:
 	_build_interface()
+	resized.connect(_apply_responsive_layout)
+	_apply_responsive_layout()
 	_refresh()
 
 
 func _build_interface() -> void:
+	var outer_scroll := ScrollContainer.new()
+	outer_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(outer_scroll)
 	var page := UIFactory.vbox(14)
-	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(page)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.custom_minimum_size = Vector2(0, 690)
+	outer_scroll.add_child(page)
 
 	var context := UIFactory.hbox(10)
 	context.add_child(UIFactory.label("LIVE MATCH CENTER", "EyebrowLabel"))
 	context.add_child(UIFactory.label("  /  ", "CaptionLabel"))
-	context.add_child(UIFactory.label("PROTOTYPE LEAGUE · PRESEASON", "CaptionLabel"))
+	context.add_child(UIFactory.label("2026 GRIDIRON LEAGUE · MATCHDAY", "CaptionLabel"))
 	context.add_child(UIFactory.spacer())
 	_final_label = UIFactory.label("GAME IN PROGRESS", "EyebrowLabel")
 	context.add_child(_final_label)
@@ -71,14 +83,18 @@ func _build_interface() -> void:
 	score_row.add_child(clock_block)
 	score_row.add_child(_build_team_score(_simulator.state.home_team, true))
 
-	var body := UIFactory.hbox(16)
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	page.add_child(body)
+	_body_grid = GridContainer.new()
+	_body_grid.columns = 2
+	_body_grid.add_theme_constant_override("h_separation", 16)
+	_body_grid.add_theme_constant_override("v_separation", 16)
+	_body_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_body_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_body_grid)
 
 	var match_column := UIFactory.vbox(12)
 	match_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	match_column.size_flags_stretch_ratio = 1.7
-	body.add_child(match_column)
+	_body_grid.add_child(match_column)
 	var field_card := UIFactory.card()
 	field_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	match_column.add_child(field_card)
@@ -112,10 +128,10 @@ func _build_interface() -> void:
 	match_column.add_child(_metrics_row)
 
 	var feed_card := UIFactory.card()
-	feed_card.custom_minimum_size = Vector2(360, 0)
+	feed_card.custom_minimum_size = Vector2(300, 300)
 	feed_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	feed_card.size_flags_stretch_ratio = 0.82
-	body.add_child(feed_card)
+	_body_grid.add_child(feed_card)
 	var feed_column := UIFactory.vbox(10)
 	feed_card.add_child(feed_column)
 	var feed_header := UIFactory.hbox(8)
@@ -134,9 +150,14 @@ func _build_interface() -> void:
 
 	var controls := UIFactory.hbox(10)
 	var exit_button := UIFactory.button("←  EXIT MATCH", "GhostButton")
+	exit_button.visible = not _career_mode
 	exit_button.pressed.connect(func(): exit_requested.emit())
 	controls.add_child(exit_button)
 	controls.add_child(UIFactory.spacer())
+	_return_button = UIFactory.button("RETURN TO CAREER", "PrimaryButton")
+	_return_button.visible = false
+	_return_button.pressed.connect(func(): career_game_finished.emit())
+	controls.add_child(_return_button)
 	_rematch_button = UIFactory.button("NEW REMATCH", "SecondaryButton")
 	_rematch_button.visible = false
 	_rematch_button.pressed.connect(func(): rematch_requested.emit())
@@ -217,12 +238,18 @@ func _refresh() -> void:
 	_next_button.disabled = not controls_enabled
 	_drive_button.disabled = not controls_enabled
 	_finish_button.disabled = not controls_enabled
-	_rematch_button.visible = state.is_final
+	_rematch_button.visible = state.is_final and not _career_mode
+	_return_button.visible = state.is_final and _career_mode
 	_final_label.text = "FINAL" if state.is_final else "GAME IN PROGRESS"
 	_final_label.modulate = GridironTheme.WARM if state.is_final else Color.WHITE
 	if state.is_final:
 		_last_play_title.text = "FINAL"
 		_last_play_description.text = _final_summary()
+
+
+func _apply_responsive_layout() -> void:
+	if _body_grid != null:
+		_body_grid.columns = 2 if size.x >= 980 else 1
 
 
 func _rebuild_feed() -> void:

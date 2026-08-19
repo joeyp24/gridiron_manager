@@ -1,25 +1,31 @@
 # Gridiron Manager
 
-Gridiron Manager is an extensible American football management simulation built with Godot 4.7. The current prototype is a polished exhibition-game vertical slice: choose a fictional club, inspect its roster, set a high-level game plan, and follow a deterministic play-by-play simulation through a live match center.
+Gridiron Manager is an extensible American football management simulation built with Godot 4.7. The current prototype supports a complete fictional season: choose a club, manage its depth chart and tactical identity, play or simulate each week, and pursue a league championship.
 
 ## Prototype features
 
-- Four fictional teams with distinct identities, ratings, and key-player rosters
-- Team comparison and tactical presets for offense and game-day aggression
-- Seeded, deterministic play simulation
-- Downs, distance, field position, possession, game clock, punts, field goals, touchdowns, and turnovers
-- Live play-by-play, drive history, field visualization, and team statistics
-- Modular domain, simulation, application, and presentation layers
+- Eight fictional clubs split between the Atlantic and Frontier conferences
+- Full 41-player prototype rosters with offensive, defensive, and specialist position groups
+- Editable depth charts with active/inactive status, player energy, and injuries
+- Persistent offensive and defensive strategy covering run balance, tempo, passing depth, fourth-down aggression, blitz frequency, and coverage preference
+- Seven-week round-robin regular season followed by a conference-winner championship
+- Weekly schedule, results, standings, club record, league leaders, injury report, and news feed
+- User-played matchups alongside deterministic AI-versus-AI simulation
+- Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
+- Live play-by-play, field visualization, and team statistics
+- Versioned JSON career saves with automatic saving after management actions and completed weeks
+- Responsive layouts that reflow and scroll cleanly across desktop window sizes
+- Quick exhibition mode for one-off games
 
 ## Run the project
 
 1. Install Godot 4.7.1 or a compatible Godot 4.7 maintenance release.
 2. Import `project.godot` from the Godot Project Manager.
-3. Press **F6** or the **Run Project** button.
+3. Press **F5** or the **Run Project** button.
 
-The project targets a 1440x900 design canvas, opens at 1280x800, and supports resizing down to 1120x760.
+The game opens maximized, remains resizable, and adapts its navigation, cards, tables, roster details, and match center to the available space. Career saves are stored under Godot's per-user application data directory at `gridiron_manager/career.json`.
 
-## Run the simulation checks
+## Run the automated checks
 
 From the repository root:
 
@@ -27,25 +33,26 @@ From the repository root:
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-The checks verify deterministic seeded results, legal terminal state, basic stat invariants, and repeated simulation stability.
+The checks cover deterministic matches, legal game state, stat invariants, complete rosters and depth charts, injury substitutions, the round-robin schedule, full-season advancement, championship completion, serialization, and save/load behavior.
 
 ## Architecture
 
 ```text
 scripts/
-├── application/  # Coordinates the current session and selected game plan
-├── data/         # Fictional prototype content
-├── domain/       # Pure player, team, game-state, and play-result models
-├── simulation/   # UI-independent football rules and outcome resolution
-└── ui/           # Theme, reusable components, and screens
+|-- application/  # Career and exhibition workflows
+|-- data/         # Fictional league content
+|-- domain/       # Player, team, matchup, standings, league, and game models
+|-- persistence/  # Versioned career saves
+|-- simulation/   # UI-independent game, schedule, season, fatigue, and injury logic
+`-- ui/           # Theme, reusable components, responsive screens, and routing
 ```
 
-The simulation layer has no dependency on scenes or controls. Future career systems—schedules, standings, contracts, drafting, scouting, progression, and saves—can consume the same domain objects without coupling league rules to the interface.
+The simulation and career layers do not depend on scenes or controls. Future systems such as contracts, drafting, scouting, progression, staff, and finances can build on stable IDs and serialized domain state without replacing the current interface or match engine.
 
-See [`docs/architecture.md`](docs/architecture.md) for the dependency rules and intended extension points.
+See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 
 ## Current limitations
 
-This is an exhibition prototype, not a complete career mode. Penalties, injuries, overtime rules, special-team depth, contracts, seasons, staff, scouting, and animated 11-on-11 presentation are intentionally deferred.
+This is a career foundation, not a complete front-office simulation. Contracts, transactions, free agency, drafting, scouting uncertainty, staff, finances, penalties, detailed player statistics, and animated 11-on-11 presentation are intentionally deferred.
 
-All teams and players are fictional. No league, club, or athlete trademarks are included.
+All clubs and players are fictional. No league, club, or athlete trademarks are included.

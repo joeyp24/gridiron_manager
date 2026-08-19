@@ -12,6 +12,8 @@ var _opponent_menu: OptionButton
 var _offense_menu: OptionButton
 var _aggression_menu: OptionButton
 var _start_button: Button
+var _body_grid: GridContainer
+var _lower_grid: GridContainer
 
 
 func setup(teams: Array[TeamData]) -> void:
@@ -20,14 +22,21 @@ func setup(teams: Array[TeamData]) -> void:
 
 func _ready() -> void:
 	_build_interface()
+	resized.connect(_apply_responsive_layout)
+	_apply_responsive_layout()
 	if not _teams.is_empty():
 		_select_team(0)
 
 
 func _build_interface() -> void:
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
 	var page := UIFactory.vbox(16)
-	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(page)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.custom_minimum_size = Vector2(0, 700)
+	scroll.add_child(page)
 
 	var heading := UIFactory.hbox(12)
 	var heading_copy := UIFactory.vbox(2)
@@ -38,19 +47,31 @@ func _build_interface() -> void:
 	heading.add_child(UIFactory.badge("EXHIBITION", GridironTheme.WARM))
 	page.add_child(heading)
 
-	var body := UIFactory.hbox(18)
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	page.add_child(body)
+	_body_grid = GridContainer.new()
+	_body_grid.columns = 2
+	_body_grid.add_theme_constant_override("h_separation", 18)
+	_body_grid.add_theme_constant_override("v_separation", 18)
+	_body_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_body_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_body_grid)
 
 	var team_panel := UIFactory.card()
 	team_panel.custom_minimum_size = Vector2(318, 0)
-	body.add_child(team_panel)
+	_body_grid.add_child(team_panel)
 	var team_column := UIFactory.vbox(10)
 	team_panel.add_child(team_column)
 	team_column.add_child(UIFactory.label("AVAILABLE CLUBS", "EyebrowLabel"))
 	team_column.add_child(UIFactory.label("Prototype League", "SectionTitleLabel"))
-	team_column.add_child(UIFactory.label("Four distinct roster philosophies", "CaptionLabel"))
+	team_column.add_child(UIFactory.label("Eight distinct roster philosophies", "CaptionLabel"))
 	team_column.add_child(UIFactory.spacer(0, 4))
+	var team_scroll := ScrollContainer.new()
+	team_scroll.custom_minimum_size = Vector2(0, 340)
+	team_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	team_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	team_column.add_child(team_scroll)
+	var team_list := UIFactory.vbox(10)
+	team_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	team_scroll.add_child(team_list)
 	for index in range(_teams.size()):
 		var team := _teams[index]
 		var team_button := UIFactory.button(
@@ -63,12 +84,13 @@ func _build_interface() -> void:
 		team_button.button_group = _team_button_group
 		team_button.pressed.connect(_select_team.bind(index))
 		_team_buttons.append(team_button)
-		team_column.add_child(team_button)
+		team_list.add_child(team_button)
 
 	_details_host = Control.new()
 	_details_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_details_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_child(_details_host)
+	_details_host.custom_minimum_size = Vector2(0, 520)
+	_body_grid.add_child(_details_host)
 
 	var footer := UIFactory.hbox(12)
 	var back_button := UIFactory.button("←  BACK", "GhostButton")
@@ -137,11 +159,16 @@ func _rebuild_details() -> void:
 	ratings.add_child(special_bar)
 	overview_column.add_child(ratings)
 
-	var lower := UIFactory.hbox(16)
-	lower.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	details.add_child(lower)
-	lower.add_child(_build_roster_card(team))
-	lower.add_child(_build_plan_card(team))
+	_lower_grid = GridContainer.new()
+	_lower_grid.columns = 2
+	_lower_grid.add_theme_constant_override("h_separation", 16)
+	_lower_grid.add_theme_constant_override("v_separation", 16)
+	_lower_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lower_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	details.add_child(_lower_grid)
+	_lower_grid.add_child(_build_roster_card(team))
+	_lower_grid.add_child(_build_plan_card(team))
+	_apply_responsive_layout()
 
 
 func _build_roster_card(team: TeamData) -> PanelContainer:
@@ -258,3 +285,10 @@ func _rating_color(value: int) -> Color:
 	if value >= 75:
 		return GridironTheme.WARM
 	return GridironTheme.TEXT_MUTED
+
+
+func _apply_responsive_layout() -> void:
+	if _body_grid != null:
+		_body_grid.columns = 2 if size.x >= 1060 else 1
+	if _lower_grid != null:
+		_lower_grid.columns = 2 if size.x >= 850 else 1

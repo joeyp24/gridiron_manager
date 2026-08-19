@@ -1,0 +1,158 @@
+extends Control
+
+signal back_requested
+signal career_requested(team_id: String)
+
+var _teams: Array[TeamData] = []
+var _selected_index := 0
+var _team_grid: GridContainer
+var _details_host: VBoxContainer
+var _team_buttons: Array[Button] = []
+var _button_group := ButtonGroup.new()
+
+
+func setup(teams: Array[TeamData]) -> void:
+	_teams = teams
+
+
+func _ready() -> void:
+	_build_interface()
+	resized.connect(_apply_responsive_layout)
+	_apply_responsive_layout()
+	if not _teams.is_empty():
+		_select_team(0)
+
+
+func _build_interface() -> void:
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
+	var page := UIFactory.vbox(18)
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.custom_minimum_size = Vector2(0, 680)
+	scroll.add_child(page)
+
+	var heading := UIFactory.hbox(12)
+	var copy := UIFactory.vbox(2)
+	copy.add_child(UIFactory.label("BEGIN YOUR CAREER", "PageTitleLabel"))
+	copy.add_child(UIFactory.label("Choose one of eight fictional clubs and take control of the season.", "MutedLabel"))
+	heading.add_child(copy)
+	heading.add_child(UIFactory.spacer())
+	heading.add_child(UIFactory.badge("2026 SEASON", GridironTheme.ACCENT))
+	page.add_child(heading)
+
+	_team_grid = GridContainer.new()
+	_team_grid.columns = 4
+	_team_grid.add_theme_constant_override("h_separation", 12)
+	_team_grid.add_theme_constant_override("v_separation", 12)
+	_team_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(_team_grid)
+	for index in range(_teams.size()):
+		var team := _teams[index]
+		var button := UIFactory.button(
+			"%s\n%s · %s · OVR %d" % [team.display_name(), team.abbreviation, team.conference.to_upper(), team.overall_rating()],
+			"TeamCardButton"
+		)
+		button.custom_minimum_size = Vector2(225, 82)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.toggle_mode = true
+		button.button_group = _button_group
+		button.pressed.connect(_select_team.bind(index))
+		_team_buttons.append(button)
+		_team_grid.add_child(button)
+
+	var details_card := UIFactory.card("RaisedCardPanel")
+	details_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(details_card)
+	_details_host = UIFactory.vbox(14)
+	details_card.add_child(_details_host)
+
+	var actions := UIFactory.hbox(10)
+	var back := UIFactory.button("←  BACK", "GhostButton")
+	back.pressed.connect(func(): back_requested.emit())
+	actions.add_child(back)
+	actions.add_child(UIFactory.spacer())
+	var begin := UIFactory.button("BEGIN CAREER  →", "PrimaryButton")
+	begin.custom_minimum_size = Vector2(200, 48)
+	begin.pressed.connect(func(): career_requested.emit(_teams[_selected_index].id))
+	actions.add_child(begin)
+	page.add_child(actions)
+
+
+func _select_team(index: int) -> void:
+	_selected_index = clampi(index, 0, _teams.size() - 1)
+	for button_index in range(_team_buttons.size()):
+		_team_buttons[button_index].button_pressed = button_index == _selected_index
+	_rebuild_details()
+
+
+func _rebuild_details() -> void:
+	for child in _details_host.get_children():
+		_details_host.remove_child(child)
+		child.queue_free()
+	var team := _teams[_selected_index]
+	var header := UIFactory.hbox(12)
+	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
+	var identity := UIFactory.vbox(1)
+	identity.add_child(UIFactory.label(team.display_name(), "SectionTitleLabel"))
+	identity.add_child(UIFactory.label("%s Conference · %d-player roster" % [team.conference, team.players.size()], "CaptionLabel"))
+	header.add_child(identity)
+	header.add_child(UIFactory.spacer())
+	header.add_child(UIFactory.label(str(team.overall_rating()), "MetricLabel"))
+	_details_host.add_child(header)
+	var ratings := GridContainer.new()
+	ratings.columns = 3
+	ratings.add_theme_constant_override("h_separation", 20)
+	ratings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for entry in [
+		["OFFENSE", team.effective_offense_rating()],
+		["DEFENSE", team.effective_defense_rating()],
+		["SPECIAL TEAMS", team.effective_special_teams_rating()],
+	]:
+		var bar := UIFactory.stat_bar(entry[0], entry[1], team.primary_color)
+		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ratings.add_child(bar)
+	_details_host.add_child(ratings)
+	var summary := UIFactory.hbox(18)
+	summary.add_child(_profile_metric("OFFENSIVE IDENTITY", _offense_label(team.run_tendency)))
+	summary.add_child(_profile_metric("DECISION PROFILE", _aggression_label(team.aggression)))
+	summary.add_child(_profile_metric("AVAILABLE PLAYERS", str(team.active_roster_count())))
+	summary.add_child(_profile_metric("STARTING QB", team.player_at("QB").full_name))
+	_details_host.add_child(summary)
+
+
+func _profile_metric(title: String, value: String) -> VBoxContainer:
+	var column := UIFactory.vbox(2)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(UIFactory.label(title, "CaptionLabel"))
+	column.add_child(UIFactory.label(value, "BodyLabel"))
+	return column
+
+
+func _offense_label(value: float) -> String:
+	if value >= 0.55:
+		return "Ground control"
+	if value <= 0.40:
+		return "Air attack"
+	return "Balanced"
+
+
+func _aggression_label(value: float) -> String:
+	if value >= 0.60:
+		return "Aggressive"
+	if value <= 0.40:
+		return "Conservative"
+	return "Balanced"
+
+
+func _apply_responsive_layout() -> void:
+	if _team_grid == null:
+		return
+	if size.x >= 1220:
+		_team_grid.columns = 4
+	elif size.x >= 760:
+		_team_grid.columns = 2
+	else:
+		_team_grid.columns = 1

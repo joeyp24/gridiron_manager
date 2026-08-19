@@ -1,140 +1,173 @@
 class_name SampleLeague
 extends RefCounted
 
+const FIRST_NAMES: Array[String] = [
+	"Marcus", "Devin", "Eli", "Grant", "Noah", "Khalil", "Owen", "Jalen",
+	"Theo", "Mason", "Cole", "Trey", "Jordan", "Beau", "Rhett", "Andre",
+	"Miles", "Cameron", "Isaiah", "Nico", "Micah", "Aaron", "Keon", "Luke",
+	"Samir", "Darius", "Finn", "Rico", "Malik", "Evan", "Adrian", "Dante",
+	"Xavier", "Roman", "Caleb", "Zion", "Bryce", "Tyrell", "Landon", "Gabriel",
+	"Julian", "Amari", "Jonah", "Tobias", "Cedric", "Emmett", "Desmond", "Kai",
+]
+const LAST_NAMES: Array[String] = [
+	"Vale", "Cross", "Mercer", "Rowe", "Baines", "Ward", "Price", "Frost",
+	"Grant", "Pike", "Maddox", "Hollis", "Lake", "Tanner", "Coleman", "Boone",
+	"Clay", "Reed", "Knox", "Ames", "Stone", "Bell", "Bishop", "Ibarra",
+	"Holt", "North", "Walker", "Dunn", "Rivers", "Cole", "Vega", "Moss",
+	"King", "Silva", "Monroe", "Pace", "Quinn", "Moon", "Shaw", "Soto",
+	"Banks", "Fox", "Hale", "James", "Lowell", "Nash", "Pierce", "Young",
+]
+
 
 static func create_teams() -> Array[TeamData]:
-	return [
-		_create_boston(),
-		_create_austin(),
-		_create_seattle(),
-		_create_miami(),
+	var profiles: Array[Dictionary] = [
+		_profile("boston_sentinels", "Boston", "Sentinels", "BOS", "Atlantic", "35e0a1", "0b2028", 84, 81, 78, 1101, 0.46, 0.50),
+		_profile("miami_nightjars", "Miami", "Nightjars", "MIA", "Atlantic", "a98cff", "241b3d", 88, 76, 77, 1102, 0.35, 0.64),
+		_profile("new_york_admirals", "New York", "Admirals", "NYA", "Atlantic", "f4cf55", "172638", 80, 84, 79, 1103, 0.50, 0.44),
+		_profile("chicago_foundry", "Chicago", "Foundry", "CHI", "Atlantic", "f07167", "321b1c", 78, 87, 82, 1104, 0.58, 0.52),
+		_profile("austin_outlaws", "Austin", "Outlaws", "AUS", "Frontier", "ff9e57", "3b1f17", 82, 79, 86, 2101, 0.59, 0.55),
+		_profile("seattle_orcas", "Seattle", "Orcas", "SEA", "Frontier", "43b9ff", "10243c", 79, 86, 80, 2102, 0.48, 0.48),
+		_profile("denver_summit", "Denver", "Summit", "DEN", "Frontier", "84e25d", "153023", 83, 82, 75, 2103, 0.54, 0.46),
+		_profile("phoenix_scorpions", "Phoenix", "Scorpions", "PHX", "Frontier", "ff6b72", "35172b", 86, 77, 83, 2104, 0.39, 0.67),
 	]
+	var teams: Array[TeamData] = []
+	for profile in profiles:
+		teams.append(_create_team(profile))
+	return teams
 
 
-static func _create_boston() -> TeamData:
-	return TeamData.new(
-		"boston_sentinels",
-		"Boston",
-		"Sentinels",
-		"BOS",
-		"Atlantic",
-		Color("35e0a1"),
-		Color("0b2028"),
-		84,
-		81,
-		78,
-		[
-			_p("bos_qb", "Marcus Vale", "QB", 87, 76, 62, 91, 89, 29),
-			_p("bos_rb", "Devin Cross", "RB", 84, 89, 78, 83, 80, 25),
-			_p("bos_wr", "Eli Mercer", "WR", 86, 92, 62, 88, 84, 26),
-			_p("bos_te", "Grant Rowe", "TE", 79, 74, 84, 81, 79, 27),
-			_p("bos_ol", "Noah Baines", "OL", 82, 58, 90, 85, 86, 30),
-			_p("bos_edge", "Khalil Ward", "EDGE", 85, 86, 88, 84, 82, 27),
-			_p("bos_lb", "Owen Price", "LB", 80, 81, 84, 80, 86, 28),
-			_p("bos_cb", "Jalen Frost", "CB", 83, 91, 65, 86, 83, 24),
-			_p("bos_s", "Theo Grant", "S", 78, 84, 73, 79, 84, 26),
-			_p("bos_k", "Mason Pike", "K", 78, 55, 68, 86, 82, 31),
-		]
-	)
-
-
-static func _create_austin() -> TeamData:
-	var team := TeamData.new(
-		"austin_outlaws",
-		"Austin",
-		"Outlaws",
-		"AUS",
-		"Frontier",
-		Color("ff9e57"),
-		Color("3b1f17"),
-		82,
-		79,
-		86,
-		[
-			_p("aus_qb", "Cole Maddox", "QB", 82, 81, 69, 84, 82, 27),
-			_p("aus_rb", "Trey Hollis", "RB", 88, 91, 86, 85, 82, 24),
-			_p("aus_wr", "Jordan Lake", "WR", 81, 88, 64, 84, 80, 26),
-			_p("aus_te", "Beau Tanner", "TE", 81, 76, 87, 82, 79, 28),
-			_p("aus_ol", "Rhett Coleman", "OL", 84, 57, 92, 86, 85, 29),
-			_p("aus_edge", "Andre Boone", "EDGE", 80, 82, 84, 82, 81, 26),
-			_p("aus_lb", "Miles Clay", "LB", 84, 84, 86, 83, 88, 28),
-			_p("aus_cb", "Cameron Reed", "CB", 76, 87, 63, 79, 78, 25),
-			_p("aus_s", "Isaiah Knox", "S", 82, 83, 80, 83, 86, 29),
-			_p("aus_k", "Nico Ames", "K", 86, 58, 66, 91, 89, 30),
-		]
-	)
-	team.run_tendency = 0.57
-	return team
-
-
-static func _create_seattle() -> TeamData:
-	var team := TeamData.new(
-		"seattle_orcas",
-		"Seattle",
-		"Orcas",
-		"SEA",
-		"Pacific",
-		Color("43b9ff"),
-		Color("10243c"),
-		79,
-		86,
-		80,
-		[
-			_p("sea_qb", "Micah Stone", "QB", 79, 78, 64, 82, 84, 26),
-			_p("sea_rb", "Aaron Bell", "RB", 78, 85, 78, 79, 77, 25),
-			_p("sea_wr", "Keon Bishop", "WR", 83, 93, 59, 84, 76, 23),
-			_p("sea_te", "Luke Ibarra", "TE", 76, 72, 82, 79, 80, 28),
-			_p("sea_ol", "Samir Holt", "OL", 79, 60, 86, 81, 84, 27),
-			_p("sea_edge", "Darius North", "EDGE", 88, 87, 91, 87, 84, 28),
-			_p("sea_lb", "Finn Walker", "LB", 86, 84, 87, 86, 90, 29),
-			_p("sea_cb", "Rico Dunn", "CB", 85, 92, 62, 88, 84, 25),
-			_p("sea_s", "Malik Rivers", "S", 82, 86, 76, 83, 88, 27),
-			_p("sea_k", "Evan Cole", "K", 80, 56, 65, 87, 84, 32),
-		]
-	)
-	team.run_tendency = 0.49
-	return team
-
-
-static func _create_miami() -> TeamData:
-	var team := TeamData.new(
-		"miami_nightjars",
-		"Miami",
-		"Nightjars",
-		"MIA",
-		"Atlantic",
-		Color("a98cff"),
-		Color("241b3d"),
-		88,
-		76,
-		77,
-		[
-			_p("mia_qb", "Adrian Vega", "QB", 90, 84, 65, 93, 91, 28),
-			_p("mia_rb", "Dante Moss", "RB", 79, 90, 73, 78, 75, 23),
-			_p("mia_wr", "Xavier King", "WR", 89, 95, 61, 91, 85, 25),
-			_p("mia_te", "Roman Silva", "TE", 82, 78, 84, 85, 83, 26),
-			_p("mia_ol", "Caleb Monroe", "OL", 80, 56, 88, 82, 82, 30),
-			_p("mia_edge", "Zion Pace", "EDGE", 78, 88, 79, 80, 75, 24),
-			_p("mia_lb", "Bryce Quinn", "LB", 77, 79, 82, 78, 80, 27),
-			_p("mia_cb", "Tyrell Moon", "CB", 82, 90, 62, 85, 82, 26),
-			_p("mia_s", "Landon Shaw", "S", 75, 82, 70, 78, 81, 25),
-			_p("mia_k", "Gabriel Soto", "K", 77, 57, 64, 84, 80, 29),
-		]
-	)
-	team.run_tendency = 0.36
-	team.aggression = 0.61
-	return team
-
-
-static func _p(
+static func _profile(
 	id: String,
-	name: String,
-	position: String,
-	overall: int,
-	speed: int,
-	power: int,
-	technique: int,
-	awareness: int,
-	age: int
-) -> PlayerData:
-	return PlayerData.new(id, name, position, overall, speed, power, technique, awareness, age)
+	city: String,
+	nickname: String,
+	abbreviation: String,
+	conference: String,
+	primary: String,
+	secondary: String,
+	offense: int,
+	defense: int,
+	special_teams: int,
+	seed: int,
+	run_tendency: float,
+	aggression: float
+) -> Dictionary:
+	return {
+		"id": id,
+		"city": city,
+		"nickname": nickname,
+		"abbreviation": abbreviation,
+		"conference": conference,
+		"primary": primary,
+		"secondary": secondary,
+		"offense": offense,
+		"defense": defense,
+		"special_teams": special_teams,
+		"seed": seed,
+		"run_tendency": run_tendency,
+		"aggression": aggression,
+	}
+
+
+static func _create_team(profile: Dictionary) -> TeamData:
+	var players := _generate_roster(
+		str(profile["id"]),
+		int(profile["offense"]),
+		int(profile["defense"]),
+		int(profile["special_teams"]),
+		int(profile["seed"])
+	)
+	var team := TeamData.new(
+		str(profile["id"]),
+		str(profile["city"]),
+		str(profile["nickname"]),
+		str(profile["abbreviation"]),
+		str(profile["conference"]),
+		Color(str(profile["primary"])),
+		Color(str(profile["secondary"])),
+		int(profile["offense"]),
+		int(profile["defense"]),
+		int(profile["special_teams"]),
+		players
+	)
+	team.run_tendency = float(profile["run_tendency"])
+	team.aggression = float(profile["aggression"])
+	team.tempo = 0.58 if team.aggression >= 0.60 else 0.48
+	team.passing_depth = 0.62 if team.run_tendency < 0.42 else 0.48
+	team.blitz_rate = 0.55 if team.defense_rating >= 84 else 0.40
+	return team
+
+
+static func _generate_roster(
+	team_id: String,
+	offense_rating: int,
+	defense_rating: int,
+	special_rating: int,
+	seed: int
+) -> Array[PlayerData]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var counts := {
+		"QB": 2, "RB": 3, "WR": 5, "TE": 2,
+		"LT": 2, "LG": 2, "C": 2, "RG": 2, "RT": 2,
+		"EDGE": 3, "DT": 3, "LB": 4, "CB": 4, "S": 3,
+		"K": 1, "P": 1,
+	}
+	var roster: Array[PlayerData] = []
+	var name_cursor := seed % FIRST_NAMES.size()
+	for position_name: String in counts:
+		var position_count: int = counts[position_name]
+		for depth_index in range(position_count):
+			var base_rating := _position_base(position_name, offense_rating, defense_rating, special_rating)
+			var depth_drop := depth_index * rng.randi_range(3, 6)
+			var overall := clampi(base_rating + rng.randi_range(-3, 3) - depth_drop, 58, 94)
+			var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
+			var last := LAST_NAMES[(name_cursor * 7 + seed) % LAST_NAMES.size()]
+			name_cursor += 1
+			var attributes := _attributes_for_position(position_name, overall, rng)
+			roster.append(PlayerData.new(
+				"%s_%s_%d" % [team_id, position_name.to_lower(), depth_index],
+				"%s %s" % [first, last],
+				position_name,
+				overall,
+				attributes["speed"],
+				attributes["power"],
+				attributes["technique"],
+				attributes["awareness"],
+				rng.randi_range(21, 32),
+				attributes["durability"]
+			))
+	return roster
+
+
+static func _position_base(position_name: String, offense: int, defense: int, special: int) -> int:
+	if position_name in ["K", "P"]:
+		return special
+	if position_name in TeamData.OFFENSIVE_POSITIONS:
+		var adjustment := 2 if position_name in ["QB", "WR"] else (-2 if position_name in ["LT", "LG", "C", "RG", "RT"] else 0)
+		return offense + adjustment
+	var defense_adjustment := 2 if position_name in ["EDGE", "CB"] else 0
+	return defense + defense_adjustment
+
+
+static func _attributes_for_position(position_name: String, overall: int, rng: RandomNumberGenerator) -> Dictionary:
+	var speed := overall + rng.randi_range(-6, 6)
+	var power := overall + rng.randi_range(-6, 6)
+	var technique := overall + rng.randi_range(-4, 5)
+	var awareness := overall + rng.randi_range(-5, 5)
+	if position_name in ["WR", "CB", "S", "RB"]:
+		speed += 6
+	if position_name in ["LT", "LG", "C", "RG", "RT", "DT", "EDGE", "TE"]:
+		power += 7
+	if position_name == "QB":
+		technique += 6
+		awareness += 5
+	if position_name in ["K", "P"]:
+		technique += 8
+		speed -= 14
+	return {
+		"speed": clampi(speed, 45, 97),
+		"power": clampi(power, 45, 97),
+		"technique": clampi(technique, 45, 97),
+		"awareness": clampi(awareness, 45, 97),
+		"durability": clampi(overall + rng.randi_range(-12, 10), 55, 96),
+	}
