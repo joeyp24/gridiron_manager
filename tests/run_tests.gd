@@ -13,9 +13,13 @@ func _init() -> void:
 	_test_round_robin_schedule()
 	_test_weekly_health_progression()
 	_test_active_career_game_is_resumable()
+	_test_initial_contracts_and_cap_rules()
+	_test_free_agent_signing_and_release()
+	_test_ai_roster_management()
 	_test_complete_career_season()
 	_test_career_serialization_round_trip()
 	_test_save_repository_round_trip()
+	_test_version_one_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -133,6 +137,62 @@ func _test_active_career_game_is_resumable() -> void:
 	_check(career.league.current_week == 2, "Completing a resumed user matchup should advance the season")
 
 
+func _test_initial_contracts_and_cap_rules() -> void:
+	var teams := SampleLeague.create_teams()
+	for team in teams:
+		_check(team.payroll() <= team.salary_cap, "%s should begin below the salary cap" % team.abbreviation)
+		_check(team.cap_space() == team.salary_cap - team.payroll(), "%s cap space should reconcile" % team.abbreviation)
+		_check(RosterValidator.validate_team(team).is_empty(), "%s should begin with a legal roster" % team.abbreviation)
+		for player in team.players:
+			_check(player.contract != null, "%s should begin under contract" % player.full_name)
+			_check(player.contract.annual_salary > 0, "%s should have a positive salary" % player.full_name)
+
+
+func _test_free_agent_signing_and_release() -> void:
+	var career := CareerSession.new_career("boston_sentinels", 88831)
+	var team := career.user_team()
+	var free_agent: PlayerData = career.league.free_agents.front()
+	var initial_roster_size := team.players.size()
+	var initial_pool_size := career.league.free_agents.size()
+	var rejection_threshold := TransactionService.minimum_offer_multiplier(career.league, team, free_agent)
+	var rejected := career.sign_free_agent(free_agent.id, 3, rejection_threshold - 0.03)
+	_check(not bool(rejected.get("ok", false)), "A below-market contract offer should be rejected")
+	_check(career.league.free_agents.size() == initial_pool_size, "A rejected offer should leave the market unchanged")
+	var offer := TransactionService.market_offer(career.league, team, free_agent, 3, 1.10)
+	var result := career.sign_free_agent(free_agent.id, 3, 1.10)
+	_check(bool(result.get("ok", false)), "A legal premium free-agent offer should be accepted")
+	_check(team.players.size() == initial_roster_size + 1, "A signing should add one roster player")
+	_check(career.league.free_agents.size() == initial_pool_size - 1, "A signing should remove one free agent")
+	_check(team.player_by_id(free_agent.id).contract.total_value() == offer.total_value(), "The signed contract should match the negotiated offer")
+	_check(team.depth_players(free_agent.position).front().id == free_agent.id, "A superior signing should enter the appropriate depth slot")
+	_check(career.league.transactions.size() == 1, "A signing should create a transaction record")
+	var post_signing_payroll := team.payroll()
+	var release_result := career.release_player(free_agent.id)
+	_check(bool(release_result.get("ok", false)), "A newly signed player should be releasable")
+	_check(team.players.size() == initial_roster_size, "A release should restore the prior roster size")
+	_check(career.league.free_agent_by_id(free_agent.id) != null, "A released player should return to free agency")
+	_check(team.dead_cap > 0, "A guaranteed contract release should create dead cap")
+	_check(team.payroll() < post_signing_payroll, "A release should lower current payroll despite dead cap")
+	_check(career.league.transactions.size() == 2, "A release should create a second transaction record")
+	var kicker: PlayerData = team.players_at("K").front()
+	_check(not RosterValidator.release_error(team, kicker).is_empty(), "The last player at a required position should not be releasable")
+	team.roster_limit = team.players.size()
+	var blocked := career.sign_free_agent(career.league.free_agents.front().id, 2, 1.10)
+	_check(not bool(blocked.get("ok", false)), "A full roster should reject another signing")
+
+
+func _test_ai_roster_management() -> void:
+	var career := CareerSession.new_career("miami_nightjars", 91913)
+	var user_roster_size := career.user_team().players.size()
+	var move_count := TransactionService.run_ai_roster_moves(career.league)
+	_check(move_count > 0, "AI clubs should make at least one useful free-agent move")
+	_check(career.league.transactions.size() >= move_count, "AI moves should be recorded in transaction history")
+	_check(career.user_team().players.size() == user_roster_size, "AI roster management should not alter the user's club")
+	for team in career.league.teams:
+		_check(team.payroll() <= team.salary_cap, "%s AI management should preserve cap legality" % team.abbreviation)
+		_check(team.players.size() <= team.roster_limit, "%s AI management should preserve roster limits" % team.abbreviation)
+
+
 func _test_complete_career_season() -> void:
 	var career := CareerSession.new_career("boston_sentinels", 555123)
 	var guard := 0
@@ -162,6 +222,9 @@ func _test_career_serialization_round_trip() -> void:
 	_check(loaded.user_team().coverage_preference == "Zone", "Serialized career should retain coverage preference")
 	_check(loaded.user_team().player_at("RB").id == career.user_team().player_at("RB").id, "Serialized career should retain depth order")
 	_check(loaded.league.recent_results().size() == 4, "Serialized career should retain weekly results")
+	_check(loaded.league.free_agents.size() == career.league.free_agents.size(), "Serialized career should retain the free-agent market")
+	_check(loaded.league.transactions.size() == career.league.transactions.size(), "Serialized career should retain transaction history")
+	_check(loaded.user_team().players.front().contract != null, "Serialized career should retain player contracts")
 
 
 func _test_save_repository_round_trip() -> void:
@@ -177,6 +240,36 @@ func _test_save_repository_round_trip() -> void:
 		_check(loaded.league.current_week == 2, "Loaded save should retain week advancement")
 		_check(loaded.league.user_team_id == "miami_nightjars", "Loaded save should retain the managed club")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
+func _test_version_one_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v1_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("denver_summit", 14771)
+	career.simulate_current_week()
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("free_agents")
+	league_data.erase("transactions")
+	for team_data: Dictionary in league_data["teams"]:
+		team_data.erase("salary_cap")
+		team_data.erase("roster_limit")
+		team_data.erase("dead_cap")
+		for player_data: Dictionary in team_data["players"]:
+			player_data.erase("contract")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 1, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-one career should migrate successfully")
+	if loaded != null:
+		_check(loaded.league.current_week == 2, "Migrated careers should retain season progress")
+		_check(loaded.league.free_agents.size() == 32, "Migrated careers should receive the initial free-agent market")
+		_check(loaded.user_team().players.front().contract != null, "Migrated careers should receive player contracts")
+		_check(RosterValidator.validate_team(loaded.user_team()).is_empty(), "Migrated careers should produce a legal roster")
+	DirAccess.remove_absolute(absolute_path)
 
 
 func _check(condition: bool, message: String) -> void:

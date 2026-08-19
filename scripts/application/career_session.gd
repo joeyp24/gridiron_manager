@@ -35,6 +35,18 @@ func next_opponent() -> TeamData:
 	return league.team_by_id(matchup.opponent_id(league.user_team_id)) if matchup != null else null
 
 
+func sign_free_agent(player_id: String, years: int, offer_multiplier: float) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return TransactionService.sign_free_agent(league, league.user_team_id, player_id, years, offer_multiplier)
+
+
+func release_player(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return TransactionService.release_player(league, league.user_team_id, player_id)
+
+
 func begin_user_game() -> FootballSimulator:
 	if active_simulator != null:
 		return active_simulator
@@ -58,6 +70,7 @@ func complete_user_game() -> void:
 	LeagueSimulator.process_played_matchup(league, active_matchup, active_simulator.state)
 	LeagueSimulator.simulate_remaining_week(league)
 	_add_week_news(completed_week)
+	_run_ai_front_offices()
 	league.advance_after_completed_week()
 	active_simulator = null
 	active_matchup = null
@@ -70,6 +83,7 @@ func simulate_current_week() -> void:
 	LeagueSimulator.prepare_current_week(league)
 	LeagueSimulator.simulate_remaining_week(league)
 	_add_week_news(completed_week)
+	_run_ai_front_offices()
 	league.advance_after_completed_week()
 
 
@@ -98,3 +112,8 @@ func _add_week_news(completed_week: int) -> void:
 		league.news.push_front("Medical update: %s is managing a %s." % [player.full_name, player.injury_type.to_lower()])
 	while league.news.size() > 12:
 		league.news.pop_back()
+
+
+func _run_ai_front_offices() -> void:
+	if league.current_week <= LeagueState.REGULAR_SEASON_WEEKS:
+		TransactionService.run_ai_roster_moves(league)

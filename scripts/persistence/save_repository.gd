@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -62,5 +62,42 @@ func load_career() -> CareerSession:
 	return CareerSession.from_dict(migrated.get("career", {}))
 
 
-func _migrate(payload: Dictionary, _version: int) -> Dictionary:
+func _migrate(payload: Dictionary, version: int) -> Dictionary:
+	var migrated := payload.duplicate(true)
+	var current_version := version
+	if current_version == 1:
+		migrated = _migrate_v1_to_v2(migrated)
+		current_version = 2
+	migrated["save_version"] = current_version
+	return migrated
+
+
+func _migrate_v1_to_v2(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var season_year := int(league_data.get("season_year", 2026))
+	var team_data_list: Array = league_data.get("teams", [])
+	for team_data: Dictionary in team_data_list:
+		team_data["salary_cap"] = int(team_data.get("salary_cap", TeamData.DEFAULT_SALARY_CAP))
+		team_data["roster_limit"] = int(team_data.get("roster_limit", TeamData.DEFAULT_ROSTER_LIMIT))
+		team_data["dead_cap"] = int(team_data.get("dead_cap", 0))
+		var position_depth: Dictionary = {}
+		var player_data_list: Array = team_data.get("players", [])
+		for player_data: Dictionary in player_data_list:
+			if player_data.has("contract") and player_data["contract"] != null:
+				continue
+			var player := PlayerData.from_dict(player_data)
+			var depth_index := int(position_depth.get(player.position, 0))
+			position_depth[player.position] = depth_index + 1
+			player_data["contract"] = PlayerContract.initial_contract(player, season_year, depth_index).to_dict()
+	league_data["teams"] = team_data_list
+	if not league_data.has("free_agents"):
+		var free_agent_data: Array[Dictionary] = []
+		for player in SampleLeague.create_free_agents():
+			free_agent_data.append(player.to_dict())
+		league_data["free_agents"] = free_agent_data
+	league_data["transactions"] = league_data.get("transactions", [])
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 2
 	return payload

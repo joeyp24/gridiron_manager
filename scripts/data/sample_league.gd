@@ -36,6 +36,34 @@ static func create_teams() -> Array[TeamData]:
 	return teams
 
 
+static func create_free_agents() -> Array[PlayerData]:
+	var free_agents: Array[PlayerData] = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 781_337
+	var name_cursor := 19
+	for position_name in TeamData.ROSTER_POSITIONS:
+		for market_index in range(2):
+			var overall := clampi(83 - market_index * 7 + rng.randi_range(-3, 3), 66, 86)
+			var attributes := _attributes_for_position(position_name, overall, rng)
+			var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
+			var last := LAST_NAMES[(name_cursor * 11 + 17) % LAST_NAMES.size()]
+			name_cursor += 1
+			free_agents.append(PlayerData.new(
+				"free_agent_%s_%d" % [position_name.to_lower(), market_index],
+				"%s %s" % [first, last],
+				position_name,
+				overall,
+				attributes["speed"],
+				attributes["power"],
+				attributes["technique"],
+				attributes["awareness"],
+				rng.randi_range(22, 33),
+				attributes["durability"]
+			))
+	free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+	return free_agents
+
+
 static func _profile(
 	id: String,
 	city: String,
@@ -124,7 +152,7 @@ static func _generate_roster(
 			var last := LAST_NAMES[(name_cursor * 7 + seed) % LAST_NAMES.size()]
 			name_cursor += 1
 			var attributes := _attributes_for_position(position_name, overall, rng)
-			roster.append(PlayerData.new(
+			var player := PlayerData.new(
 				"%s_%s_%d" % [team_id, position_name.to_lower(), depth_index],
 				"%s %s" % [first, last],
 				position_name,
@@ -135,7 +163,9 @@ static func _generate_roster(
 				attributes["awareness"],
 				rng.randi_range(21, 32),
 				attributes["durability"]
-			))
+			)
+			player.contract = PlayerContract.initial_contract(player, 2026, depth_index)
+			roster.append(player)
 	return roster
 
 

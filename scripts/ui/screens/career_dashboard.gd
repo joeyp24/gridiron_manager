@@ -5,6 +5,8 @@ signal play_requested
 signal simulate_requested
 signal roster_requested
 signal strategy_requested
+signal front_office_requested
+signal free_agency_requested
 signal save_requested
 
 var _career: CareerSession
@@ -43,11 +45,14 @@ func _build_interface() -> void:
 	header.add_child(_header_metric("RECORD", standing.record_label()))
 	header.add_child(_header_metric("OVR", str(team.overall_rating())))
 	header.add_child(_header_metric("ACTIVE", "%d/%d" % [team.active_roster_count(), team.players.size()]))
+	header.add_child(_header_metric("CAP SPACE", PlayerContract.money_label(team.cap_space())))
 	page.add_child(header)
 
 	page.add_child(_build_next_game_card())
 
-	var actions := UIFactory.hbox(10)
+	var actions := HFlowContainer.new()
+	actions.add_theme_constant_override("h_separation", 10)
+	actions.add_theme_constant_override("v_separation", 10)
 	var portal := UIFactory.button("←  PORTAL", "GhostButton")
 	portal.pressed.connect(func(): portal_requested.emit())
 	actions.add_child(portal)
@@ -57,7 +62,12 @@ func _build_interface() -> void:
 	var strategy := UIFactory.button("STRATEGY", "SecondaryButton")
 	strategy.pressed.connect(func(): strategy_requested.emit())
 	actions.add_child(strategy)
-	actions.add_child(UIFactory.spacer())
+	var office := UIFactory.button("FRONT OFFICE", "SecondaryButton")
+	office.pressed.connect(func(): front_office_requested.emit())
+	actions.add_child(office)
+	var market := UIFactory.button("FREE AGENCY", "SecondaryButton")
+	market.pressed.connect(func(): free_agency_requested.emit())
+	actions.add_child(market)
 	var save := UIFactory.button("SAVE CAREER", "SecondaryButton")
 	save.pressed.connect(func(): save_requested.emit())
 	actions.add_child(save)
@@ -88,6 +98,7 @@ func _build_interface() -> void:
 	_dashboard_grid.add_child(_build_injuries_card())
 	_dashboard_grid.add_child(_build_news_card())
 	_dashboard_grid.add_child(_build_leaders_card())
+	_dashboard_grid.add_child(_build_finance_card())
 	_dashboard_grid.add_child(_build_team_status_card())
 
 
@@ -241,6 +252,32 @@ func _build_team_status_card() -> PanelContainer:
 	status.add_child(UIFactory.label("%s coverage" % team.coverage_preference, "CaptionLabel"))
 	column.add_child(status)
 	return card
+
+
+func _build_finance_card() -> PanelContainer:
+	var team := _career.user_team()
+	var card := _dashboard_card("FRONT OFFICE", "Contracts, cap position, and market activity")
+	var column: VBoxContainer = card.get_child(0)
+	var cap_row := UIFactory.hbox(10)
+	cap_row.add_child(_finance_metric("PAYROLL", PlayerContract.money_label(team.payroll())))
+	cap_row.add_child(_finance_metric("SPACE", PlayerContract.money_label(team.cap_space())))
+	cap_row.add_child(_finance_metric("DEAD CAP", PlayerContract.money_label(team.dead_cap)))
+	column.add_child(cap_row)
+	var latest := _career.league.recent_transactions(1)
+	if latest.is_empty():
+		column.add_child(UIFactory.label("No league transactions filed yet.", "MutedLabel"))
+	else:
+		var transaction: TransactionData = latest.front()
+		column.add_child(UIFactory.wrapped_label("Latest: %s" % transaction.details, "MutedLabel"))
+	return card
+
+
+func _finance_metric(title: String, value: String) -> VBoxContainer:
+	var metric := UIFactory.vbox(1)
+	metric.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	metric.add_child(UIFactory.label(value, "BodyLabel"))
+	metric.add_child(UIFactory.label(title, "CaptionLabel"))
+	return metric
 
 
 func _dashboard_card(title: String, subtitle: String) -> PanelContainer:
