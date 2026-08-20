@@ -41,6 +41,10 @@ func release_penalty() -> int:
 	return mini(guaranteed_money / maxi(years_remaining, 1), annual_salary)
 
 
+func retirement_penalty() -> int:
+	return release_penalty()
+
+
 func summary_label() -> String:
 	return "%s / %d yr" % [money_label(annual_salary), years_remaining]
 

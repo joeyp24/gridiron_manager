@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -74,6 +74,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 3:
 		migrated = _migrate_v3_to_v4(migrated)
 		current_version = 4
+	if current_version == 4:
+		migrated = _migrate_v4_to_v5(migrated)
+		current_version = 5
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -147,3 +150,44 @@ func _migrate_v3_to_v4(payload: Dictionary) -> Dictionary:
 	payload["career"] = career_data
 	payload["save_version"] = 4
 	return payload
+
+
+func _migrate_v4_to_v5(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var season_year := int(league_data.get("season_year", 2026))
+	var season_seed := int(league_data.get("season_seed", 0))
+	for team_data: Dictionary in league_data.get("teams", []):
+		var team_id := str(team_data.get("id", ""))
+		for player_data: Dictionary in team_data.get("players", []):
+			_add_v5_player_fields(player_data, team_id, season_year, season_seed)
+	for player_data: Dictionary in league_data.get("free_agents", []):
+		_add_v5_player_fields(player_data, "", season_year, season_seed)
+	league_data["retired_players"] = league_data.get("retired_players", [])
+	league_data["last_retirement_year"] = int(league_data.get("last_retirement_year", 0))
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 5
+	return payload
+
+
+func _add_v5_player_fields(player_data: Dictionary, team_id: String, season_year: int, season_seed: int) -> void:
+	var player_id := str(player_data.get("id", ""))
+	var position_name := str(player_data.get("position", ""))
+	var age := int(player_data.get("age", 24))
+	var profile := PlayerGenerator.generate_replacement(position_name, season_year, absi(player_id.hash()) % 10_000, season_seed)
+	player_data["archetype"] = str(player_data.get("archetype", profile.archetype))
+	player_data["personality"] = str(player_data.get("personality", profile.personality))
+	player_data["height_inches"] = int(player_data.get("height_inches", profile.height_inches))
+	player_data["weight_lbs"] = int(player_data.get("weight_lbs", profile.weight_lbs))
+	player_data["college"] = str(player_data.get("college", profile.college))
+	var experience := int(player_data.get("experience_years", maxi(age - 21, 0)))
+	player_data["experience_years"] = experience
+	player_data["entry_year"] = int(player_data.get("entry_year", season_year - experience))
+	player_data["draft_round"] = int(player_data.get("draft_round", 0))
+	player_data["draft_pick"] = int(player_data.get("draft_pick", 0))
+	player_data["original_team_id"] = str(player_data.get("original_team_id", team_id))
+	player_data["team_history"] = player_data.get("team_history", [team_id] if not team_id.is_empty() else [])
+	player_data["career_peak_overall"] = int(player_data.get("career_peak_overall", player_data.get("overall", 50)))
+	player_data["seasons_as_free_agent"] = int(player_data.get("seasons_as_free_agent", 0))
+	player_data["generation_source"] = str(player_data.get("generation_source", "Legacy Migration"))

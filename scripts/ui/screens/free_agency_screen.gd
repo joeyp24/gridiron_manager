@@ -194,10 +194,11 @@ func _rebuild_detail() -> void:
 	var identity := UIFactory.vbox(1)
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity.add_child(UIFactory.label(player.full_name, "SectionTitleLabel"))
-	identity.add_child(UIFactory.label("Age %d · OVR %d · %s projection" % [player.age, player.overall, TransactionService.projected_role(_team, player)], "CaptionLabel"))
+	identity.add_child(UIFactory.label("Age %d · OVR %d · %s · %s projection" % [player.age, player.overall, player.archetype, TransactionService.projected_role(_team, player)], "CaptionLabel"))
 	heading.add_child(identity)
 	heading.add_child(UIFactory.label(str(player.overall), "MetricLabel"))
 	_detail_host.add_child(heading)
+	_detail_host.add_child(UIFactory.wrapped_label("%s · %d lb · %s · %s personality · %d years pro" % [player.height_label(), player.weight_lbs, player.college, player.personality, player.experience_years], "MutedLabel"))
 
 	var ratings := GridContainer.new()
 	ratings.columns = 2

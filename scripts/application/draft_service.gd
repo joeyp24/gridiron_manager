@@ -168,6 +168,9 @@ static func _make_selection(league: LeagueState, pick: DraftPickData, prospect: 
 	if draft == null or team == null or prospect == null:
 		return _failure("The selection could not be completed.")
 	var player := prospect.to_player(draft.draft_year)
+	player.draft_round = pick.round_number
+	player.draft_pick = pick.pick_in_round
+	player.record_team(team.id)
 	player.contract = PlayerContract.rookie_contract(draft.draft_year, pick.round_number, pick.pick_in_round)
 	if not team.add_player(player, TeamData.OFFSEASON_ROSTER_LIMIT):
 		return _failure("The offseason roster cannot accept another drafted player.")

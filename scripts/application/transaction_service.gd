@@ -142,6 +142,7 @@ static func sign_free_agent(
 	league.free_agents.erase(player)
 	player.contract = contract
 	player.is_active = true
+	player.record_team(team.id)
 	if not team.add_player(player):
 		player.contract = null
 		league.free_agents.append(player)

@@ -1,6 +1,18 @@
 class_name OffseasonService
 extends RefCounted
 
+const POSITION_DECLINE_AGE := {
+	"QB": 33, "RB": 27, "WR": 29, "TE": 30,
+	"LT": 31, "LG": 31, "C": 31, "RG": 31, "RT": 31,
+	"EDGE": 30, "DT": 31, "LB": 29, "CB": 29, "S": 30,
+	"K": 35, "P": 35,
+}
+const POSITION_SPEED_DECLINE_AGE := {
+	"QB": 31, "RB": 27, "WR": 28, "TE": 29,
+	"EDGE": 29, "LB": 28, "CB": 28, "S": 29,
+	"K": 33, "P": 33,
+}
+
 
 static func advance_stage(league: LeagueState) -> Dictionary:
 	match league.phase:
@@ -20,6 +32,11 @@ static func advance_stage(league: LeagueState) -> Dictionary:
 			_trim_news(league)
 			return _success("Contract decisions are final and development reports are ready.")
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
+			var retirement_result := RetirementService.process_offseason(league)
+			ensure_replacement_market(league)
+			league.phase = LeagueState.PHASE_RETIREMENTS
+			return _success("Career decisions are complete: %d retirements and %d additional league exits." % [int(retirement_result.get("retirements", 0)), int(retirement_result.get("market_exits", 0))])
+		LeagueState.PHASE_RETIREMENTS:
 			if league.current_draft == null:
 				league.current_draft = DraftService.create_draft(league)
 			league.phase = LeagueState.PHASE_DRAFT_PREPARATION
@@ -185,6 +202,7 @@ static func ensure_replacement_market(league: LeagueState) -> int:
 
 
 static func start_new_league_year(league: LeagueState) -> void:
+	RetirementService.balance_free_agent_market(league, league.season_year + 1)
 	if league.current_draft != null and league.current_draft.is_complete():
 		var already_archived := false
 		for archived in league.draft_history:
@@ -206,11 +224,14 @@ static func start_new_league_year(league: LeagueState) -> void:
 	for team in league.teams:
 		team.dead_cap = 0
 		for player in team.players:
+			player.advance_to_league_year(league.season_year, false)
 			player.energy = 100
 			player.injury_type = ""
 			player.injury_weeks = 0
 		team.initialize_depth_chart()
 		league.standings[team.id] = StandingData.new(team.id)
+	for player in league.free_agents:
+		player.advance_to_league_year(league.season_year, true)
 	league.schedule = ScheduleGenerator.round_robin(league.teams, league.season_year, league.season_seed)
 	league.news.push_front("The %d Gridiron League season is ready for kickoff." % league.season_year)
 	_trim_news(league)
@@ -229,7 +250,7 @@ static func _develop_player(league: LeagueState, player: PlayerData, team_id: St
 	for attribute_name in ["speed", "power", "technique", "awareness", "durability"]:
 		var old_value := int(player.get(attribute_name))
 		var attribute_delta := overall_delta + rng.randi_range(-1, 1)
-		if attribute_name == "speed" and old_age >= 30:
+		if attribute_name == "speed" and old_age >= int(POSITION_SPEED_DECLINE_AGE.get(player.position, 30)):
 			attribute_delta -= 1
 		if attribute_name == "awareness" and old_age >= 27:
 			attribute_delta += rng.randi_range(0, 1)
@@ -237,6 +258,8 @@ static func _develop_player(league: LeagueState, player: PlayerData, team_id: St
 		player.set(attribute_name, new_value)
 		changes[attribute_name] = new_value - old_value
 	player.age += 1
+	player.experience_years = maxi(report_year - player.entry_year, 0)
+	player.career_peak_overall = maxi(player.career_peak_overall, player.overall)
 	player.energy = 100
 	return DevelopmentReportData.new(
 		report_year,
@@ -255,15 +278,16 @@ static func _develop_player(league: LeagueState, player: PlayerData, team_id: St
 
 static func _development_delta(player: PlayerData, rng: RandomNumberGenerator) -> int:
 	var upside := maxi(player.potential - player.overall, 0)
+	var decline_age := int(POSITION_DECLINE_AGE.get(player.position, 30))
 	if player.age <= 22:
 		return rng.randi_range(1 if upside > 0 else 0, mini(4, upside)) if upside > 0 else 0
 	if player.age <= 25:
 		return rng.randi_range(0, mini(3, upside)) if upside > 0 else rng.randi_range(-1, 0)
-	if player.age <= 28:
+	if player.age <= mini(28, decline_age - 2):
 		return rng.randi_range(-1, mini(2, upside))
-	if player.age <= 31:
+	if player.age <= decline_age:
 		return rng.randi_range(-1, mini(1, upside))
-	if player.age <= 34:
+	if player.age <= decline_age + 3:
 		return rng.randi_range(-2, 0)
 	return rng.randi_range(-3, -1)
 
@@ -311,7 +335,7 @@ static func _best_ai_release_candidate(team: TeamData) -> PlayerData:
 static func _unique_replacement(league: LeagueState, position_name: String, starting_index: int) -> PlayerData:
 	var market_index := starting_index
 	while true:
-		var replacement := SampleLeague.create_replacement_player(position_name, league.season_year + 1, market_index)
+		var replacement := PlayerGenerator.generate_replacement(position_name, league.season_year + 1, market_index, league.season_seed)
 		if league.free_agent_by_id(replacement.id) == null:
 			return replacement
 		market_index += 1

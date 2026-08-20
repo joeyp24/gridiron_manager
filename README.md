@@ -12,8 +12,12 @@ Gridiron Manager is an extensible American football management simulation built 
 - A $280 million team salary cap, 35-to-45-player roster rules, and release dead money
 - Free-agent negotiation shaped by quality, age, position value, projected role, market demand, term, and offer strength
 - AI-controlled in-season moves, re-signing decisions, seven-round draft selections, and legal offseason roster building
-- A staged offseason with season review, re-signing, player development, draft preparation, a live draft, roster decisions, and new-league-year readiness
+- A staged offseason with season review, re-signing, player development, retirement decisions, draft preparation, a live draft, roster decisions, and new-league-year readiness
 - Player potential, deterministic age curves, attribute growth/regression, and squad development reports
+- A unified seeded player generator for original rosters, draft prospects, veteran free agents, and emergency replacements
+- Rich player profiles with position archetypes, personality, measurements, college, experience, draft origin, team history, and career peak rating
+- Position-aware career aging, deterministic retirement decisions, retirement dead money, and a permanent career archive
+- Free-agent population balancing that preserves positional coverage across long-running careers
 - Deterministic fictional draft classes with measurements, production, archetypes, personality, combine results, and hidden true ratings
 - Club-specific scouting ranges, confidence levels, targeted assignments, favorites, position filters, team needs, and starter comparisons
 - A playable seven-round draft with standings-based order, explicit pick ownership, AI boards, rookie contracts, undrafted free agents, and team-by-team recap grades
@@ -24,7 +28,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Live play-by-play, field visualization, and team statistics
-- Versioned JSON career saves with automatic migrations through schema version four
+- Versioned JSON career saves with automatic migrations through schema version five
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -44,7 +48,7 @@ From the repository root:
 godot --headless --path . --script res://tests/run_tests.gd
 ```
 
-The checks cover deterministic matches, development, and draft classes; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; scouting uncertainty; draft order and pick ownership; all 56 draft selections; rookie contracts; AI roster building; schedule regeneration; three-season advancement; career history; serialization; and save migration.
+The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order and pick ownership; all 56 draft selections; rookie contracts; AI roster building; free-agent population balance across repeated personnel cycles; schedule regeneration; multi-season advancement; career history; serialization; and save migration.
 
 ## Architecture
 
@@ -58,12 +62,12 @@ scripts/
 `-- ui/           # Theme, reusable components, responsive screens, and routing
 ```
 
-The simulation and career layers do not depend on scenes or controls. Future systems such as trades, retirements, staff, and finances can build on stable IDs and serialized domain state without replacing the current interface or match engine.
+The simulation and career layers do not depend on scenes or controls. Future systems such as trades, staff, finances, awards, and deeper statistics can build on stable IDs and serialized domain state without replacing the current interface or match engine.
 
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 
 ## Current limitations
 
-This is a career and front-office foundation, not a complete franchise simulation. Retirements, trades, staff, facilities, broader finances, penalties, detailed player statistics, and animated 11-on-11 presentation are intentionally deferred. Draft-pick ownership is modeled now, while pick trading remains a future feature.
+This is a career and front-office foundation, not a complete franchise simulation. Trades, staff, facilities, broader finances, penalties, detailed player statistics, awards, and animated 11-on-11 presentation are intentionally deferred. Draft-pick ownership is modeled now, while pick trading remains a future feature.
 
 All clubs and players are fictional. No league, club, or athlete trademarks are included.

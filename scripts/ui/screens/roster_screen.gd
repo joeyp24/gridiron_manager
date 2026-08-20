@@ -109,7 +109,7 @@ func _player_row(player: PlayerData, index: int, starter: PlayerData) -> PanelCo
 	identity.custom_minimum_size = Vector2(190, 0)
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity.add_child(UIFactory.label(player.full_name, "BodyLabel"))
-	identity.add_child(UIFactory.label("Age %d · %s" % [player.age, player.availability_label()], "CaptionLabel"))
+	identity.add_child(UIFactory.label("Age %d · Year %d · %s · %s" % [player.age, player.experience_years + 1, player.archetype, player.availability_label()], "CaptionLabel"))
 	row.add_child(identity)
 	if _show_attributes:
 		row.add_child(_small_metric("SPD", player.speed))

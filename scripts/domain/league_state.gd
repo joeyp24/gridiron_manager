@@ -8,6 +8,7 @@ const PHASE_CHAMPIONSHIP := "Championship"
 const PHASE_SEASON_REVIEW := "Season Review"
 const PHASE_RE_SIGNING := "Re-signing"
 const PHASE_PLAYER_DEVELOPMENT := "Player Development"
+const PHASE_RETIREMENTS := "Retirements"
 const PHASE_DRAFT_PREPARATION := "Draft Preparation"
 const PHASE_DRAFT := "Draft"
 const PHASE_ROSTER_DECISIONS := "Roster Decisions"
@@ -27,6 +28,8 @@ var free_agents: Array[PlayerData] = []
 var transactions: Array[TransactionData] = []
 var season_history: Array[SeasonHistoryData] = []
 var development_reports: Array[DevelopmentReportData] = []
+var retired_players: Array[RetiredPlayerData] = []
+var last_retirement_year := 0
 var current_draft: DraftStateData
 var draft_history: Array[DraftStateData] = []
 
@@ -55,6 +58,7 @@ func is_offseason() -> bool:
 		PHASE_SEASON_REVIEW,
 		PHASE_RE_SIGNING,
 		PHASE_PLAYER_DEVELOPMENT,
+		PHASE_RETIREMENTS,
 		PHASE_DRAFT_PREPARATION,
 		PHASE_DRAFT,
 		PHASE_ROSTER_DECISIONS,
@@ -219,6 +223,22 @@ func development_reports_for(team_id: String, year: int = 0) -> Array[Developmen
 	return reports
 
 
+func retired_players_for_year(year: int, team_id: String = "") -> Array[RetiredPlayerData]:
+	var records: Array[RetiredPlayerData] = []
+	for record in retired_players:
+		if record.retirement_year != year:
+			continue
+		if not team_id.is_empty() and record.final_team_id != team_id:
+			continue
+		records.append(record)
+	records.sort_custom(func(a: RetiredPlayerData, b: RetiredPlayerData):
+		if a.peak_overall != b.peak_overall:
+			return a.peak_overall > b.peak_overall
+		return a.age > b.age
+	)
+	return records
+
+
 func recent_results(limit: int = 6) -> Array[MatchupData]:
 	var results: Array[MatchupData] = []
 	for matchup in schedule:
@@ -267,6 +287,9 @@ func to_dict() -> Dictionary:
 	var draft_history_data: Array[Dictionary] = []
 	for draft in draft_history:
 		draft_history_data.append(draft.to_dict())
+	var retired_player_data: Array[Dictionary] = []
+	for retired_player in retired_players:
+		retired_player_data.append(retired_player.to_dict())
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -283,6 +306,8 @@ func to_dict() -> Dictionary:
 		"transactions": transaction_data,
 		"season_history": history_data,
 		"development_reports": development_data,
+		"retired_players": retired_player_data,
+		"last_retirement_year": last_retirement_year,
 		"current_draft": current_draft.to_dict() if current_draft != null else null,
 		"draft_history": draft_history_data,
 	}
@@ -319,6 +344,9 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.season_history.append(SeasonHistoryData.from_dict(history_data))
 	for report_data in data.get("development_reports", []):
 		league.development_reports.append(DevelopmentReportData.from_dict(report_data))
+	for retired_data in data.get("retired_players", []):
+		league.retired_players.append(RetiredPlayerData.from_dict(retired_data))
+	league.last_retirement_year = int(data.get("last_retirement_year", 0))
 	var current_draft_data = data.get("current_draft")
 	if current_draft_data is Dictionary:
 		league.current_draft = DraftStateData.from_dict(current_draft_data)
