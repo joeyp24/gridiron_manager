@@ -82,7 +82,7 @@ func projected_round_label() -> String:
 
 
 func to_player(draft_year: int) -> PlayerData:
-	return PlayerData.new(
+	var player := PlayerData.new(
 		"rookie_%d_%s" % [draft_year, id],
 		full_name,
 		position,
@@ -95,6 +95,16 @@ func to_player(draft_year: int) -> PlayerData:
 		durability,
 		true_potential
 	)
+	player.archetype = archetype
+	player.personality = personality
+	player.height_inches = height_inches
+	player.weight_lbs = weight_lbs
+	player.college = college
+	player.entry_year = draft_year
+	player.experience_years = 0
+	player.career_peak_overall = true_overall
+	player.generation_source = "Draft Class"
+	return player
 
 
 func to_dict() -> Dictionary:

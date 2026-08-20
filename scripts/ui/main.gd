@@ -99,7 +99,7 @@ func _build_shell() -> void:
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.5", GridironTheme.ACCENT)
+	_version_badge = UIFactory.badge("CAREER 0.6", GridironTheme.ACCENT)
 	top_row.add_child(_version_badge)
 
 	_content_margin = MarginContainer.new()

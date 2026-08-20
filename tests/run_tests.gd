@@ -14,20 +14,25 @@ func _init() -> void:
 	_test_weekly_health_progression()
 	_test_active_career_game_is_resumable()
 	_test_initial_contracts_and_cap_rules()
+	_test_unified_player_generator()
 	_test_free_agent_signing_and_release()
 	_test_ai_roster_management()
 	_test_complete_career_season()
 	_test_offseason_extensions_and_expiration()
 	_test_player_development_is_deterministic()
+	_test_retirement_lifecycle_is_deterministic()
+	_test_retirement_archive_and_dead_cap()
 	_test_draft_class_and_scouting()
 	_test_draft_order_and_pick_ownership()
 	_test_complete_seven_round_draft()
 	_test_multi_season_career_loop()
+	_test_long_run_population_balance()
 	_test_career_serialization_round_trip()
 	_test_save_repository_round_trip()
 	_test_version_one_save_migration()
 	_test_version_two_save_migration()
 	_test_version_three_save_migration()
+	_test_version_four_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -156,6 +161,25 @@ func _test_initial_contracts_and_cap_rules() -> void:
 			_check(player.contract.annual_salary > 0, "%s should have a positive salary" % player.full_name)
 
 
+func _test_unified_player_generator() -> void:
+	var first := PlayerGenerator.generate_replacement("QB", 2028, 7, 88117)
+	var second := PlayerGenerator.generate_replacement("QB", 2028, 7, 88117)
+	_check(JSON.stringify(first.to_dict()) == JSON.stringify(second.to_dict()), "The unified player generator should be deterministic for identical inputs")
+	_check(first.archetype in ["Field General", "Dual Threat"], "Generated quarterbacks should receive a position-specific archetype")
+	_check(first.height_inches >= 72 and first.weight_lbs >= 205, "Generated quarterbacks should receive position-appropriate measurements")
+	_check(not first.college.is_empty() and not first.personality.is_empty(), "Generated players should receive background and personality data")
+	var generated_ids: Dictionary = {}
+	for position_name in TeamData.ROSTER_POSITIONS:
+		var player := PlayerGenerator.generate_free_agent(position_name, 2028, 3, 44661)
+		generated_ids[player.id] = true
+		_check(player.position == position_name, "Generated player positions should match the requested profile")
+		_check(player.potential >= player.overall and player.career_peak_overall == player.overall, "Generated players should begin with coherent potential and career-peak values")
+	_check(generated_ids.size() == TeamData.ROSTER_POSITIONS.size(), "Generated player IDs should remain unique across position groups")
+	var roster_player: PlayerData = SampleLeague.create_teams().front().players.front()
+	_check(not roster_player.archetype.is_empty() and roster_player.height_inches > 0, "Initial rosters should use the unified generator metadata")
+	_check(roster_player.original_team_id != "" and not roster_player.team_history.is_empty(), "Initial players should retain origin and team-history metadata")
+
+
 func _test_free_agent_signing_and_release() -> void:
 	var career := CareerSession.new_career("boston_sentinels", 88831)
 	var team := career.user_team()
@@ -238,6 +262,8 @@ func _test_offseason_extensions_and_expiration() -> void:
 	_check(career.league.free_agent_by_id(expired.id) != null, "An unextended player should reach free agency")
 	_check(renewed.contract.years_remaining == 3 and renewed.contract.expiration_year() == 2029, "A future-starting extension should not lose a contract year early")
 	_check(career.league.development_reports_for(team.id, 2027).size() == team.players.size(), "Development should produce one report per roster player")
+	var retirement_review := career.advance_offseason()
+	_check(bool(retirement_review.get("ok", false)) and career.league.phase == LeagueState.PHASE_RETIREMENTS, "Development should advance into the retirement report")
 	var preparation := career.advance_offseason()
 	_check(bool(preparation.get("ok", false)) and career.league.phase == LeagueState.PHASE_DRAFT_PREPARATION, "Development should advance into draft preparation")
 	_check(career.league.current_draft != null, "Draft preparation should generate the incoming class")
@@ -266,6 +292,59 @@ func _test_player_development_is_deterministic() -> void:
 		_check(first_reports.front().player_id == second_reports.front().player_id, "Deterministic development should preserve report ordering")
 		_check(first_reports.front().new_overall == second_reports.front().new_overall, "Identical career seeds should produce identical overall development")
 		_check(first_reports.front().attribute_changes == second_reports.front().attribute_changes, "Identical career seeds should produce identical attribute development")
+	var quarterback := PlayerData.new("curve", "Curve QB", "QB", 80, 80, 80, 80, 80, 30, 80, 90)
+	var running_back := PlayerData.new("curve", "Curve RB", "RB", 80, 80, 80, 80, 80, 30, 80, 90)
+	var quarterback_best_delta := -99
+	var running_back_best_delta := -99
+	for curve_seed in range(32):
+		var quarterback_rng := RandomNumberGenerator.new()
+		quarterback_rng.seed = curve_seed
+		var running_back_rng := RandomNumberGenerator.new()
+		running_back_rng.seed = curve_seed
+		quarterback_best_delta = maxi(quarterback_best_delta, OffseasonService._development_delta(quarterback, quarterback_rng))
+		running_back_best_delta = maxi(running_back_best_delta, OffseasonService._development_delta(running_back, running_back_rng))
+	_check(quarterback_best_delta > running_back_best_delta, "Position-specific career curves should give quarterbacks a longer development window than running backs")
+
+
+func _test_retirement_lifecycle_is_deterministic() -> void:
+	var first := CareerSession.new_career("seattle_orcas", 71191)
+	var forced_player: PlayerData = first.user_team().players.front()
+	forced_player.age = 44
+	forced_player.career_peak_overall = forced_player.overall + 8
+	var second := CareerSession.from_dict(JSON.parse_string(JSON.stringify(first.to_dict())))
+	var first_result := RetirementService.process_offseason(first.league)
+	var second_result := RetirementService.process_offseason(second.league)
+	_check(int(first_result.get("retirements", 0)) == int(second_result.get("retirements", 0)), "Identical careers should produce the same retirement count")
+	_check(JSON.stringify(first.league.retired_players.front().to_dict()) == JSON.stringify(second.league.retired_players.front().to_dict()), "Retirement archives should be deterministic for identical career seeds")
+	var repeat := RetirementService.process_offseason(first.league)
+	_check(int(repeat.get("retirements", -1)) == 0, "A retirement cycle should be idempotent within one league year")
+	_check(first.league.last_retirement_year == 2027, "The league should record the completed retirement cycle")
+
+
+func _test_retirement_archive_and_dead_cap() -> void:
+	var career := CareerSession.new_career("austin_outlaws", 51337)
+	var team := career.user_team()
+	var veteran: PlayerData = team.players.front()
+	veteran.age = 50
+	veteran.experience_years = 18
+	veteran.career_peak_overall = veteran.overall + 5
+	veteran.contract = PlayerContract.new(8_000_000, 2, 8_000_000, 2026, "Starter")
+	var expected_penalty: int = veteran.contract.retirement_penalty()
+	var result := RetirementService.process_offseason(career.league)
+	_check(bool(result.get("ok", false)), "The retirement service should complete a league personnel cycle")
+	_check(team.player_by_id(veteran.id) == null, "A retiring player should be removed from the active roster")
+	_check(team.dead_cap >= expected_penalty, "A retirement should apply the remaining guaranteed-money charge")
+	var archived: RetiredPlayerData
+	for record in career.league.retired_players:
+		if record.player_id == veteran.id:
+			archived = record
+			break
+	_check(archived != null, "A retiring player should remain available in the permanent career archive")
+	if archived != null:
+		_check(archived.peak_overall == veteran.career_peak_overall and archived.dead_cap_charge == expected_penalty, "The archive should preserve career peak and financial impact")
+		_check(archived.team_history == veteran.team_history and archived.reason != "", "The archive should preserve team history and a retirement explanation")
+	var loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
+	_check(loaded.league.retired_players.size() == career.league.retired_players.size(), "Retirement archives should survive career serialization")
 
 
 func _test_draft_class_and_scouting() -> void:
@@ -279,6 +358,7 @@ func _test_draft_class_and_scouting() -> void:
 	_check(positions.size() == TeamData.ROSTER_POSITIONS.size(), "Draft classes should cover every roster position")
 	var career := CareerSession.new_career("denver_summit", 61027)
 	_complete_season(career)
+	career.advance_offseason()
 	career.advance_offseason()
 	career.advance_offseason()
 	career.advance_offseason()
@@ -311,6 +391,7 @@ func _test_draft_order_and_pick_ownership() -> void:
 	career.advance_offseason()
 	career.advance_offseason()
 	career.advance_offseason()
+	career.advance_offseason()
 	var draft: DraftStateData = career.league.current_draft
 	_check(draft.picks.size() == 56, "An eight-team, seven-round draft should contain 56 picks")
 	for round_index in range(7):
@@ -323,6 +404,7 @@ func _test_draft_order_and_pick_ownership() -> void:
 func _test_complete_seven_round_draft() -> void:
 	var career := CareerSession.new_career("boston_sentinels", 91817)
 	_complete_season(career)
+	career.advance_offseason()
 	career.advance_offseason()
 	career.advance_offseason()
 	career.advance_offseason()
@@ -342,6 +424,8 @@ func _test_complete_seven_round_draft() -> void:
 			_check(rookie != null and rookie.contract != null, "Every drafted prospect should join the selecting roster on a rookie contract")
 			if rookie != null and rookie.contract != null:
 				_check(rookie.contract.role == "Rookie" and rookie.contract.signed_year == draft.draft_year, "Rookie contracts should use the draft-year salary scale")
+				_check(rookie.draft_round == pick.round_number and rookie.draft_pick == pick.pick_in_round, "Drafted players should preserve their draft origin")
+				_check(rookie.original_team_id == team.id and rookie.team_history.has(team.id), "Drafted players should begin a persistent team history")
 		if team.id != career.league.user_team_id:
 			_check(RosterValidator.validate_team(team).is_empty(), "%s should complete automated post-draft roster decisions" % team.abbreviation)
 	_check(DraftService.team_draft_grade(draft, career.league.user_team_id) in ["A", "B", "C", "D"], "The managed club should receive a draft recap grade")
@@ -356,6 +440,7 @@ func _test_multi_season_career_loop() -> void:
 		career.advance_offseason()
 		career.advance_offseason()
 		career.advance_offseason()
+		career.advance_offseason()
 		_complete_draft(career)
 		_make_user_roster_legal(career)
 		var rollover := career.advance_offseason()
@@ -366,6 +451,29 @@ func _test_multi_season_career_loop() -> void:
 	_check(career.league.season_history.size() == 3, "Multi-season careers should retain complete season history")
 	_check(career.league.draft_history.size() == 3, "Multi-season careers should retain complete draft history")
 	_check(career.league.development_reports_for(career.league.user_team_id).size() > career.user_team().players.size(), "Development history should persist across multiple seasons")
+	_check(career.league.last_retirement_year == 2029, "Multi-season careers should process one retirement cycle per new league year")
+
+
+func _test_long_run_population_balance() -> void:
+	var career := CareerSession.new_career("denver_summit", 99331)
+	for cycle in range(6):
+		if cycle > 0:
+			OffseasonService.develop_players(career.league)
+		RetirementService.process_offseason(career.league)
+		OffseasonService.ensure_replacement_market(career.league)
+		_check(career.league.free_agents.size() <= RetirementService.MAX_FREE_AGENTS_BEFORE_DRAFT + TeamData.ROSTER_POSITIONS.size(), "The pre-draft free-agent pool should remain bounded in cycle %d" % (cycle + 1))
+		career.league.current_draft = DraftService.create_draft(career.league)
+		career.league.phase = LeagueState.PHASE_DRAFT_PREPARATION
+		career.advance_offseason()
+		_complete_draft(career)
+		_make_user_roster_legal(career)
+		var rollover := career.advance_offseason()
+		_check(bool(rollover.get("ok", false)), "Population-balance cycle %d should begin with legal rosters" % (cycle + 1))
+		_check(career.league.free_agents.size() <= RetirementService.MAX_FREE_AGENTS_BEFORE_DRAFT, "The finalized free-agent market should remain bounded in cycle %d" % (cycle + 1))
+		for team in career.league.teams:
+			_check(RosterValidator.validate_team(team).is_empty(), "%s should remain legal after population cycle %d" % [team.abbreviation, cycle + 1])
+	_check(career.league.retired_players.size() > 0, "Long-running careers should build a permanent archive of completed careers")
+	_check(career.league.season_year == 2032, "Six synthetic personnel cycles should advance the league calendar predictably")
 
 
 func _test_career_serialization_round_trip() -> void:
@@ -480,6 +588,40 @@ func _test_version_three_save_migration() -> void:
 	if loaded != null:
 		_check(loaded.league.current_draft == null and loaded.league.draft_history.is_empty(), "Version-three careers should receive empty draft state collections")
 	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_four_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v4_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("boston_sentinels", 66109)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("retired_players")
+	league_data.erase("last_retirement_year")
+	for team_data: Dictionary in league_data["teams"]:
+		for player_data: Dictionary in team_data["players"]:
+			_remove_v5_player_fields(player_data)
+	for player_data: Dictionary in league_data["free_agents"]:
+		_remove_v5_player_fields(player_data)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 4, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-four career should migrate successfully")
+	if loaded != null:
+		var player: PlayerData = loaded.user_team().players.front()
+		_check(not player.archetype.is_empty() and player.height_inches > 0 and player.weight_lbs > 0, "Version-four players should receive generated profile metadata")
+		_check(player.experience_years >= 0 and player.entry_year <= loaded.league.season_year, "Version-four players should receive career timeline metadata")
+		_check(player.original_team_id == loaded.user_team().id and player.team_history.has(loaded.user_team().id), "Version-four roster players should receive team-history metadata")
+		_check(loaded.league.retired_players.is_empty() and loaded.league.last_retirement_year == 0, "Version-four careers should receive empty retirement state")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _remove_v5_player_fields(player_data: Dictionary) -> void:
+	for field_name in ["archetype", "personality", "height_inches", "weight_lbs", "college", "experience_years", "entry_year", "draft_round", "draft_pick", "original_team_id", "team_history", "career_peak_overall", "seasons_as_free_agent", "generation_source"]:
+		player_data.erase(field_name)
 
 
 func _complete_season(career: CareerSession) -> void:

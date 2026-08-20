@@ -19,11 +19,12 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 
 `scripts/domain` contains lightweight runtime models with stable IDs:
 
-- `PlayerData` stores ratings, potential, age, position, energy, active status, and injury state.
+- `PlayerData` stores ratings, potential, age, position, energy, active status, injury state, archetype, personality, measurements, college, draft origin, experience, team history, and career peak.
 - `PlayerContract` stores salary, remaining term, fixed expiration year, guarantees, signing year, and projected role.
 - `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference identity, and tactics.
 - `TransactionData` records signings, releases, extensions, and expirations for history, news, and saves.
 - `SeasonHistoryData` stores immutable championship, standings, and managed-club snapshots.
+- `RetiredPlayerData` stores immutable career snapshots for retired players and other permanent league departures.
 - `DevelopmentReportData` records annual age, overall, potential, and attribute movement.
 - `ProspectData` stores the complete incoming-player profile, including hidden true ratings and public combine/production data.
 - `ScoutingReportData` stores a club-specific, progressively narrowed view of a prospect without mutating the prospect's true talent.
@@ -52,6 +53,7 @@ As match detail grows, play calling, penalties, injuries, clock rules, and speci
 - `CareerSession` coordinates the managed club, weekly flow, user match, AI results, news, and phase advancement.
 - `TransactionService` prices offers and extensions, evaluates player expectations, performs transactions, and runs basic AI roster improvement.
 - `OffseasonService` owns stage transitions, AI retention, contract rollover, replacement depth, development, cap growth, roster readiness, and new-season setup.
+- `RetirementService` owns deterministic career-exit decisions, retirement dead money, archival history, announcements, and free-agent population balance.
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
 - `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
 
@@ -59,11 +61,11 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 4. Version-one careers receive the contract and free-agency model; version-two careers receive fixed contract expirations, deterministic potential, season history, and development-report storage; version-three careers receive current-draft and draft-history storage. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 5. Version-one careers receive the contract and free-agency model; version-two careers receive fixed contract expirations, deterministic potential, season history, and development-report storage; version-three careers receive current-draft and draft-history storage; version-four careers receive enriched player profiles, career metadata, and retirement-archive state. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
-`SampleLeague` generates the eight fictional clubs and their 41-player rosters. It can later be replaced by resource-backed or JSON-backed repositories without changing the career or simulation callers:
+`SampleLeague` defines the eight fictional clubs and their roster composition. `PlayerGenerator` is the single seeded source for original roster players, draft prospects, veteran free agents, and emergency replacements, keeping identity, archetypes, measurements, attributes, and career metadata consistent across entry paths. Club content can later be replaced by resource-backed or JSON-backed repositories without changing the career or simulation callers:
 
 ```text
 TeamRepository
@@ -80,12 +82,11 @@ Static definitions and mutable career state should remain separate. A club arche
 
 ## Intended expansion path
 
-The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, scouting, drafting, rookie replacement, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, rookie replacement, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
-1. Retirements, career arcs, and historical player records integrated into the offseason.
-2. Trades, tradable draft-pick ownership, and deeper AI roster valuation.
-3. Staff, facilities, finances, objectives, and job security.
-4. More detailed player and season statistics, records, and awards.
-5. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
+1. Trades, tradable draft-pick ownership, and deeper AI roster valuation.
+2. Staff, facilities, finances, objectives, and job security.
+3. More detailed player and season statistics, records, and awards.
+4. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
 
 Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.

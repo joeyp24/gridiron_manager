@@ -71,6 +71,8 @@ func _rebuild() -> void:
 			_build_re_signing()
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
 			_build_development()
+		LeagueState.PHASE_RETIREMENTS:
+			_build_retirements()
 		LeagueState.PHASE_DRAFT_PREPARATION:
 			_build_draft_preparation()
 		LeagueState.PHASE_DRAFT:
@@ -106,9 +108,10 @@ func _build_stage_tracker() -> void:
 		{"phase": LeagueState.PHASE_SEASON_REVIEW, "label": "01  SEASON REVIEW"},
 		{"phase": LeagueState.PHASE_RE_SIGNING, "label": "02  RE-SIGNING"},
 		{"phase": LeagueState.PHASE_PLAYER_DEVELOPMENT, "label": "03  DEVELOPMENT"},
-		{"phase": LeagueState.PHASE_DRAFT_PREPARATION, "label": "04  SCOUTING"},
-		{"phase": LeagueState.PHASE_DRAFT, "label": "05  DRAFT"},
-		{"phase": LeagueState.PHASE_ROSTER_DECISIONS, "label": "06  ROSTER"},
+		{"phase": LeagueState.PHASE_RETIREMENTS, "label": "04  RETIREMENTS"},
+		{"phase": LeagueState.PHASE_DRAFT_PREPARATION, "label": "05  SCOUTING"},
+		{"phase": LeagueState.PHASE_DRAFT, "label": "06  DRAFT"},
+		{"phase": LeagueState.PHASE_ROSTER_DECISIONS, "label": "07  ROSTER"},
 	]
 	var active_index := _stage_index(_career.league.phase)
 	for index in range(stages.size()):
@@ -130,7 +133,12 @@ func _build_summary() -> void:
 	var record := _career.league.latest_season_record()
 	_summary_grid.add_child(_summary_card("SEASON", str(_career.league.season_year), _career.league.phase))
 	_summary_grid.add_child(_summary_card("CLUB RECORD", record.user_record if record != null else "0-0", _team.display_name()))
-	_summary_grid.add_child(_summary_card("EXPIRING", str(_career.expiring_players().size()), "Contracts requiring decisions"))
+	var personnel_year := _career.league.season_year + 1
+	var exits := _career.league.retired_players_for_year(personnel_year).size()
+	var personnel_title := "CAREER EXITS" if _career.league.phase in [LeagueState.PHASE_RETIREMENTS, LeagueState.PHASE_DRAFT_PREPARATION, LeagueState.PHASE_DRAFT, LeagueState.PHASE_ROSTER_DECISIONS] else "EXPIRING"
+	var personnel_value := str(exits) if personnel_title == "CAREER EXITS" else str(_career.expiring_players().size())
+	var personnel_detail := "%d personnel cycle" % personnel_year if personnel_title == "CAREER EXITS" else "Contracts requiring decisions"
+	_summary_grid.add_child(_summary_card(personnel_title, personnel_value, personnel_detail))
 	_summary_grid.add_child(_summary_card("CAP SPACE", PlayerContract.money_label(_team.cap_space()), "%d / %d rostered" % [_team.players.size(), _team.roster_limit]))
 
 
@@ -270,12 +278,12 @@ func _build_development() -> void:
 
 	var side := UIFactory.vbox(14)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var readiness := _card_column("NEXT: DRAFT PREPARATION", "Turn development results into a roster plan")
-	var ready := UIFactory.label("ROOKIE CLASS READY", "EyebrowLabel")
+	var readiness := _card_column("NEXT: CAREER DECISIONS", "Process position-specific retirement and league-exit evaluations")
+	var ready := UIFactory.label("PERSONNEL REVIEW READY", "EyebrowLabel")
 	ready.modulate = GridironTheme.ACCENT
 	readiness.column.add_child(ready)
-	readiness.column.add_child(UIFactory.wrapped_label("Generate the incoming class, receive baseline reports, and spend targeted scouting assignments before draft night.", "MutedLabel"))
-	var advance := UIFactory.button("BUILD %d DRAFT CLASS  ->" % (_career.league.season_year + 1), "PrimaryButton")
+	readiness.column.add_child(UIFactory.wrapped_label("Age, position, durability, career decline, injuries, performance level, and market status all influence deterministic career decisions.", "MutedLabel"))
+	var advance := UIFactory.button("PROCESS RETIREMENT DECISIONS  ->", "PrimaryButton")
 	advance.pressed.connect(_advance_stage)
 	readiness.column.add_child(advance)
 	side.add_child(readiness.card)
@@ -301,6 +309,65 @@ func _development_summary(reports: Array[DevelopmentReportData]) -> PanelContain
 	built.column.add_child(metrics)
 	built.column.add_child(UIFactory.wrapped_label("Potential drives early-career growth; age increasingly affects speed and overall development. These results should shape your scouting priorities.", "MutedLabel"))
 	return built.card
+
+
+func _build_retirements() -> void:
+	var retirement_year := _career.league.season_year + 1
+	var team_records := _career.league.retired_players_for_year(retirement_year, _team.id)
+	var league_records := _career.league.retired_players_for_year(retirement_year)
+	var team_card := _card_column("CLUB CAREER DECISIONS", "%d departure%s affecting %s" % [team_records.size(), "" if team_records.size() == 1 else "s", _team.display_name()])
+	team_card.card.custom_minimum_size = Vector2(520, 460)
+	if team_records.is_empty():
+		team_card.column.add_child(UIFactory.wrapped_label("No player whose latest club was %s ended their career this cycle." % _team.display_name(), "MutedLabel"))
+	else:
+		for record in team_records:
+			team_card.column.add_child(_retirement_row(record))
+	var team_dead_cap := 0
+	for record in team_records:
+		team_dead_cap += record.dead_cap_charge
+	team_card.column.add_child(UIFactory.divider())
+	var impact := UIFactory.hbox(10)
+	impact.add_child(_metric("ROSTER", str(_team.players.size())))
+	impact.add_child(_metric("DEAD CAP", PlayerContract.money_label(team_dead_cap)))
+	impact.add_child(_metric("TOP NEED", str(DraftService.team_needs(_team, 1).front())))
+	team_card.column.add_child(impact)
+	_body_grid.add_child(team_card.card)
+
+	var side := UIFactory.vbox(14)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var league_card := _card_column("LEAGUE RETIREMENT REPORT", "%d archived career%s across all clubs and the open market" % [league_records.size(), "" if league_records.size() == 1 else "s"])
+	if league_records.is_empty():
+		league_card.column.add_child(UIFactory.label("No careers ended this cycle.", "MutedLabel"))
+	else:
+		for index in range(mini(10, league_records.size())):
+			var record: RetiredPlayerData = league_records[index]
+			var club := _career.league.team_by_id(record.final_team_id)
+			var club_label := club.abbreviation if club != null else "FA"
+			league_card.column.add_child(UIFactory.label("%s  %s  ·  %s  ·  Age %d  ·  Peak %d" % [club_label, record.full_name, record.position, record.age, record.peak_overall], "MutedLabel"))
+	side.add_child(league_card.card)
+	var next := _card_column("NEXT: DRAFT PREPARATION", "Replace lost depth with the incoming rookie class")
+	next.column.add_child(UIFactory.wrapped_label("The generator will create a fresh position-balanced class using the same identity, physical profile, archetype, personality, and attribute rules as every other player source.", "MutedLabel"))
+	var advance := UIFactory.button("BUILD %d DRAFT CLASS  ->" % retirement_year, "PrimaryButton")
+	advance.pressed.connect(_advance_stage)
+	next.column.add_child(advance)
+	side.add_child(next.card)
+	_body_grid.add_child(side)
+
+
+func _retirement_row(record: RetiredPlayerData) -> PanelContainer:
+	var panel := UIFactory.card("InsetPanel")
+	var row := UIFactory.hbox(9)
+	panel.add_child(row)
+	row.add_child(UIFactory.badge(record.position, _team.primary_color))
+	var identity := UIFactory.vbox(1)
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_child(UIFactory.label(record.full_name, "BodyLabel"))
+	identity.add_child(UIFactory.label("%s · Age %d · %d seasons" % [record.departure_type, record.age, record.experience_years], "CaptionLabel"))
+	row.add_child(identity)
+	row.add_child(UIFactory.label("%d -> %d" % [record.peak_overall, record.final_overall], "BodyLabel"))
+	if record.dead_cap_charge > 0:
+		row.add_child(UIFactory.badge(PlayerContract.money_label(record.dead_cap_charge), GridironTheme.WARM))
+	return panel
 
 
 func _build_draft_preparation() -> void:
@@ -482,12 +549,14 @@ func _stage_index(phase: String) -> int:
 			return 1
 		LeagueState.PHASE_PLAYER_DEVELOPMENT:
 			return 2
-		LeagueState.PHASE_DRAFT_PREPARATION:
+		LeagueState.PHASE_RETIREMENTS:
 			return 3
-		LeagueState.PHASE_DRAFT:
+		LeagueState.PHASE_DRAFT_PREPARATION:
 			return 4
-		LeagueState.PHASE_ROSTER_DECISIONS:
+		LeagueState.PHASE_DRAFT:
 			return 5
+		LeagueState.PHASE_ROSTER_DECISIONS:
+			return 6
 	return 0
 
 

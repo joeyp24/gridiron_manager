@@ -1,24 +1,6 @@
 class_name SampleLeague
 extends RefCounted
 
-const FIRST_NAMES: Array[String] = [
-	"Marcus", "Devin", "Eli", "Grant", "Noah", "Khalil", "Owen", "Jalen",
-	"Theo", "Mason", "Cole", "Trey", "Jordan", "Beau", "Rhett", "Andre",
-	"Miles", "Cameron", "Isaiah", "Nico", "Micah", "Aaron", "Keon", "Luke",
-	"Samir", "Darius", "Finn", "Rico", "Malik", "Evan", "Adrian", "Dante",
-	"Xavier", "Roman", "Caleb", "Zion", "Bryce", "Tyrell", "Landon", "Gabriel",
-	"Julian", "Amari", "Jonah", "Tobias", "Cedric", "Emmett", "Desmond", "Kai",
-]
-const LAST_NAMES: Array[String] = [
-	"Vale", "Cross", "Mercer", "Rowe", "Baines", "Ward", "Price", "Frost",
-	"Grant", "Pike", "Maddox", "Hollis", "Lake", "Tanner", "Coleman", "Boone",
-	"Clay", "Reed", "Knox", "Ames", "Stone", "Bell", "Bishop", "Ibarra",
-	"Holt", "North", "Walker", "Dunn", "Rivers", "Cole", "Vega", "Moss",
-	"King", "Silva", "Monroe", "Pace", "Quinn", "Moon", "Shaw", "Soto",
-	"Banks", "Fox", "Hale", "James", "Lowell", "Nash", "Pierce", "Young",
-]
-
-
 static func create_teams() -> Array[TeamData]:
 	var profiles: Array[Dictionary] = [
 		_profile("boston_sentinels", "Boston", "Sentinels", "BOS", "Atlantic", "35e0a1", "0b2028", 84, 81, 78, 1101, 0.46, 0.50),
@@ -38,52 +20,15 @@ static func create_teams() -> Array[TeamData]:
 
 static func create_free_agents() -> Array[PlayerData]:
 	var free_agents: Array[PlayerData] = []
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 781_337
-	var name_cursor := 19
 	for position_name in TeamData.ROSTER_POSITIONS:
 		for market_index in range(2):
-			var overall := clampi(83 - market_index * 7 + rng.randi_range(-3, 3), 66, 86)
-			var attributes := _attributes_for_position(position_name, overall, rng)
-			var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
-			var last := LAST_NAMES[(name_cursor * 11 + 17) % LAST_NAMES.size()]
-			name_cursor += 1
-			free_agents.append(PlayerData.new(
-				"free_agent_%s_%d" % [position_name.to_lower(), market_index],
-				"%s %s" % [first, last],
-				position_name,
-				overall,
-				attributes["speed"],
-				attributes["power"],
-				attributes["technique"],
-				attributes["awareness"],
-				rng.randi_range(22, 33),
-				attributes["durability"]
-			))
+			free_agents.append(PlayerGenerator.generate_free_agent(position_name, 2026, market_index))
 	free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
 	return free_agents
 
 
 static func create_replacement_player(position_name: String, season_year: int, market_index: int) -> PlayerData:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = season_year * 10007 + position_name.hash() * 31 + market_index * 97
-	var overall := rng.randi_range(55, 63)
-	var attributes := _attributes_for_position(position_name, overall, rng)
-	var name_cursor := absi(season_year * 19 + position_name.hash() + market_index * 7)
-	var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
-	var last := LAST_NAMES[(name_cursor * 11 + season_year) % LAST_NAMES.size()]
-	return PlayerData.new(
-		"replacement_%d_%s_%d" % [season_year, position_name.to_lower(), market_index],
-		"%s %s" % [first, last],
-		position_name,
-		overall,
-		attributes["speed"],
-		attributes["power"],
-		attributes["technique"],
-		attributes["awareness"],
-		rng.randi_range(23, 29),
-		attributes["durability"]
-	)
+	return PlayerGenerator.generate_replacement(position_name, season_year, market_index)
 
 
 static func _profile(
@@ -163,30 +108,23 @@ static func _generate_roster(
 		"K": 1, "P": 1,
 	}
 	var roster: Array[PlayerData] = []
-	var name_cursor := seed % FIRST_NAMES.size()
 	for position_name: String in counts:
 		var position_count: int = counts[position_name]
 		for depth_index in range(position_count):
 			var base_rating := _position_base(position_name, offense_rating, defense_rating, special_rating)
 			var depth_drop := depth_index * rng.randi_range(3, 6)
 			var overall := clampi(base_rating + rng.randi_range(-3, 3) - depth_drop, 58, 94)
-			var first := FIRST_NAMES[name_cursor % FIRST_NAMES.size()]
-			var last := LAST_NAMES[(name_cursor * 7 + seed) % LAST_NAMES.size()]
-			name_cursor += 1
-			var attributes := _attributes_for_position(position_name, overall, rng)
-			var player := PlayerData.new(
+			var age := rng.randi_range(21, 32)
+			var player := PlayerGenerator.generate_roster_player(
 				"%s_%s_%d" % [team_id, position_name.to_lower(), depth_index],
-				"%s %s" % [first, last],
+				team_id,
 				position_name,
 				overall,
-				attributes["speed"],
-				attributes["power"],
-				attributes["technique"],
-				attributes["awareness"],
-				rng.randi_range(21, 32),
-				attributes["durability"]
+				age,
+				2026,
+				depth_index,
+				seed * 1009 + position_name.hash() * 31 + depth_index * 97
 			)
-			player.contract = PlayerContract.initial_contract(player, 2026, depth_index)
 			roster.append(player)
 	return roster
 
@@ -199,27 +137,3 @@ static func _position_base(position_name: String, offense: int, defense: int, sp
 		return offense + adjustment
 	var defense_adjustment := 2 if position_name in ["EDGE", "CB"] else 0
 	return defense + defense_adjustment
-
-
-static func _attributes_for_position(position_name: String, overall: int, rng: RandomNumberGenerator) -> Dictionary:
-	var speed := overall + rng.randi_range(-6, 6)
-	var power := overall + rng.randi_range(-6, 6)
-	var technique := overall + rng.randi_range(-4, 5)
-	var awareness := overall + rng.randi_range(-5, 5)
-	if position_name in ["WR", "CB", "S", "RB"]:
-		speed += 6
-	if position_name in ["LT", "LG", "C", "RG", "RT", "DT", "EDGE", "TE"]:
-		power += 7
-	if position_name == "QB":
-		technique += 6
-		awareness += 5
-	if position_name in ["K", "P"]:
-		technique += 8
-		speed -= 14
-	return {
-		"speed": clampi(speed, 45, 97),
-		"power": clampi(power, 45, 97),
-		"technique": clampi(technique, 45, 97),
-		"awareness": clampi(awareness, 45, 97),
-		"durability": clampi(overall + rng.randi_range(-12, 10), 55, 96),
-	}
