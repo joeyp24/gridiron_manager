@@ -1,26 +1,29 @@
 extends Control
 
 signal back_requested
-signal career_requested(team_id: String)
+signal career_requested(source_id: String, team_id: String)
 
 var _teams: Array[TeamData] = []
+var _sources: Array[Dictionary] = []
+var _selected_source_id := LeagueCatalog.SOURCE_FICTIONAL
 var _selected_index := 0
 var _team_grid: GridContainer
 var _details_host: VBoxContainer
+var _source_selector: OptionButton
+var _source_description: Label
 var _team_buttons: Array[Button] = []
 var _button_group := ButtonGroup.new()
 
 
-func setup(teams: Array[TeamData]) -> void:
-	_teams = teams
+func setup() -> void:
+	_sources = LeagueCatalog.source_descriptors()
 
 
 func _ready() -> void:
 	_build_interface()
 	resized.connect(_apply_responsive_layout)
 	_apply_responsive_layout()
-	if not _teams.is_empty():
-		_select_team(0)
+	_select_source(0)
 
 
 func _build_interface() -> void:
@@ -30,17 +33,34 @@ func _build_interface() -> void:
 	add_child(scroll)
 	var page := UIFactory.vbox(18)
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.custom_minimum_size = Vector2(0, 680)
+	page.custom_minimum_size = Vector2(0, 760)
 	scroll.add_child(page)
 
 	var heading := UIFactory.hbox(12)
 	var copy := UIFactory.vbox(2)
 	copy.add_child(UIFactory.label("BEGIN YOUR CAREER", "PageTitleLabel"))
-	copy.add_child(UIFactory.label("Choose one of eight fictional clubs and take control of the season.", "MutedLabel"))
+	copy.add_child(UIFactory.label("Choose a league database, then select the club you want to lead.", "MutedLabel"))
 	heading.add_child(copy)
 	heading.add_child(UIFactory.spacer())
 	heading.add_child(UIFactory.badge("2026 SEASON", GridironTheme.ACCENT))
 	page.add_child(heading)
+
+	var source_card := UIFactory.card("InsetPanel")
+	var source_row := UIFactory.hbox(14)
+	source_card.add_child(source_row)
+	var source_copy := UIFactory.vbox(2)
+	source_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	source_copy.add_child(UIFactory.label("LEAGUE DATABASE", "EyebrowLabel"))
+	_source_description = UIFactory.wrapped_label("", "MutedLabel")
+	source_copy.add_child(_source_description)
+	source_row.add_child(source_copy)
+	_source_selector = OptionButton.new()
+	_source_selector.custom_minimum_size = Vector2(250, 44)
+	for source in _sources:
+		_source_selector.add_item(str(source.get("label", "LEAGUE")))
+	_source_selector.item_selected.connect(_select_source)
+	source_row.add_child(_source_selector)
+	page.add_child(source_card)
 
 	_team_grid = GridContainer.new()
 	_team_grid.columns = 4
@@ -48,20 +68,6 @@ func _build_interface() -> void:
 	_team_grid.add_theme_constant_override("v_separation", 12)
 	_team_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(_team_grid)
-	for index in range(_teams.size()):
-		var team := _teams[index]
-		var button := UIFactory.button(
-			"%s\n%s · %s · OVR %d" % [team.display_name(), team.abbreviation, team.conference.to_upper(), team.overall_rating()],
-			"TeamCardButton"
-		)
-		button.custom_minimum_size = Vector2(225, 82)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.toggle_mode = true
-		button.button_group = _button_group
-		button.pressed.connect(_select_team.bind(index))
-		_team_buttons.append(button)
-		_team_grid.add_child(button)
 
 	var details_card := UIFactory.card("RaisedCardPanel")
 	details_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -76,9 +82,50 @@ func _build_interface() -> void:
 	actions.add_child(UIFactory.spacer())
 	var begin := UIFactory.button("BEGIN CAREER  →", "PrimaryButton")
 	begin.custom_minimum_size = Vector2(200, 48)
-	begin.pressed.connect(func(): career_requested.emit(_teams[_selected_index].id))
+	begin.pressed.connect(func():
+		if not _teams.is_empty():
+			career_requested.emit(_selected_source_id, _teams[_selected_index].id)
+	)
 	actions.add_child(begin)
 	page.add_child(actions)
+
+
+func _select_source(index: int) -> void:
+	if _sources.is_empty():
+		return
+	var source: Dictionary = _sources[clampi(index, 0, _sources.size() - 1)]
+	_selected_source_id = str(source.get("id", LeagueCatalog.SOURCE_FICTIONAL))
+	_source_description.text = "%s — %s" % [str(source.get("title", "")), str(source.get("description", ""))]
+	var bundle := LeagueCatalog.create_bundle(_selected_source_id)
+	_teams.clear()
+	for team in bundle.get("teams", []):
+		_teams.append(team)
+	_rebuild_team_grid()
+	if not _teams.is_empty():
+		_select_team(0)
+
+
+func _rebuild_team_grid() -> void:
+	for child in _team_grid.get_children():
+		_team_grid.remove_child(child)
+		child.queue_free()
+	_team_buttons.clear()
+	_button_group = ButtonGroup.new()
+	for index in range(_teams.size()):
+		var team := _teams[index]
+		var location := team.division if not team.division.is_empty() else team.conference.to_upper()
+		var button := UIFactory.button(
+			"%s\n%s · %s · OVR %d" % [team.display_name(), team.abbreviation, location, team.overall_rating()],
+			"TeamCardButton"
+		)
+		button.custom_minimum_size = Vector2(225, 82)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.toggle_mode = true
+		button.button_group = _button_group
+		button.pressed.connect(_select_team.bind(index))
+		_team_buttons.append(button)
+		_team_grid.add_child(button)
 
 
 func _select_team(index: int) -> void:
@@ -97,7 +144,8 @@ func _rebuild_details() -> void:
 	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
 	var identity := UIFactory.vbox(1)
 	identity.add_child(UIFactory.label(team.display_name(), "SectionTitleLabel"))
-	identity.add_child(UIFactory.label("%s Conference · %d-player roster" % [team.conference, team.players.size()], "CaptionLabel"))
+	var competition := "%s · %s" % [team.conference, team.division] if not team.division.is_empty() else "%s Conference" % team.conference
+	identity.add_child(UIFactory.label("%s · %d-player roster" % [competition, team.players.size()], "CaptionLabel"))
 	header.add_child(identity)
 	header.add_child(UIFactory.spacer())
 	header.add_child(UIFactory.label(str(team.overall_rating()), "MetricLabel"))

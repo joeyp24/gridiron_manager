@@ -21,7 +21,7 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 
 - `PlayerData` stores ratings, potential, age, position, energy, active status, injury state, archetype, personality, measurements, college, draft origin, experience, team history, and career peak.
 - `PlayerContract` stores salary, remaining term, fixed expiration year, guarantees, signing year, and projected role.
-- `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference identity, and tactics.
+- `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference/division identity, and tactics.
 - `TransactionData` records signings, releases, extensions, and expirations for history, news, and saves.
 - `SeasonHistoryData` stores immutable championship, standings, and managed-club snapshots.
 - `RetiredPlayerData` stores immutable career snapshots for retired players and other permanent league departures.
@@ -61,20 +61,20 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 5. Version-one careers receive the contract and free-agency model; version-two careers receive fixed contract expirations, deterministic potential, season history, and development-report storage; version-three careers receive current-draft and draft-history storage; version-four careers receive enriched player profiles, career metadata, and retirement-archive state. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 6. Version-one careers receive the contract and free-agency model; version-two careers receive fixed contract expirations, deterministic potential, season history, and development-report storage; version-three careers receive current-draft and draft-history storage; version-four careers receive enriched player profiles, career metadata, and retirement-archive state; version-five careers receive league-source provenance and optional division identity. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
-`SampleLeague` defines the eight fictional clubs and their roster composition. `PlayerGenerator` is the single seeded source for original roster players, draft prospects, veteran free agents, and emergency replacements, keeping identity, archetypes, measurements, attributes, and career metadata consistent across entry paths. Club content can later be replaced by resource-backed or JSON-backed repositories without changing the career or simulation callers:
+`LeagueCatalog` is the composition boundary for career databases. It provides the generated `SampleLeague` or delegates versioned JSON snapshots to `LeagueDataPackProvider`; both return fresh mutable domain objects plus source metadata. `PlayerGenerator` remains the seeded source for original roster players, draft prospects, veteran free agents, and emergency replacements. Importers remain build-time tooling and never become a runtime network dependency.
 
 ```text
-TeamRepository
-|-- ResourceTeamRepository
-|-- JsonTeamRepository
-`-- GeneratedLeagueRepository
+LeagueCatalog
+|-- SampleLeague
+`-- LeagueDataPackProvider
+    `-- Versioned JSON snapshot
 ```
 
-Static definitions and mutable career state should remain separate. A club archetype is content; its record, active roster, contracts, cap charges, transactions, injuries, energy, and strategy belong to the career save.
+Static definitions and mutable career state remain separate. Loading a source always constructs a new object graph. A club archetype is content; its record, active roster, contracts, cap charges, transactions, injuries, energy, and strategy belong to the career save. Stable source IDs, snapshot dates, attribution, conference names, and divisions are serialized so later providers can be added without another structural rewrite.
 
 ### Presentation
 

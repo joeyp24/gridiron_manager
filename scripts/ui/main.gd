@@ -99,7 +99,7 @@ func _build_shell() -> void:
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.6", GridironTheme.ACCENT)
+	_version_badge = UIFactory.badge("CAREER 0.7", GridironTheme.ACCENT)
 	top_row.add_child(_version_badge)
 
 	_content_margin = MarginContainer.new()
@@ -124,15 +124,15 @@ func _show_main_menu() -> void:
 func _show_career_select() -> void:
 	_section_label.text = "CAREER / CLUB SELECTION"
 	var screen := CAREER_SELECT_SCENE.instantiate()
-	screen.setup(SampleLeague.create_teams())
+	screen.setup()
 	screen.back_requested.connect(_show_main_menu)
 	screen.career_requested.connect(_start_new_career)
 	_mount(screen)
 
 
-func _start_new_career(team_id: String) -> void:
+func _start_new_career(source_id: String, team_id: String) -> void:
 	var season_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
-	_career = CareerSession.new_career(team_id, season_seed)
+	_career = CareerSession.new_career(team_id, season_seed, source_id)
 	_enable_career_navigation()
 	_save_career()
 	_show_career_dashboard()

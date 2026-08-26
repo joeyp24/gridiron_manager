@@ -39,8 +39,10 @@ func _build_interface() -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
 	var identity := UIFactory.vbox(1)
+	identity.add_child(UIFactory.label(_career.league.data_source_label, "EyebrowLabel"))
 	identity.add_child(UIFactory.label(team.display_name(), "PageTitleLabel"))
-	identity.add_child(UIFactory.label("%s Conference · %s" % [team.conference, _career.current_week_label()], "MutedLabel"))
+	var competition := "%s · %s" % [team.conference, team.division] if not team.division.is_empty() else "%s Conference" % team.conference
+	identity.add_child(UIFactory.label("%s · %s" % [competition, _career.current_week_label()], "MutedLabel"))
 	header.add_child(identity)
 	header.add_child(UIFactory.spacer())
 	header.add_child(_header_metric("RECORD", standing.record_label()))
@@ -151,7 +153,7 @@ func _build_next_game_card() -> PanelContainer:
 func _build_standings_card() -> PanelContainer:
 	var card := _dashboard_card("LEAGUE TABLE", "Conference leaders qualify for the championship")
 	var column: VBoxContainer = card.get_child(0)
-	for conference in ["Atlantic", "Frontier"]:
+	for conference in _career.league.conference_names():
 		column.add_child(UIFactory.label(conference.to_upper(), "EyebrowLabel"))
 		for index in range(_career.league.sorted_standings(conference).size()):
 			var standing := _career.league.sorted_standings(conference)[index]

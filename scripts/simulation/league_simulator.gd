@@ -6,12 +6,26 @@ const INJURIES: Array[String] = [
 ]
 
 
-static func create_season(user_team_id: String, seed: int) -> LeagueState:
-	var teams := SampleLeague.create_teams()
+static func create_season(user_team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_FICTIONAL) -> LeagueState:
+	var bundle := LeagueCatalog.create_bundle(source_id)
+	var teams: Array[TeamData] = []
+	for team in bundle.get("teams", []):
+		teams.append(team)
+	if teams.is_empty():
+		push_error("Cannot create a career without league teams")
+		return null
 	var league := LeagueState.new(teams, user_team_id, seed)
 	league.schedule = ScheduleGenerator.round_robin(teams, league.season_year, seed)
-	league.free_agents = SampleLeague.create_free_agents()
-	league.news.append("The 2026 Gridiron League season is ready for kickoff.")
+	for player in bundle.get("free_agents", []):
+		league.free_agents.append(player)
+	var source: Dictionary = bundle.get("source", {})
+	league.data_source_id = str(source.get("id", source_id))
+	league.data_source_label = str(source.get("label", "ORIGINAL LEAGUE"))
+	league.league_name = str(source.get("league_name", "Gridiron League"))
+	league.data_snapshot = str(source.get("snapshot_date", ""))
+	league.data_attribution = str(source.get("attribution", ""))
+	league.data_source_metadata = source.duplicate(true)
+	league.news.append("The %d %s season is ready for kickoff." % [league.season_year, league.league_name])
 	return league
 
 

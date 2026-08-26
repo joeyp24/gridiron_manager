@@ -161,7 +161,7 @@ func _build_season_review() -> void:
 		title_copy.add_child(UIFactory.label(record.championship_score, "MutedLabel"))
 		title_row.add_child(title_copy)
 		review.column.add_child(title_panel)
-		for conference in ["Atlantic", "Frontier"]:
+		for conference in league.conference_names():
 			review.column.add_child(UIFactory.label(conference.to_upper(), "EyebrowLabel"))
 			for entry in record.standings:
 				if str(entry.get("conference", "")) == conference:

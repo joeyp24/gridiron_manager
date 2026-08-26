@@ -19,6 +19,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate nflverse data pack
+        run: python3 -m unittest tests/test_nflverse_importer.py
+
       - name: Download Godot
         run: |
           curl --fail --location --retry 3 \
@@ -39,3 +42,10 @@ jobs:
             --headless --path . \
             --log-file test-results/godot-test.log \
             --script res://tests/run_tests.gd
+
+      - name: Run responsive career-creation checks
+        run: |
+          "./Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless --path . \
+            --log-file test-results/godot-ui-test.log \
+            --script res://tests/run_ui_tests.gd
