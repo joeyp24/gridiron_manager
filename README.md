@@ -4,7 +4,8 @@ Gridiron Manager is an extensible American football management simulation built 
 
 ## Prototype features
 
-- Eight fictional clubs split between the Atlantic and Frontier conferences
+- Two selectable league databases: eight original clubs or an offline nflverse 2026 preview
+- Eight representative real-world clubs, one per division, with source roster identities and recent-performance ratings
 - Full 41-player prototype rosters with offensive, defensive, and specialist position groups
 - Editable depth charts with active/inactive status, player energy, and injuries
 - Player contracts with annual salary, term, guarantees, role, and expiration year
@@ -28,7 +29,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Live play-by-play, field visualization, and team statistics
-- Versioned JSON career saves with automatic migrations through schema version five
+- Versioned JSON career saves with automatic migrations through schema version six and persistent data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -50,12 +51,26 @@ godot --headless --path . --script res://tests/run_tests.gd
 
 The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order and pick ownership; all 56 draft selections; rookie contracts; AI roster building; free-agent population balance across repeated personnel cycles; schedule regeneration; multi-season advancement; career history; serialization; and save migration.
 
+The committed nflverse snapshot is also validated in Python:
+
+```powershell
+python -m unittest tests/test_nflverse_importer.py
+```
+
+To rebuild it from cached source files—or download the published nflverse assets when network access is available—run:
+
+```powershell
+python tools/nflverse_importer.py
+```
+
+See [`docs/nflverse.md`](docs/nflverse.md) for the source manifest, rating model, refresh workflow, licensing, and current preview scope.
+
 ## Architecture
 
 ```text
 scripts/
 |-- application/  # Career and exhibition workflows
-|-- data/         # Fictional league content
+|-- data/         # League catalog, fictional content, and versioned JSON providers
 |-- domain/       # Player, team, matchup, standings, league, and game models
 |-- persistence/  # Versioned career saves
 |-- simulation/   # UI-independent game, schedule, season, fatigue, and injury logic
@@ -70,4 +85,4 @@ See [`docs/architecture.md`](docs/architecture.md) for dependency rules and exte
 
 This is a career and front-office foundation, not a complete franchise simulation. Trades, staff, facilities, broader finances, penalties, detailed player statistics, awards, and animated 11-on-11 presentation are intentionally deferred. Draft-pick ownership is modeled now, while pick trading remains a future feature.
 
-All clubs and players are fictional. No league, club, or athlete trademarks are included.
+The original league is fictional. The optional nflverse preview uses publicly distributed names and football data but excludes logos, wordmarks, headshots, and portrait URLs. It is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap.

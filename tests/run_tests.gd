@@ -10,6 +10,8 @@ func _init() -> void:
 	_test_statistics_balance()
 	_test_strategy_cloning_is_isolated()
 	_test_full_rosters_and_depth_charts()
+	_test_league_data_pack_catalog()
+	_test_nflverse_career_flow()
 	_test_round_robin_schedule()
 	_test_weekly_health_progression()
 	_test_active_career_game_is_resumable()
@@ -33,6 +35,7 @@ func _init() -> void:
 	_test_version_two_save_migration()
 	_test_version_three_save_migration()
 	_test_version_four_save_migration()
+	_test_version_five_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -104,6 +107,51 @@ func _test_full_rosters_and_depth_charts() -> void:
 	original_starter.is_active = false
 	_check(team.player_at("QB").is_available(), "A depleted position should use an available emergency player")
 	_check(team.player_at("QB").position != "QB", "An empty quarterback room should fall back outside the position group")
+
+
+func _test_league_data_pack_catalog() -> void:
+	var sources := LeagueCatalog.source_descriptors()
+	_check(sources.size() == 2, "Career creation should offer original and nflverse league databases")
+	var first := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
+	var second := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
+	var first_teams: Array = first.get("teams", [])
+	var second_teams: Array = second.get("teams", [])
+	_check(first_teams.size() == 8, "The nflverse preview should contain eight representative clubs")
+	_check(first.get("free_agents", []).size() == 32, "The nflverse preview should provide two free agents per position")
+	_check(first.get("source", {}).get("rating_model_version", 0) == 1, "The nflverse pack should identify its rating model")
+	var player_ids: Dictionary = {}
+	for team: TeamData in first_teams:
+		_check(team.players.size() == 41, "%s should have a normalized 41-player nflverse roster" % team.abbreviation)
+		_check(not team.division.is_empty(), "%s should retain its source division" % team.abbreviation)
+		_check(RosterValidator.validate_team(team).is_empty(), "%s should load as a legal nflverse roster" % team.abbreviation)
+		for position_name in TeamData.ROSTER_POSITIONS:
+			_check(not team.depth_players(position_name).is_empty(), "%s nflverse roster is missing %s" % [team.abbreviation, position_name])
+		for player in team.players:
+			player_ids[player.id] = true
+			_check(player.generation_source == "nflverse 2026", "%s should retain nflverse provenance" % player.full_name)
+			_check(not JSON.stringify(player.to_dict()).contains("http"), "%s should not contain a portrait or external URL" % player.full_name)
+	_check(player_ids.size() == 328, "Every rostered nflverse player should retain a unique GSIS ID")
+	var first_team: TeamData = first_teams.front()
+	var second_team: TeamData = second_teams.front()
+	first_team.players.front().energy = 12
+	_check(second_team.players.front().energy == 100, "Data-pack loads should create isolated mutable career objects")
+
+
+func _test_nflverse_career_flow() -> void:
+	var career := CareerSession.new_career("nfl_buf", 260826, LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
+	_check(career != null and career.league != null, "An nflverse career should be creatable without a network connection")
+	if career == null or career.league == null:
+		return
+	_check(career.user_team().abbreviation == "BUF", "The selected nflverse club should become the managed team")
+	_check(career.league.conference_names() == ["AFC", "NFC"], "Source conferences should drive standings and championship qualification")
+	_check(career.league.data_source_id == LeagueCatalog.SOURCE_NFLVERSE_PREVIEW, "The career should retain its league source ID")
+	_check(career.league.data_snapshot == "2026-08-26", "The career should retain its source snapshot date")
+	_check(career.league.data_source_metadata.get("license", "") == "CC-BY-4.0", "The career should retain the complete source manifest")
+	career.simulate_current_week()
+	_check(career.league.current_week == 2, "An nflverse league should complete and advance a simulated week")
+	var loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
+	_check(loaded.league.data_source_id == career.league.data_source_id, "Serialization should preserve real-data provenance")
+	_check(loaded.user_team().division == career.user_team().division, "Serialization should preserve source divisions")
 
 
 func _test_round_robin_schedule() -> void:
@@ -616,6 +664,31 @@ func _test_version_four_save_migration() -> void:
 		_check(player.experience_years >= 0 and player.entry_year <= loaded.league.season_year, "Version-four players should receive career timeline metadata")
 		_check(player.original_team_id == loaded.user_team().id and player.team_history.has(loaded.user_team().id), "Version-four roster players should receive team-history metadata")
 		_check(loaded.league.retired_players.is_empty() and loaded.league.last_retirement_year == 0, "Version-four careers should receive empty retirement state")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_five_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v5_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("austin_outlaws", 58121)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	for field_name in ["league_name", "data_source_id", "data_source_label", "data_snapshot", "data_attribution", "data_source_metadata"]:
+		league_data.erase(field_name)
+	for team_data: Dictionary in league_data["teams"]:
+		team_data.erase("division")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 5, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-five career should migrate successfully")
+	if loaded != null:
+		_check(loaded.league.data_source_id == LeagueCatalog.SOURCE_FICTIONAL, "Version-five careers should default to the original league source")
+		_check(loaded.league.league_name == "Gridiron League", "Version-five careers should receive a league identity")
+		_check(loaded.league.data_source_metadata.get("id", "") == LeagueCatalog.SOURCE_FICTIONAL, "Version-five careers should receive an extensible source manifest")
+		_check(loaded.user_team().division.is_empty(), "Version-five teams should receive an empty optional division")
 	DirAccess.remove_absolute(absolute_path)
 
 

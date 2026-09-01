@@ -6,6 +6,9 @@
 /builds/
 /exports/
 /test-results/
+/tools/.cache/
+__pycache__/
+*.py[cod]
 
 # Editor and OS files
 .vscode/

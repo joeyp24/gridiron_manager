@@ -14,6 +14,7 @@ var city: String
 var nickname: String
 var abbreviation: String
 var conference: String
+var division := ""
 var primary_color: Color
 var secondary_color: Color
 var offense_rating: int
@@ -212,6 +213,7 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 		id, city, nickname, abbreviation, conference, primary_color, secondary_color,
 		offense_rating, defense_rating, special_teams_rating, cloned_players
 	)
+	clone.division = division
 	clone.depth_chart = depth_chart.duplicate(true)
 	clone.salary_cap = salary_cap
 	clone.roster_limit = roster_limit
@@ -262,6 +264,7 @@ func to_dict() -> Dictionary:
 		"nickname": nickname,
 		"abbreviation": abbreviation,
 		"conference": conference,
+		"division": division,
 		"primary_color": primary_color.to_html(false),
 		"secondary_color": secondary_color.to_html(false),
 		"offense_rating": offense_rating,
@@ -294,6 +297,7 @@ static func from_dict(data: Dictionary) -> TeamData:
 		loaded_players
 	)
 	team.set_strategy(data.get("strategy", {}))
+	team.division = str(data.get("division", ""))
 	team.depth_chart = data.get("depth_chart", team.depth_chart).duplicate(true)
 	team.salary_cap = int(data.get("salary_cap", DEFAULT_SALARY_CAP))
 	team.roster_limit = int(data.get("roster_limit", DEFAULT_ROSTER_LIMIT))

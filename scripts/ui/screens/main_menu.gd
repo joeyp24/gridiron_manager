@@ -78,7 +78,7 @@ func _build_interface() -> void:
 	var overview_column := UIFactory.vbox(14)
 	overview.add_child(overview_column)
 	overview_column.add_child(UIFactory.label("CAREER OVERVIEW", "EyebrowLabel"))
-	overview_column.add_child(_feature_row("08", "Fictional clubs", "Two conferences and a title game"))
+	overview_column.add_child(_feature_row("02", "League databases", "Original clubs or an nflverse real-data preview"))
 	overview_column.add_child(UIFactory.divider())
 	overview_column.add_child(_feature_row("07", "Regular-season weeks", "Every club plays every opponent"))
 	overview_column.add_child(UIFactory.divider())

@@ -10,8 +10,8 @@ func _init(state: LeagueState = null) -> void:
 	league = state
 
 
-static func new_career(team_id: String, seed: int) -> CareerSession:
-	return CareerSession.new(LeagueSimulator.create_season(team_id, seed))
+static func new_career(team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_FICTIONAL) -> CareerSession:
+	return CareerSession.new(LeagueSimulator.create_season(team_id, seed, source_id))
 
 
 static func from_dict(data: Dictionary) -> CareerSession:
