@@ -16,6 +16,7 @@ var play_count := 0
 var drive_number := 1
 var is_final := false
 var stats: Dictionary = {}
+var player_stats: Dictionary = {}
 var play_history: Array[PlayResult] = []
 
 
@@ -35,6 +36,14 @@ func offense() -> TeamData:
 
 func defense() -> TeamData:
 	return away_team if possession_team_id == home_team.id else home_team
+
+
+func team_by_id(team_id: String) -> TeamData:
+	if home_team != null and home_team.id == team_id:
+		return home_team
+	if away_team != null and away_team.id == team_id:
+		return away_team
+	return null
 
 
 func score_for(team_id: String) -> int:
@@ -91,17 +100,12 @@ func field_position_label() -> String:
 func summary_signature() -> String:
 	var totals: Array[String] = []
 	for play in play_history:
-		totals.append("%s:%s:%d:%d" % [play.offense_id, play.play_type, play.yards, play.points])
+		totals.append("%s:%s:%s:%s:%d:%d" % [play.offense_id, play.play_type, play.passer_id, play.ball_carrier_id, play.yards, play.points])
 	return "%d-%d|%s" % [away_score, home_score, ",".join(totals)]
 
 
 func _empty_stats() -> Dictionary:
-	return {
-		"plays": 0,
-		"total_yards": 0,
-		"pass_yards": 0,
-		"rush_yards": 0,
-		"first_downs": 0,
-		"turnovers": 0,
-		"possession_seconds": 0,
-	}
+	var team_stats: Dictionary = {}
+	for stat_name in StatLineData.TRACKED_STATS:
+		team_stats[stat_name] = 0
+	return team_stats

@@ -6,6 +6,8 @@ var seed: int
 var require_winner: bool
 
 var _rng := RandomNumberGenerator.new()
+var _offensive_starters: Dictionary = {}
+var _defensive_starters: Dictionary = {}
 
 
 func _init(home: TeamData, away: TeamData, game_seed: int, game_requires_winner: bool = false) -> void:
@@ -13,6 +15,14 @@ func _init(home: TeamData, away: TeamData, game_seed: int, game_requires_winner:
 	require_winner = game_requires_winner
 	_rng.seed = game_seed
 	state = GameStateData.new(home, away)
+	for team in [home, away]:
+		_offensive_starters[team.id] = _lineup_ids(team, {
+			"QB": 1, "RB": 1, "WR": 3, "TE": 1,
+			"LT": 1, "LG": 1, "C": 1, "RG": 1, "RT": 1,
+		})
+		_defensive_starters[team.id] = _lineup_ids(team, {
+			"EDGE": 2, "DT": 2, "LB": 3, "CB": 2, "S": 2,
+		})
 	if _rng.randf() >= 0.5:
 		state.possession_team_id = home.id
 		state.opening_possession_team_id = home.id
@@ -39,6 +49,7 @@ func simulate_next_play() -> PlayResult:
 		else:
 			_resolve_run(result)
 
+	GameStatAccumulator.record_play(state, result)
 	state.play_count += 1
 	result.sequence = state.play_count
 	state.play_history.append(result)
@@ -66,7 +77,13 @@ func simulate_to_end(max_plays: int = 500) -> Array[PlayResult]:
 func _resolve_run(result: PlayResult) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
-	var runner := offense.player_at("RB")
+	var runner := _select_depth_player(offense, "RB")
+	var tackler := _select_defender(defense, ["LB", "S", "DT", "EDGE"])
+	var recovery_player := _select_defender(defense, ["LB", "S", "CB", "EDGE"])
+	_populate_scrimmage_participants(result, offense, defense, [runner], [tackler, recovery_player])
+	result.ball_carrier_id = runner.id
+	if tackler != null:
+		result.tackler_ids.append(tackler.id)
 	var blocking_edge := float(offense.effective_offense_rating() - defense.effective_defense_rating()) * 0.07
 	var skill_edge := float(runner.power + runner.speed - 160) * 0.025
 	var yards := clampi(roundi(_rng.randfn(4.2 + blocking_edge + skill_edge, 4.3)), -6, 32)
@@ -79,6 +96,11 @@ func _resolve_run(result: PlayResult) -> void:
 		_record_yards(offense.id, "run", yards)
 		state.stats[offense.id]["turnovers"] += 1
 		result.yards = yards
+		result.fumble = true
+		result.fumble_lost = true
+		result.fumbler_id = runner.id
+		result.forced_fumble_player_id = tackler.id if tackler != null else ""
+		result.recovery_player_id = recovery_player.id if recovery_player != null else result.forced_fumble_player_id
 		result.title = "Fumble"
 		result.description = "%s loses the football after a %d-yard run. %s recovers." % [runner.full_name, yards, defense.display_name()]
 		result.drive_ended = true
@@ -102,10 +124,14 @@ func _resolve_pass(result: PlayResult) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
 	var quarterback := offense.player_at("QB")
-	var receiver := offense.player_at("WR")
-	var edge := defense.player_at("EDGE")
-	var corner := defense.player_at("CB")
-	var safety := defense.player_at("S")
+	var receiver := _select_target(offense)
+	var edge := _select_depth_player(defense, "EDGE")
+	var corner := _select_defender(defense, ["CB", "S"])
+	var safety := _select_depth_player(defense, "S")
+	var tackler := _select_defender(defense, ["CB", "S", "LB"])
+	_populate_scrimmage_participants(result, offense, defense, [quarterback, receiver], [edge, corner, safety, tackler])
+	result.passer_id = quarterback.id
+	result.target_id = receiver.id
 	var coverage_completion_adjustment := 0.0
 	var coverage_interception_adjustment := 0.0
 	var coverage_yards_adjustment := 0.0
@@ -130,6 +156,9 @@ func _resolve_pass(result: PlayResult) -> void:
 		result.play_type = "sack"
 		result.title = "Sack"
 		result.yards = sack_yards
+		result.sack = true
+		result.sack_player_id = edge.id
+		result.tackler_ids.append(edge.id)
 		result.description = "%s breaks through and drops %s for a loss of %d." % [edge.full_name, quarterback.full_name, absi(sack_yards)]
 		_record_yards(offense.id, "pass", sack_yards)
 		_apply_standard_gain(result, sack_yards)
@@ -150,6 +179,8 @@ func _resolve_pass(result: PlayResult) -> void:
 		state.stats[offense.id]["plays"] += 1
 		state.stats[offense.id]["turnovers"] += 1
 		result.yards = 0
+		result.interception = true
+		result.interceptor_id = corner.id
 		result.title = "Intercepted"
 		result.description = "%s reads the throw and intercepts %s." % [corner.full_name, quarterback.full_name]
 		result.drive_ended = true
@@ -171,6 +202,11 @@ func _resolve_pass(result: PlayResult) -> void:
 	if _rng.randf() >= completion_chance:
 		state.stats[offense.id]["plays"] += 1
 		result.yards = 0
+		if _rng.randf() < 0.14:
+			result.dropped_pass = true
+		else:
+			result.pass_defended = _rng.randf() < 0.55
+			result.pass_defender_id = corner.id if result.pass_defended else ""
 		result.title = "Incomplete"
 		result.description = "%s looks for %s, but the pass falls incomplete." % [quarterback.full_name, receiver.full_name]
 		_advance_down_after_no_gain(result)
@@ -183,6 +219,9 @@ func _resolve_pass(result: PlayResult) -> void:
 		42
 	)
 	result.yards = yards
+	result.completed_pass = true
+	if tackler != null:
+		result.tackler_ids.append(tackler.id)
 	result.description = "%s connects with %s %s." % [quarterback.full_name, receiver.full_name, _for_yards(yards)]
 	_record_yards(offense.id, "pass", yards)
 	_apply_standard_gain(result, yards)
@@ -193,14 +232,22 @@ func _resolve_punt(result: PlayResult) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
 	var punt_distance := _rng.randi_range(38, 53)
+	var punter := offense.player_at("P")
+	var long_snapper := offense.player_at("LS")
+	result.punter_id = punter.id
+	_append_player_id(result.special_teams_participant_ids, punter)
+	_append_player_id(result.special_teams_participant_ids, long_snapper)
 	var landing_position := state.field_position + punt_distance
 	result.play_type = "punt"
 	result.title = "Punt"
 	result.yards = punt_distance
+	result.net_yards = punt_distance
 	result.drive_ended = true
 	result.possession_changed = true
 	_consume_clock(_tempo_clock(_rng.randi_range(9, 14), offense), offense.id)
 	if landing_position >= 100:
+		result.punt_touchback = true
+		result.net_yards = maxi(0, 75 - result.starting_field_position)
 		result.description = "%s punts into the end zone. %s starts at its 25." % [offense.display_name(), defense.abbreviation]
 		state.switch_possession(true)
 	else:
@@ -213,6 +260,12 @@ func _resolve_field_goal(result: PlayResult) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
 	var kick_distance := 117 - state.field_position
+	var kicker := offense.player_at("K")
+	var long_snapper := offense.player_at("LS")
+	result.kicker_id = kicker.id
+	result.kick_distance = kick_distance
+	_append_player_id(result.special_teams_participant_ids, kicker)
+	_append_player_id(result.special_teams_participant_ids, long_snapper)
 	var kick_chance := clampf(
 		0.94
 		+ float(offense.effective_special_teams_rating() - 80) * 0.007
@@ -230,6 +283,7 @@ func _resolve_field_goal(result: PlayResult) -> void:
 		result.description = "%s converts from %d yards." % [offense.display_name(), kick_distance]
 		result.points = 3
 		result.scoring_play = true
+		result.field_goal_made = true
 		state.switch_possession(true)
 	else:
 		result.title = "No good"
@@ -246,6 +300,10 @@ func _apply_standard_gain(result: PlayResult, yards: int) -> void:
 		result.description = "%s Touchdown — %s" % [state.offense().abbreviation, result.description]
 		result.points = 7
 		result.scoring_play = true
+		result.touchdown = true
+		var kicker := state.team_by_id(offense_id).player_at("K")
+		if kicker != null:
+			result.kicker_id = kicker.id
 		result.drive_ended = true
 		result.possession_changed = true
 		state.switch_possession(true)
@@ -255,6 +313,7 @@ func _apply_standard_gain(result: PlayResult, yards: int) -> void:
 		state.down = 1
 		state.yards_to_first = mini(10, 100 - state.field_position)
 		state.stats[offense_id]["first_downs"] += 1
+		result.first_down = true
 		result.title = "First down"
 	else:
 		state.down += 1
@@ -357,7 +416,126 @@ func _new_result() -> PlayResult:
 	result.quarter = state.quarter
 	result.clock_seconds = state.clock_seconds
 	result.offense_id = state.possession_team_id
+	result.defense_id = state.defense().id
+	result.down = state.down
+	result.yards_to_first = state.yards_to_first
+	result.starting_field_position = state.field_position
 	return result
+
+
+func _populate_scrimmage_participants(
+	result: PlayResult,
+	offense: TeamData,
+	defense: TeamData,
+	extra_offense: Array,
+	extra_defense: Array
+) -> void:
+	var offense_starters: Array[String] = _offensive_starters[offense.id]
+	var defense_starters: Array[String] = _defensive_starters[defense.id]
+	result.offensive_starter_ids = offense_starters.duplicate()
+	result.defensive_starter_ids = defense_starters.duplicate()
+	result.offensive_participant_ids = result.offensive_starter_ids.duplicate()
+	result.defensive_participant_ids = result.defensive_starter_ids.duplicate()
+	for player in extra_offense:
+		_replace_position_participant(result.offensive_participant_ids, offense, player)
+	for player in extra_defense:
+		_replace_position_participant(result.defensive_participant_ids, defense, player)
+
+
+func _lineup_ids(team: TeamData, position_counts: Dictionary) -> Array[String]:
+	var ids: Array[String] = []
+	for position_name in position_counts:
+		var needed := int(position_counts[position_name])
+		for player in team.depth_players(str(position_name)):
+			if not player.is_available():
+				continue
+			_append_player_id(ids, player)
+			needed -= 1
+			if needed <= 0:
+				break
+	return ids
+
+
+func _select_depth_player(team: TeamData, position_name: String) -> PlayerData:
+	var candidates: Array[PlayerData] = []
+	var weights: Array[float] = []
+	var depth_index := 0
+	for player in team.depth_players(position_name):
+		if not player.is_available():
+			continue
+		candidates.append(player)
+		weights.append(maxf(float(player.effective_overall()), 1.0) * pow(0.38, depth_index))
+		depth_index += 1
+		if candidates.size() >= 4:
+			break
+	return _weighted_player(candidates, weights, team.player_at(position_name))
+
+
+func _select_target(team: TeamData) -> PlayerData:
+	var candidates: Array[PlayerData] = []
+	var weights: Array[float] = []
+	var position_weight := {"WR": 1.0, "TE": 0.66, "RB": 0.38}
+	for position_name in ["WR", "TE", "RB"]:
+		var depth_index := 0
+		for player in team.depth_players(position_name):
+			if not player.is_available():
+				continue
+			candidates.append(player)
+			weights.append(
+				maxf(float(player.technique + player.speed), 1.0)
+				* float(position_weight[position_name])
+				* pow(0.58, depth_index)
+			)
+			depth_index += 1
+			if depth_index >= 4:
+				break
+	return _weighted_player(candidates, weights, team.player_at("WR"))
+
+
+func _select_defender(team: TeamData, positions: Array[String]) -> PlayerData:
+	var candidates: Array[PlayerData] = []
+	var weights: Array[float] = []
+	for position_name in positions:
+		var depth_index := 0
+		for player in team.depth_players(position_name):
+			if not player.is_available():
+				continue
+			candidates.append(player)
+			weights.append(maxf(float(player.awareness + player.technique), 1.0) * pow(0.52, depth_index))
+			depth_index += 1
+			if depth_index >= 3:
+				break
+	return _weighted_player(candidates, weights, team.player_at(positions.front()))
+
+
+func _weighted_player(candidates: Array[PlayerData], weights: Array[float], fallback: PlayerData) -> PlayerData:
+	if candidates.is_empty():
+		return fallback
+	var total := 0.0
+	for weight in weights:
+		total += weight
+	var roll := _rng.randf() * total
+	for index in range(candidates.size()):
+		roll -= weights[index]
+		if roll <= 0.0:
+			return candidates[index]
+	return candidates.back()
+
+
+func _append_player_id(ids: Array[String], player: PlayerData) -> void:
+	if player != null and not ids.has(player.id):
+		ids.append(player.id)
+
+
+func _replace_position_participant(ids: Array[String], team: TeamData, player: PlayerData) -> void:
+	if player == null or ids.has(player.id):
+		return
+	for index in range(ids.size() - 1, -1, -1):
+		var current := team.player_by_id(ids[index])
+		if current != null and current.position == player.position:
+			ids[index] = player.id
+			return
+	ids.append(player.id)
 
 
 func _yard_phrase(yards: int) -> String:

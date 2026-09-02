@@ -8,6 +8,9 @@ func _init() -> void:
 	_test_seeded_games_are_deterministic()
 	_test_games_reach_a_legal_final_state()
 	_test_statistics_balance()
+	_test_player_statistics_reconcile_with_team_totals()
+	_test_weekly_statistics_rollup_is_idempotent()
+	_test_player_statistics_preserve_team_splits()
 	_test_strategy_cloning_is_isolated()
 	_test_full_rosters_and_depth_charts()
 	_test_league_data_pack_catalog()
@@ -39,6 +42,7 @@ func _init() -> void:
 	_test_version_four_save_migration()
 	_test_version_five_save_migration()
 	_test_version_seven_trade_save_migration()
+	_test_version_eight_statistics_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -83,6 +87,90 @@ func _test_statistics_balance() -> void:
 		_check(stats["total_yards"] == stats["pass_yards"] + stats["rush_yards"], "%s yardage categories do not balance" % team.abbreviation)
 		_check(stats["plays"] >= stats["turnovers"], "%s has more turnovers than recorded plays" % team.abbreviation)
 		_check(stats["possession_seconds"] >= 0, "%s has negative possession time" % team.abbreviation)
+
+
+func _test_player_statistics_reconcile_with_team_totals() -> void:
+	var teams := SampleLeague.create_teams()
+	var simulator := FootballSimulator.new(teams[4], teams[5], 220091)
+	simulator.simulate_to_end()
+	for team in [simulator.state.home_team, simulator.state.away_team]:
+		var passing_attempts := 0
+		var passing_completions := 0
+		var passing_yards := 0
+		var rushing_attempts := 0
+		var rushing_yards := 0
+		var receiving_yards := 0
+		var interceptions := 0
+		var fumbles_lost := 0
+		var sacks_taken := 0
+		var sack_yards_lost := 0
+		var touchdowns := 0
+		var field_goals := 0
+		var extra_points := 0
+		for line: PlayerGameStatsData in simulator.state.player_stats.values():
+			if line.team_id != team.id:
+				continue
+			passing_attempts += line.stats.value("passing_attempts")
+			passing_completions += line.stats.value("passing_completions")
+			passing_yards += line.stats.value("passing_yards")
+			rushing_attempts += line.stats.value("rushing_attempts")
+			rushing_yards += line.stats.value("rushing_yards")
+			receiving_yards += line.stats.value("receiving_yards")
+			interceptions += line.stats.value("passing_interceptions")
+			fumbles_lost += line.stats.value("fumbles_lost")
+			sacks_taken += line.stats.value("sacks_taken")
+			sack_yards_lost += line.stats.value("sack_yards_lost")
+			touchdowns += line.stats.value("passing_touchdowns") + line.stats.value("rushing_touchdowns")
+			field_goals += line.stats.value("field_goals_made")
+			extra_points += line.stats.value("extra_points_made")
+		var team_stats: Dictionary = simulator.state.stats[team.id]
+		_check(passing_attempts == team_stats["passing_attempts"], "%s player pass attempts should reconcile with the team total" % team.abbreviation)
+		_check(passing_completions == team_stats["passing_completions"], "%s player completions should reconcile with the team total" % team.abbreviation)
+		_check(passing_yards == team_stats["gross_pass_yards"], "%s player passing yards should reconcile with gross team passing" % team.abbreviation)
+		_check(receiving_yards == team_stats["gross_pass_yards"], "%s receiving yards should reconcile with gross team passing" % team.abbreviation)
+		_check(team_stats["pass_yards"] == passing_yards - sack_yards_lost, "%s net passing should deduct credited sack yardage" % team.abbreviation)
+		_check(rushing_attempts == team_stats["rushing_attempts"], "%s player carries should reconcile with the team total" % team.abbreviation)
+		_check(rushing_yards == team_stats["rush_yards"], "%s player rushing yards should reconcile with the team total" % team.abbreviation)
+		_check(interceptions + fumbles_lost == team_stats["turnovers"], "%s player turnovers should reconcile with the team total" % team.abbreviation)
+		_check(sacks_taken == team_stats["sacks_allowed"], "%s player sacks taken should reconcile with the team total" % team.abbreviation)
+		_check(team_stats["points"] == touchdowns * 6 + field_goals * 3 + extra_points, "%s scoring credits should reconcile with the scoreboard" % team.abbreviation)
+		_check(team_stats["points"] == simulator.state.score_for(team.id), "%s statistic points should equal the final score" % team.abbreviation)
+
+
+func _test_weekly_statistics_rollup_is_idempotent() -> void:
+	var career := CareerSession.new_career("seattle_orcas", 73191, LeagueCatalog.SOURCE_FICTIONAL)
+	career.simulate_current_week()
+	var season := career.league.current_season_statistics()
+	_check(season != null and season.game_books.size() == 4, "A completed eight-team week should retain four immutable game books")
+	if season == null or season.game_books.is_empty():
+		return
+	var book: GameBookData = season.game_books.values().front()
+	var player_line: PlayerGameStatsData = book.player_stats.values().front()
+	var career_line := career.league.player_career_statistics(player_line.player_id)
+	var games_before := career_line.stats.value("games_played")
+	_check(not career.league.statistics.record_game(book), "A completed matchup should not be aggregated twice")
+	_check(career.league.player_career_statistics(player_line.player_id).stats.value("games_played") == games_before, "Rejected duplicate game books should not change career totals")
+	for team in career.league.teams:
+		var team_line := season.team_stats_for(team.id, LeagueState.PHASE_REGULAR_SEASON)
+		_check(team_line != null and team_line.value("games_played") == 1, "%s should have one weekly team-stat result" % team.abbreviation)
+
+
+func _test_player_statistics_preserve_team_splits() -> void:
+	var first_game := PlayerGameStatsData.new("split_player", "Split Player", "QB", "club_a", "club_b")
+	first_game.mark_appearance(true)
+	first_game.stats.add("passing_attempts", 24)
+	first_game.stats.add("passing_yards", 241)
+	var second_game := PlayerGameStatsData.new("split_player", "Split Player", "QB", "club_b", "club_c")
+	second_game.mark_appearance(true)
+	second_game.stats.add("passing_attempts", 31)
+	second_game.stats.add("passing_yards", 318)
+	var season_line := PlayerSeasonStatsData.new(2026, "split_player", "Split Player", "QB")
+	season_line.record_game(first_game, LeagueState.PHASE_REGULAR_SEASON)
+	season_line.record_game(second_game, LeagueState.PHASE_REGULAR_SEASON)
+	_check(season_line.stats.value("games_played") == 2, "A traded player's season total should follow the player ID")
+	_check(season_line.stats.value("passing_yards") == 559, "A traded player's season total should combine both clubs")
+	_check((season_line.team_splits["club_a"] as StatLineData).value("passing_yards") == 241, "The former club split should remain intact after a move")
+	_check((season_line.team_splits["club_b"] as StatLineData).value("passing_yards") == 318, "The new club split should receive only post-move production")
 
 
 func _test_strategy_cloning_is_isolated() -> void:
@@ -615,6 +703,11 @@ func _test_career_serialization_round_trip() -> void:
 	_check(loaded.league.free_agents.size() == career.league.free_agents.size(), "Serialized career should retain the free-agent market")
 	_check(loaded.league.transactions.size() == career.league.transactions.size(), "Serialized career should retain transaction history")
 	_check(loaded.user_team().players.front().contract != null, "Serialized career should retain player contracts")
+	var original_stats := career.league.current_season_statistics()
+	var loaded_stats := loaded.league.current_season_statistics()
+	_check(loaded_stats != null and loaded_stats.game_books.size() == original_stats.game_books.size(), "Serialized careers should retain finalized game books")
+	var user_team_stats := loaded_stats.team_stats_for(loaded.league.user_team_id)
+	_check(user_team_stats != null and user_team_stats.value("games_played") == 1, "Serialized careers should retain team season totals")
 
 
 func _test_save_repository_round_trip() -> void:
@@ -787,6 +880,27 @@ func _test_version_seven_trade_save_migration() -> void:
 		var expected_picks := loaded.league.teams.size() * DraftService.ROUNDS * TradeService.FUTURE_PICK_YEARS
 		_check(loaded.league.future_draft_picks.size() == expected_picks, "Version-seven careers should receive three complete years of original draft-pick ownership")
 		_check(loaded.league.trade_history.is_empty(), "Version-seven careers should begin with an empty trade history")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_eight_statistics_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v8_statistics_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("austin_outlaws", 80819, LeagueCatalog.SOURCE_FICTIONAL)
+	career.simulate_current_week()
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("statistics")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 8, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-eight career should migrate into the statistics schema")
+	if loaded != null:
+		_check(loaded.league.statistics.seasons.is_empty(), "Pre-statistics saves should start recording from their next completed game")
+		_check(loaded.league.statistics.career_player_totals.is_empty(), "Migration should not invent historical player totals")
 	DirAccess.remove_absolute(absolute_path)
 
 

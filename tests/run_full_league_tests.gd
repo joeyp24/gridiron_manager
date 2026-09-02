@@ -60,6 +60,12 @@ func _run() -> void:
 	_check(career.league.matchups_for_week(20).size() == 4, "The Divisional round must contain four games")
 	_check(career.league.matchups_for_week(21).size() == 2, "Conference Championship weekend must contain two games")
 	_check(career.league.matchups_for_week(22).size() == 1, "The championship round must contain one game")
+	var completed_statistics := career.league.statistics.season(2026)
+	_check(completed_statistics != null and completed_statistics.game_books.size() == 285, "The full season should retain 272 regular-season and 13 postseason game books")
+	for team in career.league.teams:
+		var regular_season_stats := completed_statistics.team_stats_for(team.id, LeagueState.PHASE_REGULAR_SEASON)
+		_check(regular_season_stats != null and regular_season_stats.value("games_played") == 17, "%s must retain all 17 regular-season team stat lines" % team.abbreviation)
+	_check(career.league.statistics.career_player_totals.size() >= 1000, "Full-league simulation should attribute statistics to active depth-chart participants")
 
 	print("FULL_LEAGUE_TEST: validating future schedule and draft")
 	var future := ScheduleGenerator.from_template(career.league.schedule_template, career.league.teams, 2027, 2026)
