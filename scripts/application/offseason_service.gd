@@ -218,6 +218,8 @@ static func start_new_league_year(league: LeagueState) -> void:
 			league.draft_history.pop_front()
 	league.current_draft = null
 	league.season_year += 1
+	TradeService.prune_past_draft_picks(league)
+	TradeService.ensure_future_draft_picks(league)
 	league.current_week = 1
 	league.prepared_week = 0
 	league.phase = LeagueState.PHASE_REGULAR_SEASON

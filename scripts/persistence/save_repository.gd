@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 7
+const SAVE_VERSION := 8
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -83,6 +83,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 6:
 		migrated = _migrate_v6_to_v7(migrated)
 		current_version = 7
+	if current_version == 7:
+		migrated = _migrate_v7_to_v8(migrated)
+		current_version = 8
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -233,4 +236,30 @@ func _migrate_v6_to_v7(payload: Dictionary) -> Dictionary:
 	career_data["league"] = league_data
 	payload["career"] = career_data
 	payload["save_version"] = 7
+	return payload
+
+
+func _migrate_v7_to_v8(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var season_year := int(league_data.get("season_year", 2026))
+	var picks: Array[Dictionary] = []
+	for draft_year in range(season_year + 1, season_year + TradeService.FUTURE_PICK_YEARS + 1):
+		for round_number in range(1, DraftService.ROUNDS + 1):
+			for team_data: Dictionary in league_data.get("teams", []):
+				var team_id := str(team_data.get("id", ""))
+				picks.append(DraftPickData.new(
+					"future_%d_r%d_%s" % [draft_year, round_number, team_id],
+					draft_year,
+					round_number,
+					0,
+					0,
+					team_id,
+					team_id
+				).to_dict())
+	league_data["future_draft_picks"] = league_data.get("future_draft_picks", picks)
+	league_data["trade_history"] = league_data.get("trade_history", [])
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 8
 	return payload

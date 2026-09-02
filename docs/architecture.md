@@ -22,18 +22,19 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `PlayerData` stores ratings, potential, age, position, energy, active status, injury state, archetype, personality, measurements, college, draft origin, experience, team history, and career peak.
 - `PlayerContract` stores salary, remaining term, fixed expiration year, guarantees, signing year, and projected role.
 - `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference/division identity, and tactics.
-- `TransactionData` records signings, releases, extensions, and expirations for history, news, and saves.
+- `TransactionData` records signings, releases, extensions, expirations, and completed club trade ledgers for history, news, and saves.
 - `SeasonHistoryData` stores immutable championship, standings, and managed-club snapshots.
 - `RetiredPlayerData` stores immutable career snapshots for retired players and other permanent league departures.
 - `DevelopmentReportData` records annual age, overall, potential, and attribute movement.
 - `ProspectData` stores the complete incoming-player profile, including hidden true ratings and public combine/production data.
 - `ScoutingReportData` stores a club-specific, progressively narrowed view of a prospect without mutating the prospect's true talent.
-- `DraftPickData` keeps original and current ownership separate so pick trading can be added without a schema redesign.
+- `DraftPickData` keeps original and current ownership separate across three future draft years and the live draft.
 - `DraftStateData` owns the class, reports, board favorites, pick clock, selection history, and undrafted conversion for one draft year.
+- `TradeProposalData` stores immutable completed-deal packages, values, asset labels, clubs, timing, and summary history.
 - `LeagueFormatData` stores roster limits, regular/postseason length, playoff size, schedule strategy, and template season without hard-coding one league shape into career rules.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
-- `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, phase, and championship state.
+- `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, future-pick ownership, trade history, phase, and championship state.
 - `GameStateData` and `PlayResult` describe a live match.
 
 Stable IDs are the boundary between runtime objects, schedules, depth charts, and save files. New systems should preserve that rule instead of relying on node paths or object identity.
@@ -56,13 +57,14 @@ As match detail grows, play calling, penalties, injuries, clock rules, and speci
 - `OffseasonService` owns stage transitions, AI retention, contract rollover, replacement depth, development, cap growth, roster readiness, and new-season setup.
 - `RetirementService` owns deterministic career-exit decisions, retirement dead money, archival history, announcements, and free-agent population balance.
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
+- `TradeService` owns the trade window, future draft capital, package valuation, partner evaluation, counteroffers, projected roster/cap validation, dead-cap transfer rules, atomic execution, and history.
 - `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
 
 Application sessions are the composition point between content, simulation, saves, and presentation. UI screens request actions from these sessions rather than calculating outcomes themselves.
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 7. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, and source provenance. Version seven adds the serialized league format, future-season schedule template, and playoff seeds. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 8. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, and playoff seeds. Version eight adds three years of future draft-pick ownership and permanent completed-trade history. Existing eight-team careers receive compatible draft capital while retaining their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
@@ -82,10 +84,10 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ## Intended expansion path
 
-The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, rookie replacement, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
-1. Trades, tradable draft-pick ownership, and deeper AI roster valuation.
-2. Staff, facilities, finances, objectives, and job security.
+1. Injured reserve, practice squads, waivers, game-day activation, and deeper roster-cut logic.
+2. AI-initiated trade offers, trade-block discovery, staff, facilities, finances, objectives, and job security.
 3. More detailed player and season statistics, records, and awards.
 4. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
 

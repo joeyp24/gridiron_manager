@@ -11,6 +11,7 @@ const FRONT_OFFICE_SCENE := preload("res://scenes/screens/front_office_screen.ts
 const FREE_AGENCY_SCENE := preload("res://scenes/screens/free_agency_screen.tscn")
 const OFFSEASON_SCENE := preload("res://scenes/screens/offseason_screen.tscn")
 const DRAFT_CENTER_SCENE := preload("res://scenes/screens/draft_center_screen.tscn")
+const TRADE_CENTER_SCENE := preload("res://scenes/screens/trade_center_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -99,7 +100,7 @@ func _build_shell() -> void:
 	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
 	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.7", GridironTheme.ACCENT)
+	_version_badge = UIFactory.badge("CAREER 0.8", GridironTheme.ACCENT)
 	top_row.add_child(_version_badge)
 
 	_content_margin = MarginContainer.new()
@@ -162,6 +163,7 @@ func _show_career_dashboard() -> void:
 	screen.strategy_requested.connect(_show_strategy)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.free_agency_requested.connect(_show_free_agency)
+	screen.trade_center_requested.connect(_show_trade_center)
 	screen.offseason_requested.connect(_show_offseason)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
@@ -197,6 +199,7 @@ func _show_front_office() -> void:
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.free_agency_requested.connect(_show_free_agency)
+	screen.trade_center_requested.connect(_show_trade_center)
 	screen.front_office_changed.connect(_save_career)
 	_mount(screen)
 
@@ -210,6 +213,18 @@ func _show_free_agency() -> void:
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.market_changed.connect(_save_career)
+	_mount(screen)
+
+
+func _show_trade_center() -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / TRADE CENTER"
+	var screen := TRADE_CENTER_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.front_office_requested.connect(_show_front_office)
+	screen.trade_changed.connect(_save_career)
 	_mount(screen)
 
 

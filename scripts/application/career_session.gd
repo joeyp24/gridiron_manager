@@ -47,6 +47,52 @@ func release_player(player_id: String) -> Dictionary:
 	return TransactionService.release_player(league, league.user_team_id, player_id)
 
 
+func preview_trade(
+	partner_team_id: String,
+	user_player_ids: Array,
+	partner_player_ids: Array,
+	user_pick_ids: Array,
+	partner_pick_ids: Array
+) -> Dictionary:
+	return TradeService.preview_proposal(
+		league,
+		league.user_team_id,
+		partner_team_id,
+		user_player_ids,
+		partner_player_ids,
+		user_pick_ids,
+		partner_pick_ids
+	)
+
+
+func submit_trade(
+	partner_team_id: String,
+	user_player_ids: Array,
+	partner_player_ids: Array,
+	user_pick_ids: Array,
+	partner_pick_ids: Array
+) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "executed": false, "status": "Invalid", "message": "Complete the active game before proposing a trade."}
+	return TradeService.submit_proposal(
+		league,
+		league.user_team_id,
+		partner_team_id,
+		user_player_ids,
+		partner_player_ids,
+		user_pick_ids,
+		partner_pick_ids
+	)
+
+
+func accept_trade_counter(counter: Dictionary) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "executed": false, "status": "Invalid", "message": "Complete the active game before accepting a trade."}
+	if str(counter.get("proposing_team_id", "")) != league.user_team_id:
+		return {"ok": false, "executed": false, "status": "Invalid", "message": "The counteroffer does not belong to this club."}
+	return TradeService.accept_counter(league, counter)
+
+
 func extend_player(player_id: String, years: int, offer_multiplier: float) -> Dictionary:
 	if active_simulator != null:
 		return {"ok": false, "message": "Complete the active game before negotiating a contract."}

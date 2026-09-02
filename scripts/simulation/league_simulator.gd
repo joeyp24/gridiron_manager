@@ -33,6 +33,7 @@ static func create_season(user_team_id: String, seed: int, source_id: String = L
 	league.data_snapshot = str(source.get("snapshot_date", ""))
 	league.data_attribution = str(source.get("attribution", ""))
 	league.data_source_metadata = source.duplicate(true)
+	TradeService.ensure_future_draft_picks(league)
 	league.news.append("The %d %s season is ready for kickoff." % [league.season_year, league.league_name])
 	return league
 

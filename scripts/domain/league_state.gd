@@ -42,6 +42,8 @@ var retired_players: Array[RetiredPlayerData] = []
 var last_retirement_year := 0
 var current_draft: DraftStateData
 var draft_history: Array[DraftStateData] = []
+var future_draft_picks: Array[DraftPickData] = []
+var trade_history: Array[TradeProposalData] = []
 
 
 func _init(league_teams: Array[TeamData] = [], selected_team_id: String = "", seed: int = 0) -> void:
@@ -465,6 +467,12 @@ func to_dict() -> Dictionary:
 	var retired_player_data: Array[Dictionary] = []
 	for retired_player in retired_players:
 		retired_player_data.append(retired_player.to_dict())
+	var future_pick_data: Array[Dictionary] = []
+	for pick in future_draft_picks:
+		future_pick_data.append(pick.to_dict())
+	var trade_data: Array[Dictionary] = []
+	for trade in trade_history:
+		trade_data.append(trade.to_dict())
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -494,6 +502,8 @@ func to_dict() -> Dictionary:
 		"last_retirement_year": last_retirement_year,
 		"current_draft": current_draft.to_dict() if current_draft != null else null,
 		"draft_history": draft_history_data,
+		"future_draft_picks": future_pick_data,
+		"trade_history": trade_data,
 	}
 
 
@@ -547,6 +557,10 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.current_draft = DraftStateData.from_dict(current_draft_data)
 	for draft_data in data.get("draft_history", []):
 		league.draft_history.append(DraftStateData.from_dict(draft_data))
+	for pick_data in data.get("future_draft_picks", []):
+		league.future_draft_picks.append(DraftPickData.from_dict(pick_data))
+	for trade_data in data.get("trade_history", []):
+		league.trade_history.append(TradeProposalData.from_dict(trade_data))
 	if league.phase == "Complete":
 		league._archive_current_season()
 		league.phase = PHASE_SEASON_REVIEW

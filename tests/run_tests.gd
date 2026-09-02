@@ -19,6 +19,8 @@ func _init() -> void:
 	_test_unified_player_generator()
 	_test_free_agent_signing_and_release()
 	_test_ai_roster_management()
+	_test_trade_execution_and_draft_pick_ownership()
+	_test_trade_counteroffers_and_deadline()
 	_test_complete_career_season()
 	_test_offseason_extensions_and_expiration()
 	_test_player_development_is_deterministic()
@@ -36,6 +38,7 @@ func _init() -> void:
 	_test_version_three_save_migration()
 	_test_version_four_save_migration()
 	_test_version_five_save_migration()
+	_test_version_seven_trade_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -273,6 +276,74 @@ func _test_ai_roster_management() -> void:
 	for team in career.league.teams:
 		_check(team.payroll() <= team.salary_cap, "%s AI management should preserve cap legality" % team.abbreviation)
 		_check(team.players.size() <= team.roster_limit, "%s AI management should preserve roster limits" % team.abbreviation)
+
+
+func _test_trade_execution_and_draft_pick_ownership() -> void:
+	var career := CareerSession.new_career("miami_nightjars", 450913, LeagueCatalog.SOURCE_FICTIONAL)
+	var user_team := career.user_team()
+	var partner: TeamData = career.league.teams[1] if career.league.teams[1].id != user_team.id else career.league.teams[2]
+	_check(career.league.future_draft_picks.size() == career.league.teams.size() * DraftService.ROUNDS * TradeService.FUTURE_PICK_YEARS, "New careers should reserve three complete years of tradable draft capital")
+	var user_player: PlayerData = user_team.players_at("WR").back()
+	var partner_player: PlayerData = partner.players_at("WR").back()
+	var user_pick := TradeService.future_pick_for(career.league, career.league.season_year + 1, 3, user_team.id)
+	var partner_pick := TradeService.future_pick_for(career.league, career.league.season_year + 1, 4, partner.id)
+	var user_dead_cap := user_team.dead_cap
+	var result := TradeService.execute_trade(
+		career.league,
+		user_team.id,
+		partner.id,
+		[user_player.id],
+		[partner_player.id],
+		[user_pick.id],
+		[partner_pick.id]
+	)
+	_check(bool(result.get("ok", false)) and bool(result.get("executed", false)), "A legal player-and-pick package should execute atomically")
+	_check(user_team.player_by_id(partner_player.id) != null and partner.player_by_id(user_player.id) != null, "Traded players should move to their receiving clubs")
+	_check(partner_player.team_history.back() == user_team.id and user_player.team_history.back() == partner.id, "Completed trades should extend each player's team history")
+	_check(user_pick.owner_team_id == partner.id and partner_pick.owner_team_id == user_team.id, "Completed trades should transfer future draft-pick ownership")
+	_check(user_team.dead_cap > user_dead_cap, "Trading a guaranteed contract should leave the sending club with dead cap")
+	_check(career.league.trade_history.size() == 1 and career.league.transactions.size() == 2, "A completed trade should create permanent trade and transaction records")
+	_check(user_team.depth_players("WR").has(partner_player), "A completed trade should rebuild the receiving depth chart")
+	var prior_user_count := user_team.players.size()
+	var invalid := TradeService.execute_trade(career.league, user_team.id, partner.id, ["missing_player"], [user_player.id], [], [])
+	_check(not bool(invalid.get("ok", false)) and user_team.players.size() == prior_user_count, "An invalid trade should leave every roster unchanged")
+	var draft := DraftService.create_draft(career.league)
+	var transferred_draft_pick: DraftPickData
+	for pick in draft.picks:
+		if pick.original_team_id == user_team.id and pick.round_number == 3:
+			transferred_draft_pick = pick
+			break
+	_check(transferred_draft_pick != null and transferred_draft_pick.owner_team_id == partner.id, "Draft creation should honor ownership transferred in the Trade Center")
+	career.league.current_draft = draft
+	var loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
+	_check(loaded.league.trade_history.size() == 1, "Completed trade history should survive career serialization")
+	var loaded_pick: DraftPickData
+	for pick in loaded.league.current_draft.picks:
+		if pick.original_team_id == user_team.id and pick.round_number == 3:
+			loaded_pick = pick
+			break
+	_check(loaded_pick != null and loaded_pick.owner_team_id == partner.id, "Traded draft-pick ownership should survive career serialization")
+
+
+func _test_trade_counteroffers_and_deadline() -> void:
+	var career := CareerSession.new_career("boston_sentinels", 540027, LeagueCatalog.SOURCE_FICTIONAL)
+	var user_team := career.user_team()
+	var partner: TeamData = career.league.teams[1] if career.league.teams[1].id != user_team.id else career.league.teams[2]
+	var discounted_pick := TradeService.future_pick_for(career.league, career.league.season_year + 2, 1, user_team.id)
+	var premium_pick := TradeService.future_pick_for(career.league, career.league.season_year + 1, 1, partner.id)
+	var low_pick := TradeService.future_pick_for(career.league, career.league.season_year + 2, 7, user_team.id)
+	var rejected := career.submit_trade(partner.id, [], [], [low_pick.id], [premium_pick.id])
+	_check(not bool(rejected.get("ok", false)) and str(rejected.get("status", "")) == TradeProposalData.STATUS_REJECTED, "A materially unbalanced offer should be rejected without changing ownership")
+	_check(low_pick.owner_team_id == user_team.id and premium_pick.owner_team_id == partner.id, "A rejected offer must not mutate either package")
+	var response := career.submit_trade(partner.id, [], [], [discounted_pick.id], [premium_pick.id])
+	_check(bool(response.get("ok", false)) and str(response.get("status", "")) == TradeProposalData.STATUS_COUNTERED, "A near-value offer should produce a deterministic AI counteroffer")
+	var counter: Dictionary = response.get("counter", {})
+	_check(not counter.is_empty(), "An AI counteroffer should include a complete revised package")
+	var accepted := career.accept_trade_counter(counter)
+	_check(bool(accepted.get("executed", false)), "The managed club should be able to accept a still-valid AI counteroffer")
+	career.league.current_week = TradeService.trade_deadline_week(career.league) + 1
+	var closed := career.submit_trade(partner.id, [], [], [TradeService.picks_owned_by(career.league, user_team.id).front().id], [TradeService.picks_owned_by(career.league, partner.id).front().id])
+	_check(not bool(closed.get("ok", false)) and str(closed.get("message", "")).contains("closed"), "In-season trades should be rejected after the configured deadline")
 
 
 func _test_complete_career_season() -> void:
@@ -694,6 +765,28 @@ func _test_version_five_save_migration() -> void:
 		_check(loaded.league.data_source_metadata.get("id", "") == LeagueCatalog.SOURCE_FICTIONAL, "Version-five careers should receive an extensible source manifest")
 		_check(loaded.user_team().division.is_empty(), "Version-five teams should receive an empty optional division")
 		_check(loaded.league.league_format.id == "legacy_eight" and loaded.league.league_format.regular_season_weeks == 7, "Legacy careers should migrate into an explicit compatible league format")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_seven_trade_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v7_trade_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("denver_summit", 80771, LeagueCatalog.SOURCE_FICTIONAL)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("future_draft_picks")
+	league_data.erase("trade_history")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 7, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-seven career should migrate into the trade schema")
+	if loaded != null:
+		var expected_picks := loaded.league.teams.size() * DraftService.ROUNDS * TradeService.FUTURE_PICK_YEARS
+		_check(loaded.league.future_draft_picks.size() == expected_picks, "Version-seven careers should receive three complete years of original draft-pick ownership")
+		_check(loaded.league.trade_history.is_empty(), "Version-seven careers should begin with an empty trade history")
 	DirAccess.remove_absolute(absolute_path)
 
 

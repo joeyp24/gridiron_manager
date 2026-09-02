@@ -42,6 +42,7 @@ func _run() -> void:
 
 	print("FULL_LEAGUE_TEST: creating career")
 	var career := CareerSession.new_career("nfl_buf", 320532, LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	_check(career.league.future_draft_picks.size() == 32 * DraftService.ROUNDS * TradeService.FUTURE_PICK_YEARS, "The complete league should reserve three seven-round years of tradable picks")
 	for conference in career.league.conference_names():
 		var projected := career.league.projected_playoff_team_ids(conference)
 		_check(projected.size() == 7, "%s must project seven playoff qualifiers" % conference)

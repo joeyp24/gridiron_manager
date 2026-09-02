@@ -2,6 +2,7 @@ extends Control
 
 signal back_requested
 signal free_agency_requested
+signal trade_center_requested
 signal front_office_changed
 
 var _career: CareerSession
@@ -63,6 +64,10 @@ func _build_header() -> void:
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
 	header.add_child(UIFactory.spacer())
+	var trades := UIFactory.button("TRADE CENTER", "SecondaryButton")
+	trades.custom_minimum_size = Vector2(145, 46)
+	trades.pressed.connect(func(): trade_center_requested.emit())
+	header.add_child(trades)
 	var market := UIFactory.button("FREE AGENCY  →", "PrimaryButton")
 	market.custom_minimum_size = Vector2(165, 46)
 	market.pressed.connect(func(): free_agency_requested.emit())

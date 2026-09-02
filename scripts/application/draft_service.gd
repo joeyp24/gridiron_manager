@@ -10,6 +10,7 @@ const DESIRED_DEPTH := {
 
 
 static func create_draft(league: LeagueState) -> DraftStateData:
+	TradeService.ensure_future_draft_picks(league)
 	var draft := DraftStateData.new(league.season_year + 1)
 	var class_size := league.teams.size() * ROUNDS + league.teams.size()
 	draft.prospects = DraftClassGenerator.generate(draft.draft_year, league.season_seed, class_size, league.teams.size())
@@ -17,15 +18,17 @@ static func create_draft(league: LeagueState) -> DraftStateData:
 	var overall_pick := 1
 	for round_number in range(1, ROUNDS + 1):
 		for pick_index in range(order.size()):
-			var team_id: String = order[pick_index]
+			var original_team_id: String = order[pick_index]
+			var reserved_pick := TradeService.future_pick_for(league, draft.draft_year, round_number, original_team_id)
+			var owner_team_id := reserved_pick.owner_team_id if reserved_pick != null else original_team_id
 			draft.picks.append(DraftPickData.new(
 				"draft_%d_r%d_p%d" % [draft.draft_year, round_number, pick_index + 1],
 				draft.draft_year,
 				round_number,
 				pick_index + 1,
 				overall_pick,
-				team_id,
-				team_id
+				original_team_id,
+				owner_team_id
 			))
 			overall_pick += 1
 	for prospect in draft.prospects:
