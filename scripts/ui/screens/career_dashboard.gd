@@ -7,6 +7,7 @@ signal roster_requested
 signal strategy_requested
 signal front_office_requested
 signal free_agency_requested
+signal trade_center_requested
 signal offseason_requested
 signal save_requested
 
@@ -71,6 +72,9 @@ func _build_interface() -> void:
 	var market := UIFactory.button("FREE AGENCY", "SecondaryButton")
 	market.pressed.connect(func(): free_agency_requested.emit())
 	actions.add_child(market)
+	var trades := UIFactory.button("TRADE CENTER", "SecondaryButton")
+	trades.pressed.connect(func(): trade_center_requested.emit())
+	actions.add_child(trades)
 	var save := UIFactory.button("SAVE CAREER", "SecondaryButton")
 	save.pressed.connect(func(): save_requested.emit())
 	actions.add_child(save)

@@ -13,6 +13,8 @@ Gridiron Manager is an extensible American football management simulation built 
 - A $280 million team salary cap, 53-player active rosters, 90-player offseason capacity, and release dead money
 - An expanded 134-player launch free-agent market drawn from source-roster depth
 - Free-agent negotiation shaped by quality, age, position value, projected role, market demand, term, and offer strength
+- A responsive Trade Center with multi-player and multi-pick offers, live cap and roster validation, AI acceptance, deterministic counteroffers, and a Week 9 deadline
+- Three complete years of tradable seven-round draft capital whose ownership carries into the live draft
 - AI-controlled in-season moves, re-signing decisions, seven-round draft selections, and legal offseason roster building
 - A staged offseason with season review, re-signing, player development, retirement decisions, draft preparation, a live draft, roster decisions, and new-league-year readiness
 - Player potential, deterministic age curves, attribute growth/regression, and squad development reports
@@ -30,7 +32,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Live play-by-play, field visualization, and team statistics
-- Versioned JSON career saves with automatic migrations through schema version seven and persistent data provenance
+- Versioned JSON career saves with automatic migrations through schema version eight, trade history, future-pick ownership, and persistent data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -48,11 +50,12 @@ From the repository root:
 
 ```powershell
 godot --headless --path . --script res://tests/run_tests.gd
+godot --headless --path . --script res://tests/run_trade_tests.gd
 godot --headless --path . --script res://tests/run_full_league_tests.gd
 godot --headless --path . --script res://tests/run_ui_tests.gd
 ```
 
-The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order and pick ownership; rookie contracts; AI roster building; free-agent population balance; all 32 teams and 1,696 rostered players; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive selection UI; serialization; and save migration.
+The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams and 1,696 rostered players; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive selection and Trade Center UI; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -80,12 +83,12 @@ scripts/
 `-- ui/           # Theme, reusable components, responsive screens, and routing
 ```
 
-The simulation and career layers do not depend on scenes or controls. Future systems such as trades, staff, finances, awards, and deeper statistics can build on stable IDs and serialized domain state without replacing the current interface or match engine.
+The simulation and career layers do not depend on scenes or controls. Future systems such as waivers, practice squads, staff, finances, awards, and deeper statistics can build on stable IDs and serialized domain state without replacing the current interface or match engine.
 
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 
 ## Current limitations
 
-This is a career and front-office foundation, not a complete franchise simulation. Trades, staff, facilities, broader finances, penalties, detailed player statistics, awards, and animated 11-on-11 presentation are intentionally deferred. Draft-pick ownership is modeled now, while pick trading remains a future feature.
+This is a career and front-office foundation, not a complete franchise simulation. Practice squads, waivers, injured-reserve designations, AI-initiated trade offers, conditional picks, staff, facilities, broader finances, penalties, detailed player statistics, awards, and animated 11-on-11 presentation are intentionally deferred.
 
 The shipped league uses publicly distributed names and football data but excludes logos, wordmarks, headshots, and portrait URLs. The original eight-team league remains only as an internal compatibility fixture for older saves and tests; it is not offered for new careers. Gridiron Manager is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap.

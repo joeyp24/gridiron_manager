@@ -37,6 +37,8 @@ func is_used() -> bool:
 
 
 func pick_label() -> String:
+	if overall_pick <= 0 or pick_in_round <= 0:
+		return "%d Round %d" % [draft_year, round_number]
 	return "R%d P%d (#%d)" % [round_number, pick_in_round, overall_pick]
 
 
