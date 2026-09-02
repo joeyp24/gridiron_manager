@@ -12,7 +12,10 @@ var simulator: FootballSimulator
 
 
 func _init() -> void:
-	teams = SampleLeague.create_teams()
+	var bundle := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	teams = []
+	for team in bundle.get("teams", []):
+		teams.append(team)
 
 
 func start_exhibition(

@@ -12,15 +12,19 @@ const POSITION_POOL: Array[String] = [
 	"DT", "DT", "DT", "DT", "DT", "DT",
 	"LB", "LB", "LB", "LB", "LB", "LB", "LB",
 	"CB", "CB", "CB", "CB", "CB", "CB", "CB", "CB",
-	"S", "S", "S", "S", "S", "S", "K", "K", "P", "P",
+	"S", "S", "S", "S", "S", "S", "K", "K", "P", "P", "LS",
 ]
 
 
-static func generate(draft_year: int, seed: int) -> Array[ProspectData]:
+static func generate(draft_year: int, seed: int, class_size: int = 0, teams_per_round: int = 32) -> Array[ProspectData]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed + draft_year * 65537
 	var prospects: Array[ProspectData] = []
-	var shuffled_positions := POSITION_POOL.duplicate()
+	var target_size := class_size if class_size > 0 else POSITION_POOL.size()
+	var shuffled_positions: Array[String] = []
+	while shuffled_positions.size() < target_size:
+		shuffled_positions.append_array(POSITION_POOL)
+	shuffled_positions.resize(target_size)
 	for index in range(shuffled_positions.size() - 1, 0, -1):
 		var swap_index := rng.randi_range(0, index)
 		var current: String = shuffled_positions[index]
@@ -36,5 +40,5 @@ static func generate(draft_year: int, seed: int) -> Array[ProspectData]:
 	)
 	for index in range(prospects.size()):
 		prospects[index].consensus_rank = index + 1
-		prospects[index].projected_round = mini(8, floori(float(index) / 8.0) + 1)
+		prospects[index].projected_round = mini(8, floori(float(index) / float(maxi(teams_per_round, 1))) + 1)
 	return prospects

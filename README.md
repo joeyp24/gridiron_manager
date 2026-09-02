@@ -4,13 +4,14 @@ Gridiron Manager is an extensible American football management simulation built 
 
 ## Prototype features
 
-- Two selectable league databases: eight original clubs or an offline nflverse 2026 preview
-- Eight representative real-world clubs, one per division, with source roster identities and recent-performance ratings
-- Full 41-player prototype rosters with offensive, defensive, and specialist position groups
+- One deterministic offline nflverse 2026 league with all 32 current clubs
+- Full 53-player rosters with offensive, defensive, kicking, punting, and long-snapping position groups
+- The published 272-game 2026 regular-season schedule, including each club's bye week
 - Editable depth charts with active/inactive status, player energy, and injuries
 - Player contracts with annual salary, term, guarantees, role, and expiration year
 - Contract extensions, annual contract rollover, expirations, and dead-cap relief
-- A $280 million team salary cap, 35-to-45-player roster rules, and release dead money
+- A $280 million team salary cap, 53-player active rosters, 90-player offseason capacity, and release dead money
+- An expanded 134-player launch free-agent market drawn from source-roster depth
 - Free-agent negotiation shaped by quality, age, position value, projected role, market demand, term, and offer strength
 - AI-controlled in-season moves, re-signing decisions, seven-round draft selections, and legal offseason roster building
 - A staged offseason with season review, re-signing, player development, retirement decisions, draft preparation, a live draft, roster decisions, and new-league-year readiness
@@ -24,12 +25,12 @@ Gridiron Manager is an extensible American football management simulation built 
 - A playable seven-round draft with standings-based order, explicit pick ownership, AI boards, rookie contracts, undrafted free agents, and team-by-team recap grades
 - Permanent season history with champions, title-game results, final standings, and managed-club records
 - Persistent offensive and defensive strategy covering run balance, tempo, passing depth, fourth-down aggression, blitz frequency, and coverage preference
-- Seven-week round-robin regular season followed by a conference-winner championship
+- An 18-week, 17-game regular season followed by seven-team AFC and NFC playoff brackets and a championship
 - Weekly schedule, results, standings, club record, league leaders, injury report, and news feed
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Live play-by-play, field visualization, and team statistics
-- Versioned JSON career saves with automatic migrations through schema version six and persistent data provenance
+- Versioned JSON career saves with automatic migrations through schema version seven and persistent data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -47,9 +48,11 @@ From the repository root:
 
 ```powershell
 godot --headless --path . --script res://tests/run_tests.gd
+godot --headless --path . --script res://tests/run_full_league_tests.gd
+godot --headless --path . --script res://tests/run_ui_tests.gd
 ```
 
-The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order and pick ownership; all 56 draft selections; rookie contracts; AI roster building; free-agent population balance across repeated personnel cycles; schedule regeneration; multi-season advancement; career history; serialization; and save migration.
+The checks cover deterministic matches and player generation; legal game state; stat invariants; rosters and depth charts; injury substitutions; contracts and the salary cap; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order and pick ownership; rookie contracts; AI roster building; free-agent population balance; all 32 teams and 1,696 rostered players; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive selection UI; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -63,7 +66,7 @@ To rebuild it from cached source files—or download the published nflverse asse
 python tools/nflverse_importer.py
 ```
 
-See [`docs/nflverse.md`](docs/nflverse.md) for the source manifest, rating model, refresh workflow, licensing, and current preview scope.
+See [`docs/nflverse.md`](docs/nflverse.md) for the source manifest, rating model, refresh workflow, licensing, and full-league scope.
 
 ## Architecture
 
@@ -85,4 +88,4 @@ See [`docs/architecture.md`](docs/architecture.md) for dependency rules and exte
 
 This is a career and front-office foundation, not a complete franchise simulation. Trades, staff, facilities, broader finances, penalties, detailed player statistics, awards, and animated 11-on-11 presentation are intentionally deferred. Draft-pick ownership is modeled now, while pick trading remains a future feature.
 
-The original league is fictional. The optional nflverse preview uses publicly distributed names and football data but excludes logos, wordmarks, headshots, and portrait URLs. It is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap.
+The shipped league uses publicly distributed names and football data but excludes logos, wordmarks, headshots, and portrait URLs. The original eight-team league remains only as an internal compatibility fixture for older saves and tests; it is not offered for new careers. Gridiron Manager is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap.

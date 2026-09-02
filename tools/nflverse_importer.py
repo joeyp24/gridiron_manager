@@ -17,17 +17,41 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 RATING_MODEL_VERSION = 1
-DEFAULT_TEAMS = ("BUF", "BAL", "HOU", "KC", "PHI", "DET", "TB", "SF")
+DEFAULT_TEAMS = (
+    "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
+    "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
+    "LV", "LAC", "LA", "MIA", "MIN", "NE", "NO", "NYG",
+    "NYJ", "PHI", "PIT", "SF", "SEA", "TB", "TEN", "WAS",
+)
+CURRENT_TEAM_NAMES = {
+    "ARI": ("Arizona", "Cardinals"), "ATL": ("Atlanta", "Falcons"),
+    "BAL": ("Baltimore", "Ravens"), "BUF": ("Buffalo", "Bills"),
+    "CAR": ("Carolina", "Panthers"), "CHI": ("Chicago", "Bears"),
+    "CIN": ("Cincinnati", "Bengals"), "CLE": ("Cleveland", "Browns"),
+    "DAL": ("Dallas", "Cowboys"), "DEN": ("Denver", "Broncos"),
+    "DET": ("Detroit", "Lions"), "GB": ("Green Bay", "Packers"),
+    "HOU": ("Houston", "Texans"), "IND": ("Indianapolis", "Colts"),
+    "JAX": ("Jacksonville", "Jaguars"), "KC": ("Kansas City", "Chiefs"),
+    "LV": ("Las Vegas", "Raiders"), "LAC": ("Los Angeles", "Chargers"),
+    "LA": ("Los Angeles", "Rams"), "MIA": ("Miami", "Dolphins"),
+    "MIN": ("Minnesota", "Vikings"), "NE": ("New England", "Patriots"),
+    "NO": ("New Orleans", "Saints"), "NYG": ("New York", "Giants"),
+    "NYJ": ("New York", "Jets"), "PHI": ("Philadelphia", "Eagles"),
+    "PIT": ("Pittsburgh", "Steelers"), "SF": ("San Francisco", "49ers"),
+    "SEA": ("Seattle", "Seahawks"), "TB": ("Tampa Bay", "Buccaneers"),
+    "TEN": ("Tennessee", "Titans"), "WAS": ("Washington", "Commanders"),
+}
 TEAM_ALIASES = {"AZ": "ARI", "JAC": "JAX", "STL": "LA", "OAK": "LV", "SD": "LAC"}
 ROSTER_COUNTS = {
-    "QB": 2, "RB": 3, "WR": 5, "TE": 2,
+    "QB": 3, "RB": 4, "WR": 6, "TE": 3,
     "LT": 2, "LG": 2, "C": 2, "RG": 2, "RT": 2,
-    "EDGE": 3, "DT": 3, "LB": 4, "CB": 4, "S": 3,
-    "K": 1, "P": 1,
+    "EDGE": 4, "DT": 4, "LB": 6, "CB": 6, "S": 4,
+    "K": 1, "P": 1, "LS": 1,
 }
-POSITION_ORDER = ("QB", "K", "P", "C", "TE", "RB", "WR", "LT", "RT", "LG", "RG", "DT", "EDGE", "LB", "CB", "S")
+POSITION_ORDER = ("QB", "K", "P", "LS", "C", "TE", "RB", "WR", "LT", "RT", "LG", "RG", "DT", "EDGE", "LB", "CB", "S")
+FREE_AGENT_TARGET_PER_POSITION = 8
 PERSONALITIES = ("Driven", "Professional", "Team Leader", "Reserved", "Independent", "Competitive")
 STAT_WEIGHTS = {2023: 0.20, 2024: 0.30, 2025: 0.50}
 SOURCE_URLS = {
@@ -36,6 +60,7 @@ SOURCE_URLS = {
     "stats_{year}.csv.gz": "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_reg_{year}.csv.gz",
     "teams.csv": "https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv",
     "contracts.csv.gz": "https://github.com/nflverse/nflverse-data/releases/download/contracts/historical_contracts.csv.gz",
+    "games.csv": "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv",
 }
 
 
@@ -97,6 +122,7 @@ def _source_paths(cache_dir: Path, season: int, stat_years: Iterable[int], offli
         "roster": cache_dir / f"roster_{season}.csv",
         "teams": cache_dir / "teams.csv",
         "contracts": cache_dir / "contracts.csv.gz",
+        "games": cache_dir / "games.csv",
     }
     for year in stat_years:
         paths[f"stats_{year}"] = cache_dir / f"stats_{year}.csv.gz"
@@ -105,6 +131,7 @@ def _source_paths(cache_dir: Path, season: int, stat_years: Iterable[int], offli
         "roster": SOURCE_URLS["roster_{season}.csv"].format(season=season),
         "teams": SOURCE_URLS["teams.csv"],
         "contracts": SOURCE_URLS["contracts.csv.gz"],
+        "games": SOURCE_URLS["games.csv"],
     }
     for year in stat_years:
         urls[f"stats_{year}"] = SOURCE_URLS["stats_{year}.csv.gz"].format(year=year)
@@ -131,11 +158,11 @@ def eligible_positions(row: dict[str, Any]) -> tuple[str, ...]:
     if value == "TE":
         return ("TE",)
     if value in ("T", "OT"):
-        return ("LT", "RT")
+        return ("LT", "RT", "LG", "RG")
     if value in ("G", "OG"):
-        return ("LG", "RG")
+        return ("LG", "RG", "C")
     if value == "C":
-        return ("C",)
+        return ("C", "LG", "RG")
     if position == "OL" or value == "OL":
         return ("LT", "LG", "C", "RG", "RT")
     if value in ("DE", "EDGE"):
@@ -156,6 +183,8 @@ def eligible_positions(row: dict[str, Any]) -> tuple[str, ...]:
         return ("K",)
     if value == "P":
         return ("P",)
+    if value == "LS" or position == "LS":
+        return ("LS",)
     return ()
 
 
@@ -179,6 +208,8 @@ def _rating_group(row: dict[str, Any]) -> str:
         return "K"
     if "P" in eligible:
         return "P"
+    if "LS" in eligible:
+        return "LS"
     return "OTHER"
 
 
@@ -266,7 +297,7 @@ def performance_score(candidate: dict[str, Any]) -> float:
     if group == "OL":
         score = games * 1.25 + experience * 0.45 + draft * 1.25
     age = candidate["age"]
-    age_penalty = max(age - {"QB": 34, "K": 35, "P": 35, "OL": 32}.get(group, 30), 0) * 0.8
+    age_penalty = max(age - {"QB": 34, "K": 35, "P": 35, "LS": 35, "OL": 32}.get(group, 30), 0) * 0.8
     return score + draft + min(experience, 8.0) * 0.20 + status_bonus - age_penalty
 
 
@@ -299,7 +330,7 @@ def _attributes(candidate: dict[str, Any], position: str) -> dict[str, int]:
         "QB": (-3, -3, 6, 6), "RB": (7, 2, 2, -2), "WR": (8, -4, 5, 0), "TE": (1, 6, 4, 1),
         "LT": (-6, 9, 5, 3), "LG": (-7, 10, 4, 2), "C": (-8, 8, 6, 5), "RG": (-7, 10, 4, 2), "RT": (-6, 9, 5, 3),
         "EDGE": (2, 7, 5, 1), "DT": (-5, 10, 4, 2), "LB": (3, 4, 4, 3), "CB": (9, -3, 5, 3), "S": (6, 1, 4, 5),
-        "K": (-12, -5, 11, 4), "P": (-10, -3, 10, 4),
+        "K": (-12, -5, 11, 4), "P": (-10, -3, 10, 4), "LS": (-9, 2, 12, 7),
     }[position]
     speed = int(_clamp(overall + offsets[0] + _jitter(player_id, "speed"), 42, 98))
     power = int(_clamp(overall + offsets[1] + _jitter(player_id, "power"), 42, 98))
@@ -320,7 +351,7 @@ def _archetype(position: str, attributes: dict[str, int]) -> str:
         return "Ball Hawk" if attributes["awareness"] >= attributes["power"] else "Press Enforcer"
     if position in ("LT", "LG", "C", "RG", "RT", "DT", "EDGE"):
         return "Power" if attributes["power"] >= attributes["technique"] else "Technical"
-    if position in ("K", "P"):
+    if position in ("K", "P", "LS"):
         return "Precision"
     return "Versatile"
 
@@ -475,6 +506,32 @@ def _team_ratings(players: list[dict[str, Any]]) -> tuple[int, int, int]:
     return offense, defense, special
 
 
+def _schedule(paths: dict[str, Path], season: int, requested_teams: list[str]) -> list[dict[str, Any]]:
+    allowed = set(requested_teams)
+    schedule: list[dict[str, Any]] = []
+    for row in _read_csv(paths["games"]):
+        if _integer(row.get("season")) != season or row.get("game_type") != "REG":
+            continue
+        away = _normalize_team(row.get("away_team", ""))
+        home = _normalize_team(row.get("home_team", ""))
+        if away not in allowed or home not in allowed:
+            continue
+        schedule.append({
+            "id": row.get("game_id") or f"{season}_{row.get('week')}_{away}_{home}",
+            "week": _integer(row.get("week")),
+            "away_team_id": f"nfl_{away.lower()}",
+            "home_team_id": f"nfl_{home.lower()}",
+            "phase": "Regular Season",
+            "played": False,
+            "away_score": 0,
+            "home_score": 0,
+            "away_stats": {},
+            "home_stats": {},
+        })
+    schedule.sort(key=lambda game: (game["week"], game["id"]))
+    return schedule
+
+
 def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_abbreviations: list[str], snapshot_date: str) -> dict[str, Any]:
     players_by_id = {row["gsis_id"]: row for row in _read_csv(paths["players"]) if row.get("gsis_id")}
     team_rows = {_normalize_team(row["team_abbr"]): row for row in _read_csv(paths["teams"]) if row.get("team_abbr")}
@@ -525,9 +582,7 @@ def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_
         roster = [_player(candidate, position, team_id, contracts, season, depth_index) for candidate, position, depth_index in selected]
         _scale_payroll(roster)
         offense, defense, special = _team_ratings(roster)
-        nickname = team_info.get("team_nick", "").strip()
-        full_name = team_info.get("team_name", abbreviation).strip()
-        city = full_name[:-len(nickname)].strip() if nickname and full_name.endswith(nickname) else full_name
+        city, nickname = CURRENT_TEAM_NAMES[abbreviation]
         output_teams.append({
             "id": team_id,
             "city": city,
@@ -543,33 +598,32 @@ def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_
             "strategy": _team_tactics(selected),
             "players": roster,
             "salary_cap": 280_000_000,
-            "roster_limit": 45,
+            "roster_limit": 53,
             "dead_cap": 0,
         })
 
-    # The market can draw from every current roster, not just the eight preview
-    # clubs. This gives every position meaningful depth while keeping club
-    # rosters and free-agent IDs mutually exclusive.
+    # The market draws from players outside the balanced 53-player active
+    # rosters. It stays entirely offline and keeps club and free-agent IDs
+    # mutually exclusive.
     reserve_candidates = [candidate for candidate in candidates if candidate["id"] not in selected_player_ids]
     free_agents: list[dict[str, Any]] = []
     free_agent_ids: set[str] = set()
     for position in ROSTER_COUNTS:
-        for target_rating in (76, 72):
+        for market_index in range(FREE_AGENT_TARGET_PER_POSITION):
+            target_rating = max(62, 79 - market_index * 2)
             eligible = [candidate for candidate in reserve_candidates if candidate["id"] not in free_agent_ids and position in candidate["eligible"]]
-            # Non-preview clubs supply the alternate-league market, but
-            # established starters should not become overpowering day-one free
-            # agents. Build a useful two-tier market and only relax a ceiling
-            # when the source lacks reserve depth at that position.
             market_level = [candidate for candidate in eligible if candidate["overall"] <= target_rating]
             pool = market_level if market_level else eligible
             pool.sort(key=lambda item: (item["overall"], item["score"], item["id"]), reverse=True)
             if not pool:
-                raise ValueError(f"Reserve pool is missing {position} depth")
+                break
             candidate = pool[0]
             free_agent_ids.add(candidate["id"])
             actual_team_id = f"nfl_{candidate['team'].lower()}"
             free_agents.append(_player(candidate, position, actual_team_id, contracts, season, 3, free_agent=True))
     free_agents.sort(key=lambda player: (-player["overall"], player["id"]))
+
+    schedule = _schedule(paths, season, requested_teams)
 
     source_files = []
     for name, path in sorted(paths.items()):
@@ -577,22 +631,36 @@ def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_
     pack = {
         "schema_version": SCHEMA_VERSION,
         "source": {
-            "id": f"nflverse_{season}_preview",
-            "label": f"NFLVERSE {season} PREVIEW",
-            "league_name": "NFLVERSE PREVIEW LEAGUE",
-            "description": "Eight-club real-data preview with one representative from each NFL division, normalized to prototype competition rules.",
+            "id": f"nflverse_{season}_full",
+            "label": f"NFLVERSE {season}",
+            "league_name": "PRO FOOTBALL LEAGUE",
+            "description": "Complete 32-club league with full active rosters and the published 2026 regular-season schedule.",
             "season": season,
             "snapshot_date": snapshot_date,
             "performance_seasons": stat_years,
             "license": "CC-BY-4.0",
             "attribution": "Player, roster, team, statistics, and contract source data provided by nflverse. Contract summaries originate from OverTheCap via nflverse.",
             "source_url": "https://github.com/nflverse/nflverse-data",
+            "schedule_source_url": "https://github.com/nflverse/nfldata/blob/master/data/games.csv",
             "rating_model_version": RATING_MODEL_VERSION,
-            "limitations": "Not an official NFL product. Logos, wordmarks, headshots, and portrait URLs are excluded. Rosters are reduced to the prototype's 41-player format.",
+            "limitations": "Not an official NFL product. Logos, wordmarks, headshots, and portrait URLs are excluded. Roster slots are selected from the August 26 nflverse preseason snapshot.",
             "files": source_files,
+        },
+        "league_format": {
+            "id": "nfl_32",
+            "team_count": 32,
+            "roster_size": 53,
+            "offseason_roster_limit": 90,
+            "regular_season_weeks": 18,
+            "games_per_team": 17,
+            "playoff_teams_per_conference": 7,
+            "postseason_weeks": 4,
+            "schedule_type": "nflverse_template",
+            "template_season": season,
         },
         "teams": output_teams,
         "free_agents": free_agents,
+        "schedule": schedule,
     }
     validate_pack(pack)
     return pack
@@ -602,13 +670,13 @@ def validate_pack(pack: dict[str, Any]) -> None:
     if pack.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("Unsupported data-pack schema")
     teams = pack.get("teams", [])
-    if len(teams) != 8:
-        raise ValueError(f"Preview data pack must contain eight teams, found {len(teams)}")
+    if len(teams) != 32:
+        raise ValueError(f"Full data pack must contain 32 teams, found {len(teams)}")
     all_ids: set[str] = set()
     for team in teams:
         players = team.get("players", [])
         if len(players) != sum(ROSTER_COUNTS.values()):
-            raise ValueError(f"{team.get('abbreviation')} has {len(players)} players instead of 41")
+            raise ValueError(f"{team.get('abbreviation')} has {len(players)} players instead of 53")
         counts = defaultdict(int)
         for player in players:
             player_id = player.get("id", "")
@@ -627,14 +695,37 @@ def validate_pack(pack: dict[str, Any]) -> None:
         if payroll > int(team.get("salary_cap", 0)):
             raise ValueError(f"{team.get('abbreviation')} exceeds its salary cap")
     free_agents = pack.get("free_agents", [])
-    if len(free_agents) != len(ROSTER_COUNTS) * 2:
-        raise ValueError("Preview market must contain two free agents at every position")
+    if len(free_agents) < 100:
+        raise ValueError(f"Expanded market must contain at least 100 players, found {len(free_agents)}")
     for player in free_agents:
         if player["id"] in all_ids:
             raise ValueError(f"Free agent duplicates a roster player: {player['id']}")
         all_ids.add(player["id"])
         if player.get("contract") is not None:
             raise ValueError(f"Free agent has a contract: {player['id']}")
+
+    format_data = pack.get("league_format", {})
+    if format_data.get("team_count") != 32 or format_data.get("roster_size") != 53:
+        raise ValueError("League format does not describe the 32-team, 53-player competition")
+    schedule = pack.get("schedule", [])
+    if len(schedule) != 272:
+        raise ValueError(f"The 2026 regular season must contain 272 games, found {len(schedule)}")
+    games_by_team = defaultdict(int)
+    weeks_by_team: dict[str, set[int]] = defaultdict(set)
+    valid_team_ids = {team["id"] for team in teams}
+    for game in schedule:
+        away = game.get("away_team_id", "")
+        home = game.get("home_team_id", "")
+        week = int(game.get("week", 0))
+        if away not in valid_team_ids or home not in valid_team_ids or not 1 <= week <= 18:
+            raise ValueError(f"Schedule game references invalid league data: {game.get('id')}")
+        for team_id in (away, home):
+            if week in weeks_by_team[team_id]:
+                raise ValueError(f"{team_id} plays more than once in week {week}")
+            weeks_by_team[team_id].add(week)
+            games_by_team[team_id] += 1
+    if any(games_by_team[team_id] != 17 for team_id in valid_team_ids):
+        raise ValueError("Every team must play exactly 17 regular-season games")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -644,7 +735,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--teams", nargs="+", default=list(DEFAULT_TEAMS))
     parser.add_argument("--snapshot-date", default="2026-08-26")
     parser.add_argument("--cache-dir", type=Path, default=Path("tools/.cache/nflverse"))
-    parser.add_argument("--output", type=Path, default=Path("data/leagues/nflverse_2026_preview.json"))
+    parser.add_argument("--output", type=Path, default=Path("data/leagues/nflverse_2026_full.json"))
     parser.add_argument("--offline", action="store_true", help="Fail instead of downloading a missing source file")
     parser.add_argument("--validate-only", type=Path, help="Validate an existing generated data pack")
     return parser.parse_args(argv)

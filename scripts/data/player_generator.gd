@@ -91,7 +91,7 @@ static func generate_prospect(position_name: String, draft_year: int, class_inde
 	var profile_seed := seed + draft_year * 65537 + class_index * 2053 + position_name.hash() * 17
 	var rng := _rng(profile_seed)
 	var overall := clampi(roundi(rng.randfn(68.5, 6.7)), 54, 86)
-	if position_name in ["K", "P"]:
+	if position_name in ["K", "P", "LS"]:
 		overall = clampi(overall - 3, 54, 80)
 	var age := rng.randi_range(21, 23)
 	var upside := rng.randi_range(2, 13) + (2 if age == 21 else 0)
@@ -183,6 +183,10 @@ static func _attributes(position_name: String, overall: int, rng: RandomNumberGe
 	if position_name in ["K", "P"]:
 		values["technique"] += 10
 		values["speed"] -= 12
+	if position_name == "LS":
+		values["technique"] += 12
+		values["awareness"] += 6
+		values["speed"] -= 9
 	for key in values:
 		values[key] = clampi(int(values[key]), 42, 98)
 	return values
@@ -204,6 +208,8 @@ static func _measurements(position_name: String, rng: RandomNumberGenerator) -> 
 			return {"height": rng.randi_range(72, 79), "weight": rng.randi_range(245, 325)}
 		"LB":
 			return {"height": rng.randi_range(71, 77), "weight": rng.randi_range(220, 260)}
+		"LS":
+			return {"height": rng.randi_range(72, 77), "weight": rng.randi_range(225, 265)}
 		_:
 			return {"height": rng.randi_range(70, 76), "weight": rng.randi_range(185, 230)}
 
@@ -219,7 +225,7 @@ static func _archetype(position_name: String, attributes: Dictionary) -> String:
 		return "Ball Hawk" if int(attributes["awareness"]) >= int(attributes["power"]) else "Press Enforcer"
 	if position_name in ["LT", "LG", "C", "RG", "RT", "DT", "EDGE"]:
 		return "Power" if int(attributes["power"]) >= int(attributes["technique"]) else "Technical"
-	if position_name in ["K", "P"]:
+	if position_name in ["K", "P", "LS"]:
 		return "Precision"
 	return "Versatile"
 

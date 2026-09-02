@@ -1,7 +1,7 @@
 class_name LeagueDataPackProvider
 extends RefCounted
 
-const SUPPORTED_SCHEMA_VERSION := 1
+const SUPPORTED_SCHEMA_VERSION := 2
 
 
 static func load_bundle(path: String) -> Dictionary:
@@ -28,8 +28,13 @@ static func load_bundle(path: String) -> Dictionary:
 	if teams.is_empty():
 		push_error("League data pack contains no teams: %s" % path)
 		return {}
+	var schedule: Array[MatchupData] = []
+	for matchup_data in pack.get("schedule", []):
+		schedule.append(MatchupData.from_dict(matchup_data))
 	return {
 		"teams": teams,
 		"free_agents": free_agents,
+		"schedule": schedule,
+		"league_format": LeagueFormatData.from_dict(Dictionary(pack.get("league_format", {})), teams.size()),
 		"source": Dictionary(pack.get("source", {})).duplicate(true),
 	}

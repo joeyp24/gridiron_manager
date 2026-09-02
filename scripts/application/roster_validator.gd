@@ -2,15 +2,19 @@ class_name RosterValidator
 extends RefCounted
 
 
-static func validate_team(team: TeamData) -> Array[String]:
+static func validate_team(team: TeamData, require_full_roster: bool = false) -> Array[String]:
 	var errors: Array[String] = []
 	if team.players.size() < TeamData.MIN_ROSTER_SIZE:
 		errors.append("Roster requires at least %d players." % TeamData.MIN_ROSTER_SIZE)
 	if team.players.size() > team.roster_limit:
 		errors.append("Roster exceeds the %d-player limit." % team.roster_limit)
+	if require_full_roster and team.players.size() != team.roster_limit:
+		errors.append("Roster must contain exactly %d players before the season begins." % team.roster_limit)
 	if team.payroll() > team.salary_cap:
 		errors.append("Payroll exceeds the salary cap by %s." % PlayerContract.money_label(team.payroll() - team.salary_cap))
 	for position_name in TeamData.ROSTER_POSITIONS:
+		if position_name == "LS" and team.roster_limit < 53:
+			continue
 		if team.players_at(position_name).is_empty():
 			errors.append("Roster does not contain a %s." % position_name)
 	var ids: Dictionary = {}

@@ -105,7 +105,7 @@ static func _generate_roster(
 		"QB": 2, "RB": 3, "WR": 5, "TE": 2,
 		"LT": 2, "LG": 2, "C": 2, "RG": 2, "RT": 2,
 		"EDGE": 3, "DT": 3, "LB": 4, "CB": 4, "S": 3,
-		"K": 1, "P": 1,
+		"K": 1, "P": 1, "LS": 1,
 	}
 	var roster: Array[PlayerData] = []
 	for position_name: String in counts:
@@ -130,7 +130,7 @@ static func _generate_roster(
 
 
 static func _position_base(position_name: String, offense: int, defense: int, special: int) -> int:
-	if position_name in ["K", "P"]:
+	if position_name in ["K", "P", "LS"]:
 		return special
 	if position_name in TeamData.OFFENSIVE_POSITIONS:
 		var adjustment := 2 if position_name in ["QB", "WR"] else (-2 if position_name in ["LT", "LG", "C", "RG", "RT"] else 0)

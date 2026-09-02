@@ -30,9 +30,10 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `ScoutingReportData` stores a club-specific, progressively narrowed view of a prospect without mutating the prospect's true talent.
 - `DraftPickData` keeps original and current ownership separate so pick trading can be added without a schema redesign.
 - `DraftStateData` owns the class, reports, board favorites, pick clock, selection history, and undrafted conversion for one draft year.
+- `LeagueFormatData` stores roster limits, regular/postseason length, playoff size, schedule strategy, and template season without hard-coding one league shape into career rules.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
-- `LeagueState` owns the calendar, standings, news, phase, and championship state.
+- `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, phase, and championship state.
 - `GameStateData` and `PlayResult` describe a live match.
 
 Stable IDs are the boundary between runtime objects, schedules, depth charts, and save files. New systems should preserve that rule instead of relying on node paths or object identity.
@@ -42,7 +43,7 @@ Stable IDs are the boundary between runtime objects, schedules, depth charts, an
 The simulation layer contains focused, UI-independent services:
 
 - `FootballSimulator` resolves seeded plays, drives, regulation, and overtime.
-- `ScheduleGenerator` builds seeded, year-specific seven-week round robins.
+- `ScheduleGenerator` clones the published 2026 schedule and rotates its division-preserving template for deterministic future 17-game seasons. The round-robin path remains for legacy saves.
 - `LeagueSimulator` coordinates AI games, weekly recovery, fatigue, and injuries.
 
 As match detail grows, play calling, penalties, injuries, clock rules, and special teams can move into narrower collaborators while the existing public commands remain stable.
@@ -61,17 +62,16 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 6. Version-one careers receive the contract and free-agency model; version-two careers receive fixed contract expirations, deterministic potential, season history, and development-report storage; version-three careers receive current-draft and draft-history storage; version-four careers receive enriched player profiles, career metadata, and retirement-archive state; version-five careers receive league-source provenance and optional division identity. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 7. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, and source provenance. Version seven adds the serialized league format, future-season schedule template, and playoff seeds. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
-`LeagueCatalog` is the composition boundary for career databases. It provides the generated `SampleLeague` or delegates versioned JSON snapshots to `LeagueDataPackProvider`; both return fresh mutable domain objects plus source metadata. `PlayerGenerator` remains the seeded source for original roster players, draft prospects, veteran free agents, and emergency replacements. Importers remain build-time tooling and never become a runtime network dependency.
+`LeagueCatalog` is the composition boundary for career databases. New careers and exhibitions use the complete versioned nflverse JSON snapshot through `LeagueDataPackProvider`; `SampleLeague` remains an internal legacy fixture for save migration and focused tests. Providers return fresh mutable domain objects, league-format rules, schedule templates, and source metadata. `PlayerGenerator` remains the seeded source for future draft prospects, veteran free agents, and emergency replacements. Importers remain build-time tooling and never become a runtime network dependency.
 
 ```text
 LeagueCatalog
-|-- SampleLeague
-`-- LeagueDataPackProvider
-    `-- Versioned JSON snapshot
+|-- LeagueDataPackProvider -> versioned 32-team JSON snapshot
+`-- SampleLeague -> legacy compatibility only
 ```
 
 Static definitions and mutable career state remain separate. Loading a source always constructs a new object graph. A club archetype is content; its record, active roster, contracts, cap charges, transactions, injuries, energy, and strategy belong to the career save. Stable source IDs, snapshot dates, attribution, conference names, and divisions are serialized so later providers can be added without another structural rewrite.

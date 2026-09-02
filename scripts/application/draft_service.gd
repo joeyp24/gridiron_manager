@@ -5,12 +5,14 @@ const ROUNDS := 7
 const DESIRED_DEPTH := {
 	"QB": 2, "RB": 3, "WR": 5, "TE": 2, "LT": 2, "LG": 2, "C": 2, "RG": 2, "RT": 2,
 	"EDGE": 3, "DT": 3, "LB": 4, "CB": 4, "S": 3, "K": 1, "P": 1,
+	"LS": 1,
 }
 
 
 static func create_draft(league: LeagueState) -> DraftStateData:
 	var draft := DraftStateData.new(league.season_year + 1)
-	draft.prospects = DraftClassGenerator.generate(draft.draft_year, league.season_seed)
+	var class_size := league.teams.size() * ROUNDS + league.teams.size()
+	draft.prospects = DraftClassGenerator.generate(draft.draft_year, league.season_seed, class_size, league.teams.size())
 	var order := _draft_order(league)
 	var overall_pick := 1
 	for round_number in range(1, ROUNDS + 1):
@@ -243,7 +245,7 @@ static func _position_value(position_name: String) -> float:
 		"QB": return 5.0
 		"EDGE", "LT", "CB", "WR": return 3.0
 		"DT", "LB", "S", "RT": return 1.8
-		"K", "P": return -2.0
+		"K", "P", "LS": return -2.0
 	return 1.0
 
 

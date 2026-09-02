@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 6
+const SAVE_VERSION := 7
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -80,6 +80,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 5:
 		migrated = _migrate_v5_to_v6(migrated)
 		current_version = 6
+	if current_version == 6:
+		migrated = _migrate_v6_to_v7(migrated)
+		current_version = 7
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -89,9 +92,10 @@ func _migrate_v1_to_v2(payload: Dictionary) -> Dictionary:
 	var league_data: Dictionary = career_data.get("league", {})
 	var season_year := int(league_data.get("season_year", 2026))
 	var team_data_list: Array = league_data.get("teams", [])
+	var migrated_roster_limit := 45 if team_data_list.size() < 32 else TeamData.DEFAULT_ROSTER_LIMIT
 	for team_data: Dictionary in team_data_list:
 		team_data["salary_cap"] = int(team_data.get("salary_cap", TeamData.DEFAULT_SALARY_CAP))
-		team_data["roster_limit"] = int(team_data.get("roster_limit", TeamData.DEFAULT_ROSTER_LIMIT))
+		team_data["roster_limit"] = int(team_data.get("roster_limit", migrated_roster_limit))
 		team_data["dead_cap"] = int(team_data.get("dead_cap", 0))
 		var position_depth: Dictionary = {}
 		var player_data_list: Array = team_data.get("players", [])
@@ -215,4 +219,18 @@ func _migrate_v5_to_v6(payload: Dictionary) -> Dictionary:
 	career_data["league"] = league_data
 	payload["career"] = career_data
 	payload["save_version"] = 6
+	return payload
+
+
+func _migrate_v6_to_v7(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var team_count := Array(league_data.get("teams", [])).size()
+	var format := LeagueFormatData.nfl_32() if team_count >= 32 else LeagueFormatData.legacy_eight()
+	league_data["league_format"] = Dictionary(league_data.get("league_format", format.to_dict())).duplicate(true)
+	league_data["schedule_template"] = league_data.get("schedule_template", [])
+	league_data["playoff_seeds"] = Dictionary(league_data.get("playoff_seeds", {})).duplicate(true)
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 7
 	return payload
