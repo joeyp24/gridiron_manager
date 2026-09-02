@@ -44,6 +44,7 @@ var current_draft: DraftStateData
 var draft_history: Array[DraftStateData] = []
 var future_draft_picks: Array[DraftPickData] = []
 var trade_history: Array[TradeProposalData] = []
+var statistics := LeagueStatisticsData.new()
 
 
 func _init(league_teams: Array[TeamData] = [], selected_team_id: String = "", seed: int = 0) -> void:
@@ -123,6 +124,18 @@ func standing_for(team_id: String) -> StandingData:
 	return standings.get(team_id)
 
 
+func current_season_statistics() -> SeasonStatisticsData:
+	return statistics.season(season_year)
+
+
+func player_season_statistics(player_id: String, year: int = 0) -> PlayerSeasonStatsData:
+	return statistics.player_season(player_id, season_year if year <= 0 else year)
+
+
+func player_career_statistics(player_id: String) -> PlayerSeasonStatsData:
+	return statistics.player_career(player_id)
+
+
 func sorted_standings(conference: String = "") -> Array[StandingData]:
 	var ordered: Array[StandingData] = []
 	for team in teams:
@@ -187,6 +200,7 @@ func record_game(matchup: MatchupData, game: GameStateData) -> void:
 	matchup.home_score = game.home_score
 	matchup.away_stats = game.stats.get(matchup.away_team_id, {}).duplicate(true)
 	matchup.home_stats = game.stats.get(matchup.home_team_id, {}).duplicate(true)
+	statistics.record_game(GameBookData.from_game(matchup, game, season_year))
 	if matchup.phase != "Regular Season":
 		return
 	var away_standing := standing_for(matchup.away_team_id)
@@ -504,6 +518,7 @@ func to_dict() -> Dictionary:
 		"draft_history": draft_history_data,
 		"future_draft_picks": future_pick_data,
 		"trade_history": trade_data,
+		"statistics": statistics.to_dict(),
 	}
 
 
@@ -561,6 +576,7 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.future_draft_picks.append(DraftPickData.from_dict(pick_data))
 	for trade_data in data.get("trade_history", []):
 		league.trade_history.append(TradeProposalData.from_dict(trade_data))
+	league.statistics = LeagueStatisticsData.from_dict(Dictionary(data.get("statistics", {})))
 	if league.phase == "Complete":
 		league._archive_current_season()
 		league.phase = PHASE_SEASON_REVIEW

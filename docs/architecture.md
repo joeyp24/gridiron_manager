@@ -31,6 +31,8 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `DraftPickData` keeps original and current ownership separate across three future draft years and the live draft.
 - `DraftStateData` owns the class, reports, board favorites, pick clock, selection history, and undrafted conversion for one draft year.
 - `TradeProposalData` stores immutable completed-deal packages, values, asset labels, clubs, timing, and summary history.
+- `StatLineData` is the sparse, extensible stat-value boundary shared by player game, season, career, and team records.
+- `GameBookData` stores an immutable completed-game snapshot; `SeasonStatisticsData` and `LeagueStatisticsData` own idempotent season and career aggregation.
 - `LeagueFormatData` stores roster limits, regular/postseason length, playoff size, schedule strategy, and template season without hard-coding one league shape into career rules.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
@@ -44,6 +46,7 @@ Stable IDs are the boundary between runtime objects, schedules, depth charts, an
 The simulation layer contains focused, UI-independent services:
 
 - `FootballSimulator` resolves seeded plays, drives, regulation, and overtime.
+- `GameStatAccumulator` consumes structured play participants and outcomes, then reconciles player credits with the live team box score.
 - `ScheduleGenerator` clones the published 2026 schedule and rotates its division-preserving template for deterministic future 17-game seasons. The round-robin path remains for legacy saves.
 - `LeagueSimulator` coordinates AI games, weekly recovery, fatigue, and injuries.
 
@@ -64,7 +67,7 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 8. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, and playoff seeds. Version eight adds three years of future draft-pick ownership and permanent completed-trade history. Existing eight-team careers receive compatible draft capital while retaining their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 9. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, and playoff seeds. Version eight adds three years of future draft-pick ownership and permanent completed-trade history. Version nine adds game books plus season and career statistics; older careers begin recording from their next completed game instead of receiving fabricated historical totals. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
@@ -84,11 +87,11 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ## Intended expansion path
 
-The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, player/team statistics, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
 1. Injured reserve, practice squads, waivers, game-day activation, and deeper roster-cut logic.
 2. AI-initiated trade offers, trade-block discovery, staff, facilities, finances, objectives, and job security.
-3. More detailed player and season statistics, records, and awards.
+3. A responsive Statistics Center, league/franchise records, awards, and richer modeled categories such as penalties and returns.
 4. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
 
 Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.
