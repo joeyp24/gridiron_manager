@@ -17,11 +17,11 @@ func _run() -> void:
 
 	screen.size = Vector2(540, 900)
 	screen._apply_responsive_layout()
-	screen._select_source(1)
+	screen._select_source(0)
 	await process_frame
 	_check(screen._team_grid.columns == 1, "Career clubs should reflow to one column on a narrow display")
-	_check(screen._team_buttons.size() == 8, "The real-data source should render eight selectable club cards")
-	_check(screen._selected_source_id == LeagueCatalog.SOURCE_NFLVERSE_PREVIEW, "The source selector should switch the active database")
+	_check(screen._team_buttons.size() == 32, "The real-data source should render all 32 selectable club cards")
+	_check(screen._selected_source_id == LeagueCatalog.SOURCE_NFLVERSE_FULL, "The complete league database should be active")
 	_check(screen._details_host.get_child_count() > 0, "The selected real-data club should render its profile")
 
 	screen.size = Vector2(1440, 900)
@@ -30,8 +30,8 @@ func _run() -> void:
 	_check(screen._team_grid.columns == 4, "Career clubs should use four columns on a wide display")
 	screen._select_source(0)
 	await process_frame
-	_check(screen._selected_source_id == LeagueCatalog.SOURCE_FICTIONAL, "The source selector should switch back to the original league")
-	_check(screen._team_buttons.size() == 8, "Switching databases should replace rather than duplicate club cards")
+	_check(screen._selected_source_id == LeagueCatalog.SOURCE_NFLVERSE_FULL, "The full league should remain the only new-career database")
+	_check(screen._team_buttons.size() == 32, "Refreshing the database should replace rather than duplicate club cards")
 
 	screen.queue_free()
 	if _failures.is_empty():

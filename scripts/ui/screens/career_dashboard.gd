@@ -129,9 +129,16 @@ func _build_next_game_card() -> PanelContainer:
 	var matchup := _career.current_matchup()
 	if matchup == null:
 		var copy := UIFactory.vbox(3)
-		copy.add_child(UIFactory.label("CHAMPIONSHIP WEEK", "EyebrowLabel"))
-		copy.add_child(UIFactory.label("Your season is complete", "SectionTitleLabel"))
-		copy.add_child(UIFactory.label("Simulate the championship to crown the league winner.", "MutedLabel"))
+		copy.add_child(UIFactory.label(_career.current_week_label(), "EyebrowLabel"))
+		if league.phase == LeagueState.PHASE_REGULAR_SEASON:
+			copy.add_child(UIFactory.label("Bye week", "SectionTitleLabel"))
+			copy.add_child(UIFactory.label("Your club is off this week. Simulate the league slate to advance.", "MutedLabel"))
+		elif league.phase == LeagueState.PHASE_PLAYOFFS and _has_first_round_bye():
+			copy.add_child(UIFactory.label("First-round bye", "SectionTitleLabel"))
+			copy.add_child(UIFactory.label("Your top seed advances automatically. Simulate Wild Card weekend.", "MutedLabel"))
+		else:
+			copy.add_child(UIFactory.label("League postseason continues", "SectionTitleLabel"))
+			copy.add_child(UIFactory.label("Your club has been eliminated. Simulate this round to continue.", "MutedLabel"))
 		row.add_child(copy)
 		return card
 	var opponent := _career.next_opponent()
@@ -151,14 +158,26 @@ func _build_next_game_card() -> PanelContainer:
 
 
 func _build_standings_card() -> PanelContainer:
-	var card := _dashboard_card("LEAGUE TABLE", "Conference leaders qualify for the championship")
+	var user_team := _career.user_team()
+	var card := _dashboard_card("PLAYOFF PICTURE", "%s standings and conference seeds" % user_team.division)
 	var column: VBoxContainer = card.get_child(0)
-	for conference in _career.league.conference_names():
-		column.add_child(UIFactory.label(conference.to_upper(), "EyebrowLabel"))
-		for index in range(_career.league.sorted_standings(conference).size()):
-			var standing := _career.league.sorted_standings(conference)[index]
-			column.add_child(_standing_row(standing, index == 0))
+	column.add_child(UIFactory.label(user_team.division.to_upper(), "EyebrowLabel"))
+	var division_table := _career.league.sorted_division_standings(user_team.division)
+	for index in range(division_table.size()):
+		column.add_child(_standing_row(division_table[index], index == 0))
+	column.add_child(UIFactory.label("%s SEEDS" % user_team.conference.to_upper(), "EyebrowLabel"))
+	var projected_seeds := _career.league.projected_playoff_team_ids(user_team.conference)
+	for index in range(projected_seeds.size()):
+		column.add_child(_standing_row(_career.league.standing_for(projected_seeds[index]), index < 4))
 	return card
+
+
+func _has_first_round_bye() -> bool:
+	var league := _career.league
+	if league.current_week != league.league_format.regular_season_weeks + 1:
+		return false
+	var seeds: Array = league.playoff_seeds.get(_career.user_team().conference, [])
+	return not seeds.is_empty() and str(seeds.front()) == league.user_team_id
 
 
 func _standing_row(standing: StandingData, leader: bool) -> PanelContainer:

@@ -6,7 +6,7 @@ const INJURIES: Array[String] = [
 ]
 
 
-static func create_season(user_team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_FICTIONAL) -> LeagueState:
+static func create_season(user_team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_NFLVERSE_FULL) -> LeagueState:
 	var bundle := LeagueCatalog.create_bundle(source_id)
 	var teams: Array[TeamData] = []
 	for team in bundle.get("teams", []):
@@ -15,7 +15,15 @@ static func create_season(user_team_id: String, seed: int, source_id: String = L
 		push_error("Cannot create a career without league teams")
 		return null
 	var league := LeagueState.new(teams, user_team_id, seed)
-	league.schedule = ScheduleGenerator.round_robin(teams, league.season_year, seed)
+	var format_data = bundle.get("league_format")
+	league.league_format = format_data if format_data is LeagueFormatData else LeagueFormatData.from_dict({}, teams.size())
+	for team in teams:
+		team.roster_limit = league.league_format.roster_size
+	var imported_schedule: Array[MatchupData] = []
+	for matchup in bundle.get("schedule", []):
+		imported_schedule.append(matchup)
+	league.schedule_template = ScheduleGenerator.clone_schedule(imported_schedule)
+	league.schedule = ScheduleGenerator.clone_schedule(imported_schedule) if not imported_schedule.is_empty() else ScheduleGenerator.round_robin(teams, league.season_year, seed)
 	for player in bundle.get("free_agents", []):
 		league.free_agents.append(player)
 	var source: Dictionary = bundle.get("source", {})
@@ -42,7 +50,7 @@ static func simulate_matchup(league: LeagueState, matchup: MatchupData) -> GameS
 	var home := league.team_by_id(matchup.home_team_id)
 	var away := league.team_by_id(matchup.away_team_id)
 	var game_seed := _matchup_seed(league, matchup)
-	var simulator := FootballSimulator.new(home, away, game_seed, matchup.phase == "Championship")
+	var simulator := FootballSimulator.new(home, away, game_seed, matchup.phase != "Regular Season")
 	simulator.simulate_to_end()
 	league.record_game(matchup, simulator.state)
 	_process_postgame(home, game_seed + 17)

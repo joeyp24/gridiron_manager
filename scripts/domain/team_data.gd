@@ -3,11 +3,11 @@ extends RefCounted
 
 const OFFENSIVE_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"]
 const DEFENSIVE_POSITIONS: Array[String] = ["EDGE", "DT", "LB", "CB", "S"]
-const ROSTER_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"]
+const ROSTER_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P", "LS"]
 const DEFAULT_SALARY_CAP := 280_000_000
 const MIN_ROSTER_SIZE := 35
-const DEFAULT_ROSTER_LIMIT := 45
-const OFFSEASON_ROSTER_LIMIT := 52
+const DEFAULT_ROSTER_LIMIT := 53
+const OFFSEASON_ROSTER_LIMIT := 90
 
 var id: String
 var city: String

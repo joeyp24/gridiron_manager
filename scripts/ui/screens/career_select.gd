@@ -5,7 +5,7 @@ signal career_requested(source_id: String, team_id: String)
 
 var _teams: Array[TeamData] = []
 var _sources: Array[Dictionary] = []
-var _selected_source_id := LeagueCatalog.SOURCE_FICTIONAL
+var _selected_source_id := LeagueCatalog.SOURCE_NFLVERSE_FULL
 var _selected_index := 0
 var _team_grid: GridContainer
 var _details_host: VBoxContainer
@@ -39,7 +39,7 @@ func _build_interface() -> void:
 	var heading := UIFactory.hbox(12)
 	var copy := UIFactory.vbox(2)
 	copy.add_child(UIFactory.label("BEGIN YOUR CAREER", "PageTitleLabel"))
-	copy.add_child(UIFactory.label("Choose a league database, then select the club you want to lead.", "MutedLabel"))
+	copy.add_child(UIFactory.label("Select one of 32 clubs to lead through the 2026 season and beyond.", "MutedLabel"))
 	heading.add_child(copy)
 	heading.add_child(UIFactory.spacer())
 	heading.add_child(UIFactory.badge("2026 SEASON", GridironTheme.ACCENT))
@@ -94,7 +94,7 @@ func _select_source(index: int) -> void:
 	if _sources.is_empty():
 		return
 	var source: Dictionary = _sources[clampi(index, 0, _sources.size() - 1)]
-	_selected_source_id = str(source.get("id", LeagueCatalog.SOURCE_FICTIONAL))
+	_selected_source_id = str(source.get("id", LeagueCatalog.SOURCE_NFLVERSE_FULL))
 	_source_description.text = "%s — %s" % [str(source.get("title", "")), str(source.get("description", ""))]
 	var bundle := LeagueCatalog.create_bundle(_selected_source_id)
 	_teams.clear()

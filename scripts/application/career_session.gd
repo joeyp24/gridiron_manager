@@ -10,7 +10,7 @@ func _init(state: LeagueState = null) -> void:
 	league = state
 
 
-static func new_career(team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_FICTIONAL) -> CareerSession:
+static func new_career(team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_NFLVERSE_FULL) -> CareerSession:
 	return CareerSession.new(LeagueSimulator.create_season(team_id, seed, source_id))
 
 
@@ -104,7 +104,7 @@ func begin_user_game() -> FootballSimulator:
 	var home := league.team_by_id(active_matchup.home_team_id)
 	var away := league.team_by_id(active_matchup.away_team_id)
 	var game_seed := league.season_seed + league.current_week * 1009 + active_matchup.id.hash()
-	active_simulator = FootballSimulator.new(home, away, game_seed, active_matchup.phase == "Championship")
+	active_simulator = FootballSimulator.new(home, away, game_seed, active_matchup.phase != "Regular Season")
 	return active_simulator
 
 
@@ -137,7 +137,10 @@ func current_week_label() -> String:
 		return league.phase.to_upper()
 	if league.phase == LeagueState.PHASE_CHAMPIONSHIP:
 		return "CHAMPIONSHIP WEEK"
-	return "WEEK %d OF %d" % [league.current_week, LeagueState.REGULAR_SEASON_WEEKS]
+	if league.phase == LeagueState.PHASE_PLAYOFFS:
+		var playoff_round := league.current_week - league.league_format.regular_season_weeks
+		return ["WILD CARD", "DIVISIONAL", "CONFERENCE CHAMPIONSHIP"][clampi(playoff_round - 1, 0, 2)]
+	return "WEEK %d OF %d" % [league.current_week, league.league_format.regular_season_weeks]
 
 
 func _add_week_news(completed_week: int) -> void:
@@ -160,5 +163,5 @@ func _add_week_news(completed_week: int) -> void:
 
 
 func _run_ai_front_offices() -> void:
-	if league.current_week <= LeagueState.REGULAR_SEASON_WEEKS:
+	if league.current_week <= league.league_format.regular_season_weeks:
 		TransactionService.run_ai_roster_moves(league)

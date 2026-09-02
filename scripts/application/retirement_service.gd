@@ -1,19 +1,19 @@
 class_name RetirementService
 extends RefCounted
 
-const MAX_FREE_AGENTS_BEFORE_DRAFT := 64
-const MIN_FREE_AGENTS_PER_POSITION := 2
+const MAX_FREE_AGENTS_BEFORE_DRAFT := 160
+const MIN_FREE_AGENTS_PER_POSITION := 6
 const RETIREMENT_AGES := {
 	"QB": 34, "RB": 29, "WR": 30, "TE": 31,
 	"LT": 32, "LG": 32, "C": 32, "RG": 32, "RT": 32,
 	"EDGE": 31, "DT": 31, "LB": 30, "CB": 30, "S": 30,
-	"K": 34, "P": 34,
+	"K": 34, "P": 34, "LS": 34,
 }
 const HARD_RETIREMENT_AGES := {
 	"QB": 44, "RB": 36, "WR": 38, "TE": 39,
 	"LT": 41, "LG": 41, "C": 41, "RG": 41, "RT": 41,
 	"EDGE": 39, "DT": 40, "LB": 38, "CB": 38, "S": 39,
-	"K": 44, "P": 44,
+	"K": 44, "P": 44, "LS": 44,
 }
 
 
@@ -87,7 +87,8 @@ static func balance_free_agent_market(league: LeagueState, archive_year: int) ->
 static func _balance_free_agent_market(league: LeagueState, retirement_year: int) -> int:
 	var exit_count := 0
 	var guard := 0
-	while league.free_agents.size() > MAX_FREE_AGENTS_BEFORE_DRAFT and guard < 200:
+	var guard_limit := league.free_agents.size() + 1
+	while league.free_agents.size() > MAX_FREE_AGENTS_BEFORE_DRAFT and guard < guard_limit:
 		var position_counts: Dictionary = {}
 		for free_agent in league.free_agents:
 			position_counts[free_agent.position] = int(position_counts.get(free_agent.position, 0)) + 1

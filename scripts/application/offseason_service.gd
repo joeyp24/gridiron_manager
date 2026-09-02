@@ -5,12 +5,12 @@ const POSITION_DECLINE_AGE := {
 	"QB": 33, "RB": 27, "WR": 29, "TE": 30,
 	"LT": 31, "LG": 31, "C": 31, "RG": 31, "RT": 31,
 	"EDGE": 30, "DT": 31, "LB": 29, "CB": 29, "S": 30,
-	"K": 35, "P": 35,
+	"K": 35, "P": 35, "LS": 35,
 }
 const POSITION_SPEED_DECLINE_AGE := {
 	"QB": 31, "RB": 27, "WR": 28, "TE": 29,
 	"EDGE": 29, "LB": 28, "CB": 28, "S": 29,
-	"K": 33, "P": 33,
+	"K": 33, "P": 33, "LS": 33,
 }
 
 
@@ -49,7 +49,10 @@ static func advance_stage(league: LeagueState) -> Dictionary:
 			return {"ok": false, "message": "Complete your selections in the Draft Center before advancing."}
 		LeagueState.PHASE_ROSTER_DECISIONS:
 			prepare_post_draft_ai_rosters(league)
-			var errors := RosterValidator.validate_team(league.user_team())
+			var errors := RosterValidator.validate_team(
+				league.user_team(),
+				league.league_format.roster_size >= TeamData.DEFAULT_ROSTER_LIMIT
+			)
 			if not errors.is_empty():
 				return {"ok": false, "message": "Your roster is not ready for the new league year.", "errors": errors}
 			start_new_league_year(league)
@@ -138,7 +141,7 @@ static func run_ai_offseason_roster_building(league: LeagueState) -> int:
 			if required_candidate != null and _ai_sign(league, team, required_candidate):
 				move_count += 1
 		var guard := 0
-		while team.players.size() < TeamData.MIN_ROSTER_SIZE and guard < 60:
+		while team.players.size() < team.roster_limit and guard < 120:
 			var candidate := _best_affordable_candidate(league, team, "", true)
 			if candidate == null or not _ai_sign(league, team, candidate):
 				break
@@ -185,7 +188,7 @@ static func ensure_replacement_market(league: LeagueState) -> int:
 			additions += 1
 	var total_deficit := 0
 	for team in league.teams:
-		total_deficit += maxi(TeamData.MIN_ROSTER_SIZE - team.players.size(), 0)
+		total_deficit += maxi(team.roster_limit - team.players.size(), 0)
 	var affordable_count := 0
 	for player in league.free_agents:
 		if player.overall <= 65:
@@ -232,8 +235,14 @@ static func start_new_league_year(league: LeagueState) -> void:
 		league.standings[team.id] = StandingData.new(team.id)
 	for player in league.free_agents:
 		player.advance_to_league_year(league.season_year, true)
-	league.schedule = ScheduleGenerator.round_robin(league.teams, league.season_year, league.season_seed)
-	league.news.push_front("The %d Gridiron League season is ready for kickoff." % league.season_year)
+	league.playoff_seeds.clear()
+	league.schedule = ScheduleGenerator.from_template(
+		league.schedule_template,
+		league.teams,
+		league.season_year,
+		league.league_format.template_season
+	) if not league.schedule_template.is_empty() else ScheduleGenerator.round_robin(league.teams, league.season_year, league.season_seed)
+	league.news.push_front("The %d %s season is ready for kickoff." % [league.season_year, league.league_name])
 	_trim_news(league)
 
 

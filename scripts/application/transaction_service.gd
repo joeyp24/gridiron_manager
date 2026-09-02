@@ -255,7 +255,7 @@ static func _position_multiplier(position_name: String) -> float:
 			return 1.18
 		"DT", "LB", "S", "RT":
 			return 1.09
-		"K", "P":
+		"K", "P", "LS":
 			return 0.74
 		_:
 			return 1.0

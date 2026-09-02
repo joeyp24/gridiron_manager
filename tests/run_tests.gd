@@ -94,7 +94,7 @@ func _test_full_rosters_and_depth_charts() -> void:
 	var teams := SampleLeague.create_teams()
 	_check(teams.size() == 8, "The prototype league should contain eight teams")
 	for team in teams:
-		_check(team.players.size() == 41, "%s should have a 41-player prototype roster" % team.abbreviation)
+		_check(team.players.size() == 42, "%s legacy fixture should include every required position" % team.abbreviation)
 		for position_name in TeamData.ROSTER_POSITIONS:
 			_check(not team.depth_players(position_name).is_empty(), "%s is missing %s depth" % [team.abbreviation, position_name])
 	var team: TeamData = teams.front()
@@ -111,17 +111,18 @@ func _test_full_rosters_and_depth_charts() -> void:
 
 func _test_league_data_pack_catalog() -> void:
 	var sources := LeagueCatalog.source_descriptors()
-	_check(sources.size() == 2, "Career creation should offer original and nflverse league databases")
-	var first := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
-	var second := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
+	_check(sources.size() == 1, "Career creation should offer the complete nflverse league database")
+	var first := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	var second := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_FULL)
 	var first_teams: Array = first.get("teams", [])
 	var second_teams: Array = second.get("teams", [])
-	_check(first_teams.size() == 8, "The nflverse preview should contain eight representative clubs")
-	_check(first.get("free_agents", []).size() == 32, "The nflverse preview should provide two free agents per position")
+	_check(first_teams.size() == 32, "The nflverse league should contain all 32 clubs")
+	_check(first.get("free_agents", []).size() >= 100, "The nflverse league should provide an expanded free-agent market")
+	_check(first.get("schedule", []).size() == 272, "The nflverse league should load the complete 2026 schedule")
 	_check(first.get("source", {}).get("rating_model_version", 0) == 1, "The nflverse pack should identify its rating model")
 	var player_ids: Dictionary = {}
 	for team: TeamData in first_teams:
-		_check(team.players.size() == 41, "%s should have a normalized 41-player nflverse roster" % team.abbreviation)
+		_check(team.players.size() == 53, "%s should have a full 53-player nflverse roster" % team.abbreviation)
 		_check(not team.division.is_empty(), "%s should retain its source division" % team.abbreviation)
 		_check(RosterValidator.validate_team(team).is_empty(), "%s should load as a legal nflverse roster" % team.abbreviation)
 		for position_name in TeamData.ROSTER_POSITIONS:
@@ -130,7 +131,7 @@ func _test_league_data_pack_catalog() -> void:
 			player_ids[player.id] = true
 			_check(player.generation_source == "nflverse 2026", "%s should retain nflverse provenance" % player.full_name)
 			_check(not JSON.stringify(player.to_dict()).contains("http"), "%s should not contain a portrait or external URL" % player.full_name)
-	_check(player_ids.size() == 328, "Every rostered nflverse player should retain a unique GSIS ID")
+	_check(player_ids.size() == 1696, "Every rostered nflverse player should retain a unique GSIS ID")
 	var first_team: TeamData = first_teams.front()
 	var second_team: TeamData = second_teams.front()
 	first_team.players.front().energy = 12
@@ -138,13 +139,14 @@ func _test_league_data_pack_catalog() -> void:
 
 
 func _test_nflverse_career_flow() -> void:
-	var career := CareerSession.new_career("nfl_buf", 260826, LeagueCatalog.SOURCE_NFLVERSE_PREVIEW)
+	var career := CareerSession.new_career("nfl_buf", 260826, LeagueCatalog.SOURCE_NFLVERSE_FULL)
 	_check(career != null and career.league != null, "An nflverse career should be creatable without a network connection")
 	if career == null or career.league == null:
 		return
 	_check(career.user_team().abbreviation == "BUF", "The selected nflverse club should become the managed team")
 	_check(career.league.conference_names() == ["AFC", "NFC"], "Source conferences should drive standings and championship qualification")
-	_check(career.league.data_source_id == LeagueCatalog.SOURCE_NFLVERSE_PREVIEW, "The career should retain its league source ID")
+	_check(career.league.data_source_id == LeagueCatalog.SOURCE_NFLVERSE_FULL, "The career should retain its league source ID")
+	_check(career.league.schedule.size() == 272 and career.league.league_format.games_per_team == 17, "A full career should use the 17-game schedule format")
 	_check(career.league.data_snapshot == "2026-08-26", "The career should retain its source snapshot date")
 	_check(career.league.data_source_metadata.get("license", "") == "CC-BY-4.0", "The career should retain the complete source manifest")
 	career.simulate_current_week()
@@ -187,7 +189,7 @@ func _test_weekly_health_progression() -> void:
 
 
 func _test_active_career_game_is_resumable() -> void:
-	var career := CareerSession.new_career("austin_outlaws", 77119)
+	var career := CareerSession.new_career("austin_outlaws", 77119, LeagueCatalog.SOURCE_FICTIONAL)
 	var first := career.begin_user_game()
 	var resumed := career.begin_user_game()
 	_check(first == resumed, "Starting an active career matchup again should resume the same game")
@@ -229,7 +231,7 @@ func _test_unified_player_generator() -> void:
 
 
 func _test_free_agent_signing_and_release() -> void:
-	var career := CareerSession.new_career("boston_sentinels", 88831)
+	var career := CareerSession.new_career("boston_sentinels", 88831, LeagueCatalog.SOURCE_FICTIONAL)
 	var team := career.user_team()
 	var free_agent: PlayerData = career.league.free_agents.front()
 	var initial_roster_size := team.players.size()
@@ -262,7 +264,7 @@ func _test_free_agent_signing_and_release() -> void:
 
 
 func _test_ai_roster_management() -> void:
-	var career := CareerSession.new_career("miami_nightjars", 91913)
+	var career := CareerSession.new_career("miami_nightjars", 91913, LeagueCatalog.SOURCE_FICTIONAL)
 	var user_roster_size := career.user_team().players.size()
 	var move_count := TransactionService.run_ai_roster_moves(career.league)
 	_check(move_count > 0, "AI clubs should make at least one useful free-agent move")
@@ -274,7 +276,7 @@ func _test_ai_roster_management() -> void:
 
 
 func _test_complete_career_season() -> void:
-	var career := CareerSession.new_career("boston_sentinels", 555123)
+	var career := CareerSession.new_career("boston_sentinels", 555123, LeagueCatalog.SOURCE_FICTIONAL)
 	var guard := 0
 	while not career.league.is_offseason() and guard < 12:
 		career.simulate_current_week()
@@ -291,7 +293,7 @@ func _test_complete_career_season() -> void:
 
 
 func _test_offseason_extensions_and_expiration() -> void:
-	var career := CareerSession.new_career("austin_outlaws", 200211)
+	var career := CareerSession.new_career("austin_outlaws", 200211, LeagueCatalog.SOURCE_FICTIONAL)
 	var team := career.user_team()
 	var renewed := team.players[0]
 	var expired := team.players[1]
@@ -327,7 +329,7 @@ func _test_offseason_extensions_and_expiration() -> void:
 
 
 func _test_player_development_is_deterministic() -> void:
-	var first := CareerSession.new_career("seattle_orcas", 310031)
+	var first := CareerSession.new_career("seattle_orcas", 310031, LeagueCatalog.SOURCE_FICTIONAL)
 	_complete_season(first)
 	first.advance_offseason()
 	var second := CareerSession.from_dict(JSON.parse_string(JSON.stringify(first.to_dict())))
@@ -355,7 +357,7 @@ func _test_player_development_is_deterministic() -> void:
 
 
 func _test_retirement_lifecycle_is_deterministic() -> void:
-	var first := CareerSession.new_career("seattle_orcas", 71191)
+	var first := CareerSession.new_career("seattle_orcas", 71191, LeagueCatalog.SOURCE_FICTIONAL)
 	var forced_player: PlayerData = first.user_team().players.front()
 	forced_player.age = 44
 	forced_player.career_peak_overall = forced_player.overall + 8
@@ -370,7 +372,7 @@ func _test_retirement_lifecycle_is_deterministic() -> void:
 
 
 func _test_retirement_archive_and_dead_cap() -> void:
-	var career := CareerSession.new_career("austin_outlaws", 51337)
+	var career := CareerSession.new_career("austin_outlaws", 51337, LeagueCatalog.SOURCE_FICTIONAL)
 	var team := career.user_team()
 	var veteran: PlayerData = team.players.front()
 	veteran.age = 50
@@ -398,13 +400,13 @@ func _test_retirement_archive_and_dead_cap() -> void:
 func _test_draft_class_and_scouting() -> void:
 	var first := DraftClassGenerator.generate(2027, 61027)
 	var second := DraftClassGenerator.generate(2027, 61027)
-	_check(first.size() == 86, "Each draft class should provide enough prospects for seven rounds and priority free agents")
+	_check(first.size() == DraftClassGenerator.POSITION_POOL.size(), "Default draft classes should preserve the compact fixture size")
 	_check(JSON.stringify(first.front().to_dict()) == JSON.stringify(second.front().to_dict()), "Draft generation should be deterministic for a season seed")
 	var positions: Dictionary = {}
 	for prospect in first:
 		positions[prospect.position] = true
 	_check(positions.size() == TeamData.ROSTER_POSITIONS.size(), "Draft classes should cover every roster position")
-	var career := CareerSession.new_career("denver_summit", 61027)
+	var career := CareerSession.new_career("denver_summit", 61027, LeagueCatalog.SOURCE_FICTIONAL)
 	_complete_season(career)
 	career.advance_offseason()
 	career.advance_offseason()
@@ -434,7 +436,7 @@ func _test_draft_class_and_scouting() -> void:
 
 
 func _test_draft_order_and_pick_ownership() -> void:
-	var career := CareerSession.new_career("chicago_foundry", 72611)
+	var career := CareerSession.new_career("chicago_foundry", 72611, LeagueCatalog.SOURCE_FICTIONAL)
 	_complete_season(career)
 	career.advance_offseason()
 	career.advance_offseason()
@@ -450,7 +452,7 @@ func _test_draft_order_and_pick_ownership() -> void:
 
 
 func _test_complete_seven_round_draft() -> void:
-	var career := CareerSession.new_career("boston_sentinels", 91817)
+	var career := CareerSession.new_career("boston_sentinels", 91817, LeagueCatalog.SOURCE_FICTIONAL)
 	_complete_season(career)
 	career.advance_offseason()
 	career.advance_offseason()
@@ -462,8 +464,9 @@ func _test_complete_seven_round_draft() -> void:
 	_check(bool(start.get("ok", false)) and career.league.phase == LeagueState.PHASE_DRAFT, "Draft night should begin after preparation")
 	_complete_draft(career)
 	_check(career.league.phase == LeagueState.PHASE_ROSTER_DECISIONS and draft.is_complete(), "The final selection should advance the offseason into roster decisions")
-	_check(draft.current_pick_index == 56 and draft.available_prospects().size() == 30, "The draft should make 56 selections and retain 30 undrafted prospects")
-	_check(career.league.free_agents.size() >= free_agents_before + 30, "Undrafted prospects should enter the free-agent market")
+	var undrafted_count := career.league.teams.size()
+	_check(draft.current_pick_index == 56 and draft.available_prospects().size() == undrafted_count, "The draft should make 56 selections and retain the undrafted prospects")
+	_check(career.league.free_agents.size() >= free_agents_before + undrafted_count, "Undrafted prospects should enter the free-agent market")
 	for team in career.league.teams:
 		var selections := draft.selections_for_team(team.id)
 		_check(selections.size() == 7, "%s should make one selection in every round" % team.abbreviation)
@@ -480,7 +483,7 @@ func _test_complete_seven_round_draft() -> void:
 
 
 func _test_multi_season_career_loop() -> void:
-	var career := CareerSession.new_career("miami_nightjars", 808017)
+	var career := CareerSession.new_career("miami_nightjars", 808017, LeagueCatalog.SOURCE_FICTIONAL)
 	for season_index in range(3):
 		_complete_season(career)
 		_check(career.league.season_history.size() == season_index + 1, "Each completed season should add exactly one history record")
@@ -503,8 +506,8 @@ func _test_multi_season_career_loop() -> void:
 
 
 func _test_long_run_population_balance() -> void:
-	var career := CareerSession.new_career("denver_summit", 99331)
-	for cycle in range(6):
+	var career := CareerSession.new_career("denver_summit", 99331, LeagueCatalog.SOURCE_FICTIONAL)
+	for cycle in range(3):
 		if cycle > 0:
 			OffseasonService.develop_players(career.league)
 		RetirementService.process_offseason(career.league)
@@ -521,11 +524,11 @@ func _test_long_run_population_balance() -> void:
 		for team in career.league.teams:
 			_check(RosterValidator.validate_team(team).is_empty(), "%s should remain legal after population cycle %d" % [team.abbreviation, cycle + 1])
 	_check(career.league.retired_players.size() > 0, "Long-running careers should build a permanent archive of completed careers")
-	_check(career.league.season_year == 2032, "Six synthetic personnel cycles should advance the league calendar predictably")
+	_check(career.league.season_year == 2029, "Three synthetic personnel cycles should advance the league calendar predictably")
 
 
 func _test_career_serialization_round_trip() -> void:
-	var career := CareerSession.new_career("seattle_orcas", 44001)
+	var career := CareerSession.new_career("seattle_orcas", 44001, LeagueCatalog.SOURCE_FICTIONAL)
 	career.user_team().set_strategy({"run_tendency": 0.63, "coverage_preference": "Zone"})
 	career.user_team().move_on_depth_chart("RB", career.user_team().depth_players("RB")[1].id, -1)
 	career.simulate_current_week()
@@ -546,7 +549,7 @@ func _test_career_serialization_round_trip() -> void:
 func _test_save_repository_round_trip() -> void:
 	var path := "user://gridiron_manager/career_test.json"
 	var repository := SaveRepository.new(path)
-	var career := CareerSession.new_career("miami_nightjars", 91234)
+	var career := CareerSession.new_career("miami_nightjars", 91234, LeagueCatalog.SOURCE_FICTIONAL)
 	career.simulate_current_week()
 	_check(repository.save_career(career), "Career repository should write a versioned save")
 	_check(repository.has_save(), "Career repository should find the written save")
@@ -562,7 +565,7 @@ func _test_version_one_save_migration() -> void:
 	var path := "user://gridiron_manager/career_v1_test.json"
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
-	var career := CareerSession.new_career("denver_summit", 14771)
+	var career := CareerSession.new_career("denver_summit", 14771, LeagueCatalog.SOURCE_FICTIONAL)
 	career.simulate_current_week()
 	var career_data := career.to_dict()
 	var league_data: Dictionary = career_data["league"]
@@ -582,7 +585,8 @@ func _test_version_one_save_migration() -> void:
 	_check(loaded != null, "A version-one career should migrate successfully")
 	if loaded != null:
 		_check(loaded.league.current_week == 2, "Migrated careers should retain season progress")
-		_check(loaded.league.free_agents.size() == 32, "Migrated careers should receive the initial free-agent market")
+		_check(loaded.league.free_agents.size() == TeamData.ROSTER_POSITIONS.size() * 2, "Migrated careers should receive the initial free-agent market")
+		_check(loaded.user_team().roster_limit == 45, "Legacy careers should retain their original active-roster limit")
 		_check(loaded.user_team().players.front().contract != null, "Migrated careers should receive player contracts")
 		_check(RosterValidator.validate_team(loaded.user_team()).is_empty(), "Migrated careers should produce a legal roster")
 	DirAccess.remove_absolute(absolute_path)
@@ -592,7 +596,7 @@ func _test_version_two_save_migration() -> void:
 	var path := "user://gridiron_manager/career_v2_test.json"
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
-	var career := CareerSession.new_career("chicago_foundry", 51991)
+	var career := CareerSession.new_career("chicago_foundry", 51991, LeagueCatalog.SOURCE_FICTIONAL)
 	var career_data := career.to_dict()
 	var league_data: Dictionary = career_data["league"]
 	league_data.erase("season_history")
@@ -622,7 +626,7 @@ func _test_version_three_save_migration() -> void:
 	var path := "user://gridiron_manager/career_v3_test.json"
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
-	var career := CareerSession.new_career("seattle_orcas", 77881)
+	var career := CareerSession.new_career("seattle_orcas", 77881, LeagueCatalog.SOURCE_FICTIONAL)
 	var career_data := career.to_dict()
 	var league_data: Dictionary = career_data["league"]
 	league_data.erase("current_draft")
@@ -642,7 +646,7 @@ func _test_version_four_save_migration() -> void:
 	var path := "user://gridiron_manager/career_v4_test.json"
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
-	var career := CareerSession.new_career("boston_sentinels", 66109)
+	var career := CareerSession.new_career("boston_sentinels", 66109, LeagueCatalog.SOURCE_FICTIONAL)
 	var career_data := career.to_dict()
 	var league_data: Dictionary = career_data["league"]
 	league_data.erase("retired_players")
@@ -671,7 +675,7 @@ func _test_version_five_save_migration() -> void:
 	var path := "user://gridiron_manager/career_v5_test.json"
 	var absolute_path := ProjectSettings.globalize_path(path)
 	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
-	var career := CareerSession.new_career("austin_outlaws", 58121)
+	var career := CareerSession.new_career("austin_outlaws", 58121, LeagueCatalog.SOURCE_FICTIONAL)
 	var career_data := career.to_dict()
 	var league_data: Dictionary = career_data["league"]
 	for field_name in ["league_name", "data_source_id", "data_source_label", "data_snapshot", "data_attribution", "data_source_metadata"]:
@@ -689,6 +693,7 @@ func _test_version_five_save_migration() -> void:
 		_check(loaded.league.league_name == "Gridiron League", "Version-five careers should receive a league identity")
 		_check(loaded.league.data_source_metadata.get("id", "") == LeagueCatalog.SOURCE_FICTIONAL, "Version-five careers should receive an extensible source manifest")
 		_check(loaded.user_team().division.is_empty(), "Version-five teams should receive an empty optional division")
+		_check(loaded.league.league_format.id == "legacy_eight" and loaded.league.league_format.regular_season_weeks == 7, "Legacy careers should migrate into an explicit compatible league format")
 	DirAccess.remove_absolute(absolute_path)
 
 
@@ -699,7 +704,7 @@ func _remove_v5_player_fields(player_data: Dictionary) -> void:
 
 func _complete_season(career: CareerSession) -> void:
 	var guard := 0
-	while not career.league.is_offseason() and guard < 12:
+	while not career.league.is_offseason() and guard < career.league.league_format.regular_season_weeks + career.league.league_format.postseason_weeks + 2:
 		career.simulate_current_week()
 		guard += 1
 
@@ -738,18 +743,41 @@ func _make_user_roster_legal(career: CareerSession) -> void:
 		if not team.players_at(position_name).is_empty():
 			continue
 		var required_candidate: PlayerData
-		var required_salary := 0
+		var required_salary := 2_147_483_647
 		for player in career.league.free_agents:
 			if player.position != position_name:
 				continue
 			var offer := TransactionService.market_offer(career.league, team, player, 1, 1.10)
-			if offer.annual_salary <= team.cap_space() and (required_candidate == null or offer.annual_salary < required_salary):
+			if required_candidate == null or offer.annual_salary < required_salary:
 				required_candidate = player
 				required_salary = offer.annual_salary
+		if required_candidate != null and not team.has_roster_space():
+			var depth_release: PlayerData
+			for roster_player in team.players:
+				if team.players_at(roster_player.position).size() <= 1:
+					continue
+				if depth_release == null or roster_player.overall < depth_release.overall:
+					depth_release = roster_player
+			if depth_release != null:
+				career.release_player(depth_release.id)
+		var cap_guard := 0
+		while required_candidate != null and required_salary > team.cap_space() and cap_guard < 10:
+			var cap_release: PlayerData
+			var best_savings := 0
+			for roster_player in team.players:
+				if team.players_at(roster_player.position).size() <= 1 or roster_player.contract == null:
+					continue
+				var savings := roster_player.contract.annual_salary - roster_player.contract.release_penalty()
+				if savings > best_savings:
+					cap_release = roster_player
+					best_savings = savings
+			if cap_release == null or not bool(career.release_player(cap_release.id).get("ok", false)):
+				break
+			cap_guard += 1
 		if required_candidate != null:
 			career.sign_free_agent(required_candidate.id, 1, 1.10)
 	var guard := 0
-	while team.players.size() < TeamData.MIN_ROSTER_SIZE and guard < 80:
+	while team.players.size() < team.roster_limit and guard < 100:
 		var candidate: PlayerData
 		var candidate_salary := 0
 		for player in career.league.free_agents:

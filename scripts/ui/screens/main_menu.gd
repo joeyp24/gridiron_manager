@@ -45,7 +45,7 @@ func _build_interface() -> void:
 	hero_row.add_child(hero_copy)
 	hero_copy.add_child(UIFactory.label("BUILD THE STANDARD.", "DisplayLabel"))
 	var summary := UIFactory.wrapped_label(
-		"Take control of a club across a complete season. Set your depth chart, establish a tactical identity, navigate injuries, and chase the championship.",
+		"Take control of any of 32 clubs across a complete pro football season. Shape a 53-player roster, navigate injuries, and chase the championship.",
 		"BodyLabel"
 	)
 	summary.modulate = Color(1, 1, 1, 0.84)
@@ -78,11 +78,11 @@ func _build_interface() -> void:
 	var overview_column := UIFactory.vbox(14)
 	overview.add_child(overview_column)
 	overview_column.add_child(UIFactory.label("CAREER OVERVIEW", "EyebrowLabel"))
-	overview_column.add_child(_feature_row("02", "League databases", "Original clubs or an nflverse real-data preview"))
+	overview_column.add_child(_feature_row("32", "Professional clubs", "Every current team in one complete league"))
 	overview_column.add_child(UIFactory.divider())
-	overview_column.add_child(_feature_row("07", "Regular-season weeks", "Every club plays every opponent"))
+	overview_column.add_child(_feature_row("18", "Regular-season weeks", "The published 2026, 272-game schedule"))
 	overview_column.add_child(UIFactory.divider())
-	overview_column.add_child(_feature_row("41", "Players per roster", "Depth, energy, and availability"))
+	overview_column.add_child(_feature_row("53", "Players per roster", "Full depth, specialists, energy, and availability"))
 
 	var lower_grid := GridContainer.new()
 	lower_grid.columns = 4

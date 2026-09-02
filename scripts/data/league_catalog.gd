@@ -3,34 +3,30 @@ extends RefCounted
 
 const SOURCE_FICTIONAL := "fictional"
 const SOURCE_NFLVERSE_PREVIEW := "nflverse_2026_preview"
-const NFLVERSE_PREVIEW_PATH := "res://data/leagues/nflverse_2026_preview.json"
+const SOURCE_NFLVERSE_FULL := "nflverse_2026_full"
+const NFLVERSE_FULL_PATH := "res://data/leagues/nflverse_2026_full.json"
 
 
 static func source_descriptors() -> Array[Dictionary]:
 	return [
 		{
-			"id": SOURCE_FICTIONAL,
-			"label": "ORIGINAL LEAGUE",
-			"title": "Gridiron League",
-			"description": "Eight original clubs with fully generated players and long-term careers.",
-			"badge": "FICTIONAL",
-		},
-		{
-			"id": SOURCE_NFLVERSE_PREVIEW,
-			"label": "NFLVERSE PREVIEW",
-			"title": "2026 real-data preview",
-			"description": "Eight representative clubs built from nflverse rosters, recent stats, and contract data.",
+			"id": SOURCE_NFLVERSE_FULL,
+			"label": "NFLVERSE 2026",
+			"title": "32-team pro football league",
+			"description": "All 32 clubs, full 53-player rosters, an expanded veteran market, and the published 2026 schedule.",
 			"badge": "REAL DATA",
 		},
 	]
 
 
-static func create_bundle(source_id: String = SOURCE_FICTIONAL) -> Dictionary:
-	if source_id == SOURCE_NFLVERSE_PREVIEW:
-		return LeagueDataPackProvider.load_bundle(NFLVERSE_PREVIEW_PATH)
+static func create_bundle(source_id: String = SOURCE_NFLVERSE_FULL) -> Dictionary:
+	if source_id in [SOURCE_NFLVERSE_FULL, SOURCE_NFLVERSE_PREVIEW]:
+		return LeagueDataPackProvider.load_bundle(NFLVERSE_FULL_PATH)
 	return {
 		"teams": SampleLeague.create_teams(),
 		"free_agents": SampleLeague.create_free_agents(),
+		"schedule": [],
+		"league_format": LeagueFormatData.legacy_eight(),
 		"source": {
 			"id": SOURCE_FICTIONAL,
 			"label": "ORIGINAL LEAGUE",
