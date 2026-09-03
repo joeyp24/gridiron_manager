@@ -11,6 +11,7 @@ func _init() -> void:
 	_test_player_statistics_reconcile_with_team_totals()
 	_test_weekly_statistics_rollup_is_idempotent()
 	_test_player_statistics_preserve_team_splits()
+	_test_statistics_center_queries()
 	_test_strategy_cloning_is_isolated()
 	_test_full_rosters_and_depth_charts()
 	_test_league_data_pack_catalog()
@@ -173,6 +174,48 @@ func _test_player_statistics_preserve_team_splits() -> void:
 	_check((season_line.team_splits["club_b"] as StatLineData).value("passing_yards") == 318, "The new club split should receive only post-move production")
 
 
+func _test_statistics_center_queries() -> void:
+	var career := CareerSession.new_career("seattle_orcas", 620927, LeagueCatalog.SOURCE_FICTIONAL)
+	var league := career.league
+	var user_team := career.user_team()
+	var preseason_user_rows := StatisticsService.player_rows(
+		league,
+		league.season_year,
+		StatisticsService.PHASE_ALL,
+		user_team.id
+	)
+	_check(preseason_user_rows.size() == user_team.players.size(), "Statistics queries should retain zero-stat players on the active roster")
+	_check(preseason_user_rows.all(func(row: Dictionary): return (row.get("stats") as StatLineData).value("games_played") == 0), "Preseason player rows should begin at zero without disappearing")
+	var preseason_teams := StatisticsService.team_rows(league, league.season_year)
+	_check(preseason_teams.size() == league.teams.size(), "Team rankings should retain every club before games are played")
+
+	career.simulate_current_week()
+	var completed := StatisticsService.completed_games(league, league.season_year)
+	_check(completed.size() == 4, "The game-book query should expose every completed game in an eight-team week")
+	_check(StatisticsService.completed_games(league, league.season_year, StatisticsService.PHASE_POSTSEASON).is_empty(), "Postseason filters should exclude regular-season books")
+	_check(StatisticsService.completed_games(league, league.season_year, StatisticsService.PHASE_ALL, user_team.id).size() == 1, "A club filter should narrow the game-book slate to that club")
+
+	var quarterback_rows := StatisticsService.sorted_player_rows(
+		StatisticsService.player_rows(league, league.season_year),
+		"Passing"
+	)
+	_check(not quarterback_rows.is_empty(), "Passing leaders should return the league's quarterbacks")
+	if not quarterback_rows.is_empty():
+		var leader: Dictionary = quarterback_rows.front()
+		var trailer: Dictionary = quarterback_rows.back()
+		_check(StatisticsService.metric_value(leader.get("stats"), "passing_yards") >= StatisticsService.metric_value(trailer.get("stats"), "passing_yards"), "Passing leaders should default to descending yardage")
+		var ascending := StatisticsService.sort_player_rows(quarterback_rows, "passing_yards", false)
+		_check(StatisticsService.metric_value(ascending.front().get("stats"), "passing_yards") <= StatisticsService.metric_value(ascending.back().get("stats"), "passing_yards"), "Player statistic columns should support ascending resorting")
+		var appearances := StatisticsService.player_game_log(league, str(leader.get("player_id", "")), league.season_year)
+		_check(appearances.size() == 1, "A week-one participant should have one player game-log entry")
+		_check(StatisticsService.player_team_splits(league, str(leader.get("player_id", "")), league.season_year).size() == 1, "An untraded player should have one club split")
+
+	var offense_rows := StatisticsService.sorted_team_rows(StatisticsService.team_rows(league, league.season_year), "Offense")
+	_check(offense_rows.size() == league.teams.size(), "Team ranking queries should return the full league")
+	var points_ascending := StatisticsService.sort_team_rows(offense_rows, "points", false)
+	_check(StatisticsService.metric_value(points_ascending.front().get("stats"), "points") <= StatisticsService.metric_value(points_ascending.back().get("stats"), "points"), "Team statistic columns should support ascending resorting")
+
+
 func _test_strategy_cloning_is_isolated() -> void:
 	var original := SampleLeague.create_teams()[0]
 	var adjusted := original.clone_with_strategy({"run_tendency": 0.72, "aggression": 0.31})
@@ -242,6 +285,9 @@ func _test_nflverse_career_flow() -> void:
 	_check(career.league.data_source_metadata.get("license", "") == "CC-BY-4.0", "The career should retain the complete source manifest")
 	career.simulate_current_week()
 	_check(career.league.current_week == 2, "An nflverse league should complete and advance a simulated week")
+	_check(StatisticsService.completed_games(career.league, career.league.season_year).size() == 16, "Statistics queries should expose all 16 completed games in an NFL week")
+	_check(StatisticsService.team_rows(career.league, career.league.season_year).size() == 32, "Statistics rankings should retain all 32 NFL clubs")
+	_check(StatisticsService.player_rows(career.league, career.league.season_year, StatisticsService.PHASE_ALL, career.user_team().id).size() == 53, "Club-filtered statistics should retain the managed team's full 53-player roster")
 	var loaded := CareerSession.from_dict(JSON.parse_string(JSON.stringify(career.to_dict())))
 	_check(loaded.league.data_source_id == career.league.data_source_id, "Serialization should preserve real-data provenance")
 	_check(loaded.user_team().division == career.user_team().division, "Serialization should preserve source divisions")
