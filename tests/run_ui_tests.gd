@@ -107,8 +107,44 @@ func _run() -> void:
 	await process_frame
 	_check(statistics_screen._selected_view == "PLAYER PROFILE" and statistics_screen._selected_player_id == participant_id, "Box-score participants should link to their full player profile")
 	statistics_screen.queue_free()
+
+	var match_teams := SampleLeague.create_teams()
+	var play_simulator := FootballSimulator.new(match_teams[0], match_teams[1], 99021)
+	var coached_team: TeamData = match_teams[0]
+	play_simulator.state.possession_team_id = coached_team.id
+	play_simulator.state.opening_possession_team_id = coached_team.id
+	var match_scene: PackedScene = load("res://scenes/screens/match_center.tscn")
+	var match_screen := match_scene.instantiate()
+	match_screen.setup(play_simulator, coached_team, false)
+	root.add_child(match_screen)
+	await process_frame
+	_check(match_screen._call_sheet_card.visible and match_screen._recommendation_buttons.size() == 3, "Coach mode should show three recommended calls when the user has possession")
+	_check(match_screen._displayed_play_ids.size() == 3, "The recommended call sheet should render three selectable concepts")
+	_check(match_screen._next_button.visible and match_screen._drive_button.visible and match_screen._finish_button.visible, "Coach mode should preserve every existing simulation-forward control")
+	match_screen.size = Vector2(540, 900)
+	match_screen._apply_responsive_layout()
+	_check(match_screen._body_grid.columns == 1 and match_screen._play_grid.columns == 1, "The field, feed, and call sheet should stack on a narrow display")
+	match_screen.size = Vector2(1440, 900)
+	match_screen._apply_responsive_layout()
+	_check(match_screen._body_grid.columns == 2 and match_screen._play_grid.columns == 3, "The Match Center and call sheet should use their wide layouts when space permits")
+	var prior_play_count := play_simulator.state.play_count
+	match_screen._call_play("kneel")
+	await process_frame
+	_check(play_simulator.state.play_count == prior_play_count + 1 and play_simulator.state.play_history.back().call_id == "kneel", "Selecting a call-sheet play should resolve exactly that concept")
+	match_screen._select_play_category("PASS")
+	await process_frame
+	_check(match_screen._displayed_play_ids.size() == 14, "The full pass section should expose every passing concept")
+	var drive_number := play_simulator.state.drive_number
+	var drive_play_count := play_simulator.state.play_count
+	match_screen._simulate_drive()
+	await process_frame
+	_check(play_simulator.state.play_count > drive_play_count and (play_simulator.state.drive_number > drive_number or play_simulator.state.is_final), "The existing Simulate Drive control should still advance an automatically called series")
+	match_screen._finish_game()
+	await process_frame
+	_check(play_simulator.state.is_final, "The existing Finish Game control should still complete an automatically called game")
+	match_screen.queue_free()
 	if _failures.is_empty():
-		print("PASS: %d assertions across responsive career-creation, Trade Center, and Statistics Center checks." % _assertions)
+		print("PASS: %d assertions across responsive career-creation, Trade Center, Statistics Center, and playcalling checks." % _assertions)
 		quit(0)
 	else:
 		for failure in _failures:

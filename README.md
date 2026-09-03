@@ -31,6 +31,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - Weekly schedule, results, standings, club record, league leaders, injury report, and news feed
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
+- Optional offensive coach mode with 26 data-driven calls, situational recommendations, tempo control, AI defensive responses, and preserved play/drive/full-game simulation
 - Player-attributed passing, rushing, receiving, defensive, kicking, and punting game books with depth-chart participation and snap counts
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
@@ -58,7 +59,7 @@ godot --headless --path . --script res://tests/run_full_league_tests.gd
 godot --headless --path . --script res://tests/run_ui_tests.gd
 ```
 
-The checks cover deterministic matches and player generation; legal game state; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams and 1,696 rostered players; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive selection, Trade Center, and Statistics Center UI; serialization; and save migration.
+The checks cover deterministic automatic and manually called matches; playbook loading, call validation, tempo, repetition, and clock management; legal game state; player generation; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams and 1,696 rostered players; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive Match Center, Trade Center, and Statistics Center UI; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -90,9 +91,10 @@ The simulation and career layers do not depend on scenes or controls. The Statis
 
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 See [`docs/statistics.md`](docs/statistics.md) for the game-book schema, aggregation lifecycle, reconciliation rules, and UI extension points.
+See [`docs/playcalling.md`](docs/playcalling.md) for the call-sheet data model, simulation flow, matchup modifiers, and extension path.
 
 ## Current limitations
 
-This is a career and front-office foundation, not a complete franchise simulation. Official records and awards, practice squads, waivers, injured-reserve designations, AI-initiated trade offers, conditional picks, staff, facilities, broader finances, penalties, return-play attribution, and animated 11-on-11 presentation are intentionally deferred.
+This is a career and front-office foundation, not a complete franchise simulation. User-selected defensive calls, audibles, timeouts, official records and awards, practice squads, waivers, injured-reserve designations, AI-initiated trade offers, conditional picks, staff, facilities, broader finances, penalties, return-play attribution, and animated 11-on-11 presentation are intentionally deferred.
 
 The shipped league uses publicly distributed names and football data but excludes logos, wordmarks, headshots, and portrait URLs. The original eight-team league remains only as an internal compatibility fixture for older saves and tests; it is not offered for new careers. Gridiron Manager is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap.
