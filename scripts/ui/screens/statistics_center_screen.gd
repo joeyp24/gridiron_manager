@@ -32,6 +32,12 @@ var _phase_menu: OptionButton
 var _team_menu: OptionButton
 var _position_menu: OptionButton
 var _content_grid: GridContainer
+var _player_table_scroll: ScrollContainer
+var _player_table_body: VBoxContainer
+var _team_table_scroll: ScrollContainer
+var _team_table_body: VBoxContainer
+var _player_finder_card: PanelContainer
+var _player_picker_menu: OptionButton
 var _leader_rows: Array[Dictionary] = []
 var _team_rows: Array[Dictionary] = []
 var _game_books: Array[GameBookData] = []
@@ -211,6 +217,12 @@ func _rebuild_content() -> void:
 		return
 	_clear(_content_host)
 	_content_grid = null
+	_player_table_scroll = null
+	_player_table_body = null
+	_team_table_scroll = null
+	_team_table_body = null
+	_player_finder_card = null
+	_player_picker_menu = null
 	_category_buttons.clear()
 	match _selected_view:
 		VIEW_TEAMS:
@@ -398,20 +410,25 @@ func _player_table(rows: Array[Dictionary], category: Dictionary) -> PanelContai
 	var table_columns: Array = category.get("columns", [])
 	var visible_count := mini(rows.size(), 100)
 	column.add_child(UIFactory.label("%d PLAYER%s · TOP %d SHOWN" % [rows.size(), "" if rows.size() == 1 else "S", visible_count], "CaptionLabel"))
-	var table_scroll := ScrollContainer.new()
-	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	column.add_child(table_scroll)
-	var table := UIFactory.vbox(4)
-	table.custom_minimum_size.x = 400 + table_columns.size() * 78
-	table_scroll.add_child(table)
-	table.add_child(_player_table_row({}, table_columns, -1, true))
+	_player_table_scroll = ScrollContainer.new()
+	_player_table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_player_table_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_player_table_scroll.custom_minimum_size.y = float(visible_count + 1) * 48.0
+	_player_table_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_player_table_scroll)
+	_player_table_body = UIFactory.vbox(4)
+	_player_table_body.custom_minimum_size.x = 400 + table_columns.size() * 78
+	_player_table_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_player_table_scroll.add_child(_player_table_body)
+	_player_table_body.add_child(_player_table_row({}, table_columns, -1, true))
 	for index in range(visible_count):
-		table.add_child(_player_table_row(rows[index], table_columns, index, false))
+		_player_table_body.add_child(_player_table_row(rows[index], table_columns, index, false))
 	return card
 
 
 func _player_table_row(row: Dictionary, columns: Array, index: int, header: bool) -> PanelContainer:
 	var panel := UIFactory.card("RaisedCardPanel" if header else "InsetPanel")
+	panel.custom_minimum_size.y = 44
 	var line := UIFactory.hbox(4)
 	panel.add_child(line)
 	line.add_child(_table_label("RK" if header else str(index + 1), 42, "CaptionLabel", HORIZONTAL_ALIGNMENT_CENTER))
@@ -442,20 +459,25 @@ func _team_table(rows: Array[Dictionary], category: Dictionary) -> PanelContaine
 	card.add_child(column)
 	var table_columns: Array = category.get("columns", [])
 	column.add_child(UIFactory.label("%d CLUBS · %s · %d" % [rows.size(), _selected_phase.to_upper(), _selected_year], "CaptionLabel"))
-	var table_scroll := ScrollContainer.new()
-	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	column.add_child(table_scroll)
-	var table := UIFactory.vbox(4)
-	table.custom_minimum_size.x = 400 + table_columns.size() * 82
-	table_scroll.add_child(table)
-	table.add_child(_team_table_row({}, table_columns, -1, true))
+	_team_table_scroll = ScrollContainer.new()
+	_team_table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	_team_table_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_team_table_scroll.custom_minimum_size.y = float(rows.size() + 1) * 48.0
+	_team_table_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_team_table_scroll)
+	_team_table_body = UIFactory.vbox(4)
+	_team_table_body.custom_minimum_size.x = 400 + table_columns.size() * 82
+	_team_table_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_team_table_scroll.add_child(_team_table_body)
+	_team_table_body.add_child(_team_table_row({}, table_columns, -1, true))
 	for index in range(rows.size()):
-		table.add_child(_team_table_row(rows[index], table_columns, index, false))
+		_team_table_body.add_child(_team_table_row(rows[index], table_columns, index, false))
 	return card
 
 
 func _team_table_row(row: Dictionary, columns: Array, index: int, header: bool) -> PanelContainer:
 	var panel := UIFactory.card("RaisedCardPanel" if header else "InsetPanel")
+	panel.custom_minimum_size.y = 44
 	var line := UIFactory.hbox(4)
 	panel.add_child(line)
 	line.add_child(_table_label("RK" if header else str(index + 1), 42, "CaptionLabel", HORIZONTAL_ALIGNMENT_CENTER))
@@ -487,31 +509,36 @@ func _sort_button(title: String, stat_name: String, width: float, player_table: 
 
 
 func _player_picker(rows: Array[Dictionary], selected_player_id: String) -> PanelContainer:
-	var card := UIFactory.card("InsetPanel")
+	_player_finder_card = UIFactory.card("InsetPanel")
+	var column := UIFactory.vbox(6)
+	_player_finder_card.add_child(column)
 	var flow := HFlowContainer.new()
 	flow.add_theme_constant_override("h_separation", 10)
 	flow.add_theme_constant_override("v_separation", 8)
-	card.add_child(flow)
 	flow.add_child(UIFactory.label("PLAYER FINDER", "EyebrowLabel"))
 	var sorted_rows: Array[Dictionary] = rows.duplicate()
 	sorted_rows.sort_custom(func(a: Dictionary, b: Dictionary): return str(a.get("full_name", "")) < str(b.get("full_name", "")))
-	var picker := OptionButton.new()
-	picker.custom_minimum_size = Vector2(320, 44)
+	_player_picker_menu = OptionButton.new()
+	_player_picker_menu.custom_minimum_size = Vector2(320, 44)
+	_player_picker_menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var selected_index := 0
 	for index in range(sorted_rows.size()):
 		var player_row: Dictionary = sorted_rows[index]
-		picker.add_item("%s · %s · %s" % [player_row.get("full_name", "Unknown Player"), player_row.get("position", ""), player_row.get("team_label", "FA")])
-		picker.set_item_metadata(index, str(player_row.get("player_id", "")))
+		_player_picker_menu.add_item("%s · %s · %s" % [player_row.get("full_name", "Unknown Player"), player_row.get("position", ""), player_row.get("team_label", "FA")])
+		_player_picker_menu.set_item_metadata(index, str(player_row.get("player_id", "")))
 		if str(player_row.get("player_id", "")) == selected_player_id:
 			selected_index = index
-	if picker.item_count > 0:
-		picker.select(selected_index)
-	picker.disabled = picker.item_count == 0
-	picker.item_selected.connect(func(index: int): _open_player(str(picker.get_item_metadata(index))))
-	flow.add_child(picker)
+	if _player_picker_menu.item_count > 0:
+		_player_picker_menu.select(selected_index)
+	_player_picker_menu.disabled = _player_picker_menu.item_count == 0
+	_player_picker_menu.item_selected.connect(func(index: int): _open_player(str(_player_picker_menu.get_item_metadata(index))))
+	flow.add_child(_player_picker_menu)
+	column.add_child(flow)
 	var description := "Use the club and position filters above to narrow the directory."
-	flow.add_child(UIFactory.wrapped_label(description, "CaptionLabel"))
-	return card
+	var helper := UIFactory.wrapped_label(description, "CaptionLabel")
+	helper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(helper)
+	return _player_finder_card
 
 
 func _profile_summary_card(row: Dictionary) -> PanelContainer:
