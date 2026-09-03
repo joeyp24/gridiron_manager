@@ -26,6 +26,8 @@ var team_history: Array[String] = []
 var career_peak_overall := 50
 var seasons_as_free_agent := 0
 var generation_source := "Legacy"
+var jersey_number := 0
+var madden_ratings: PlayerRatingsData
 var energy := 100
 var is_active := true
 var injury_type := ""
@@ -58,6 +60,10 @@ func _init(
 	durability = player_durability
 	potential = player_potential if player_potential >= 0 else initial_potential(player_id, player_overall, player_age)
 	career_peak_overall = player_overall
+	madden_ratings = PlayerRatingsData.from_summary(
+		player_id, player_position, player_overall, player_speed, player_power,
+		player_technique, player_awareness, player_durability
+	)
 
 
 func rating_for(category: String) -> int:
@@ -169,6 +175,8 @@ func to_dict() -> Dictionary:
 		"career_peak_overall": career_peak_overall,
 		"seasons_as_free_agent": seasons_as_free_agent,
 		"generation_source": generation_source,
+		"jersey_number": jersey_number,
+		"madden_ratings": madden_ratings.to_dict() if madden_ratings != null else null,
 		"energy": energy,
 		"is_active": is_active,
 		"injury_type": injury_type,
@@ -210,6 +218,15 @@ static func from_dict(data: Dictionary) -> PlayerData:
 	player.career_peak_overall = int(data.get("career_peak_overall", player.overall))
 	player.seasons_as_free_agent = int(data.get("seasons_as_free_agent", 0))
 	player.generation_source = str(data.get("generation_source", "Legacy"))
+	player.jersey_number = int(data.get("jersey_number", 0))
+	var ratings_data = data.get("madden_ratings")
+	if ratings_data is Dictionary:
+		player.madden_ratings = PlayerRatingsData.from_dict(ratings_data)
+	else:
+		player.madden_ratings = PlayerRatingsData.from_summary(
+			player.id, player.position, player.overall, player.speed, player.power,
+			player.technique, player.awareness, player.durability, player.archetype
+		)
 	var contract_data = data.get("contract")
 	if contract_data is Dictionary:
 		player.contract = PlayerContract.from_dict(contract_data)

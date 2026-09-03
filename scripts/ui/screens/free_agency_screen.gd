@@ -3,6 +3,7 @@ extends Control
 signal back_requested
 signal front_office_requested
 signal market_changed
+signal player_profile_requested(player_id: String)
 
 const OFFER_MULTIPLIERS: Array[float] = [0.90, 1.00, 1.10]
 
@@ -31,6 +32,7 @@ var _back_button: Button
 var _market_guidance: Label
 var _toolbar_caption: Label
 var _list_caption: Label
+var _full_profile_button: Button
 
 
 func setup(career: CareerSession) -> void:
@@ -199,6 +201,9 @@ func _rebuild_detail() -> void:
 	heading.add_child(UIFactory.label(str(player.overall), "MetricLabel"))
 	_detail_host.add_child(heading)
 	_detail_host.add_child(UIFactory.wrapped_label("%s · %d lb · %s · %s personality · %d years pro" % [player.height_label(), player.weight_lbs, player.college, player.personality, player.experience_years], "MutedLabel"))
+	_full_profile_button = UIFactory.button("VIEW FULL PLAYER PROFILE", "SecondaryButton")
+	_full_profile_button.pressed.connect(func(): player_profile_requested.emit(player.id))
+	_detail_host.add_child(_full_profile_button)
 
 	var ratings := GridContainer.new()
 	ratings.columns = 2

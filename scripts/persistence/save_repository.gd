@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 9
+const SAVE_VERSION := 10
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -59,7 +59,9 @@ func load_career() -> CareerSession:
 		last_error = "This career save version is not supported."
 		return null
 	var migrated := _migrate(payload, version)
-	return CareerSession.from_dict(migrated.get("career", {}))
+	var career := CareerSession.from_dict(migrated.get("career", {}))
+	HybridRatingsCatalog.hydrate_league(career.league)
+	return career
 
 
 func _migrate(payload: Dictionary, version: int) -> Dictionary:
@@ -89,6 +91,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 8:
 		migrated = _migrate_v8_to_v9(migrated)
 		current_version = 9
+	if current_version == 9:
+		migrated = _migrate_v9_to_v10(migrated)
+		current_version = 10
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -275,4 +280,12 @@ func _migrate_v8_to_v9(payload: Dictionary) -> Dictionary:
 	career_data["league"] = league_data
 	payload["career"] = career_data
 	payload["save_version"] = 9
+	return payload
+
+
+func _migrate_v9_to_v10(payload: Dictionary) -> Dictionary:
+	# Detailed ratings are optional in older payloads. PlayerData creates a
+	# projection during deserialization and HybridRatingsCatalog replaces it with
+	# the real source snapshot whenever the permanent player ID is available.
+	payload["save_version"] = 10
 	return payload

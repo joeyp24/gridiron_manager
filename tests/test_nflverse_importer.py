@@ -45,14 +45,22 @@ class NflverseImporterTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertTrue(all(42 <= value <= 98 for value in first.values()))
 
-    def test_pack_retains_provenance_but_excludes_media_urls(self):
+    def test_pack_retains_provenance_and_hybrid_media_metadata(self):
         source = self.pack["source"]
         self.assertEqual("CC-BY-4.0", source["license"])
         self.assertEqual([2023, 2024, 2025], source["performance_seasons"])
         self.assertTrue(all(len(item["sha256"]) == 64 for item in source["files"]))
+        self.assertEqual("Madden NFL 26", source["ratings_source"])
+        self.assertEqual(2035, source["hybrid_player_count"])
+        self.assertTrue(all(team["logo_url"].startswith("https://") for team in self.pack["teams"]))
         for team in self.pack["teams"]:
             for player in team["players"]:
-                self.assertNotIn("http", json.dumps(player).lower())
+                ratings = player["madden_ratings"]
+                self.assertGreaterEqual(len(ratings["attributes"]), 50)
+                self.assertTrue(not ratings["portrait_url"] or ratings["portrait_url"].startswith("https://"))
+                core_player = dict(player)
+                core_player.pop("madden_ratings")
+                self.assertNotIn("http", json.dumps(core_player).lower())
 
     def test_schedule_and_current_team_names_are_complete(self):
         teams = {team["abbreviation"]: team for team in self.pack["teams"]}

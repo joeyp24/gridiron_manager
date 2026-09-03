@@ -13,6 +13,7 @@ const OFFSEASON_SCENE := preload("res://scenes/screens/offseason_screen.tscn")
 const DRAFT_CENTER_SCENE := preload("res://scenes/screens/draft_center_screen.tscn")
 const TRADE_CENTER_SCENE := preload("res://scenes/screens/trade_center_screen.tscn")
 const STATISTICS_CENTER_SCENE := preload("res://scenes/screens/statistics_center_screen.tscn")
+const PLAYERS_SCENE := preload("res://scenes/screens/players_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -26,6 +27,7 @@ var _top_margin: MarginContainer
 var _career_button: Button
 var _roster_button: Button
 var _statistics_button: Button
+var _players_button: Button
 var _strategy_button: Button
 var _office_button: Button
 var _match_button: Button
@@ -86,6 +88,10 @@ func _build_shell() -> void:
 	_roster_button.disabled = true
 	_roster_button.pressed.connect(_show_roster)
 	top_row.add_child(_roster_button)
+	_players_button = UIFactory.button("PLAYERS", "GhostButton")
+	_players_button.disabled = true
+	_players_button.pressed.connect(_show_players)
+	top_row.add_child(_players_button)
 	_statistics_button = UIFactory.button("STATS", "GhostButton")
 	_statistics_button.disabled = true
 	_statistics_button.pressed.connect(_show_statistics)
@@ -171,6 +177,7 @@ func _show_career_dashboard() -> void:
 	screen.free_agency_requested.connect(_show_free_agency)
 	screen.trade_center_requested.connect(_show_trade_center)
 	screen.statistics_requested.connect(_show_statistics)
+	screen.players_requested.connect(_show_players)
 	screen.offseason_requested.connect(_show_offseason)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
@@ -195,6 +202,18 @@ func _show_statistics(initial_player_id: String = "") -> void:
 	var screen := STATISTICS_CENTER_SCENE.instantiate()
 	screen.setup(_career, initial_player_id)
 	screen.back_requested.connect(_show_career_dashboard)
+	screen.player_profile_requested.connect(_show_players)
+	_mount(screen)
+
+
+func _show_players(initial_player_id: String = "") -> void:
+	if _career == null:
+		return
+	_section_label.text = "CAREER / PLAYERS"
+	var screen := PLAYERS_SCENE.instantiate()
+	screen.setup(_career, initial_player_id)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.statistics_requested.connect(_show_statistics)
 	_mount(screen)
 
 
@@ -231,6 +250,7 @@ func _show_free_agency() -> void:
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.market_changed.connect(_save_career)
+	screen.player_profile_requested.connect(_show_players)
 	_mount(screen)
 
 
@@ -362,6 +382,7 @@ func _start_rematch() -> void:
 func _enable_career_navigation() -> void:
 	_career_button.disabled = false
 	_roster_button.disabled = false
+	_players_button.disabled = false
 	_statistics_button.disabled = false
 	_strategy_button.disabled = false
 	_office_button.disabled = false
@@ -391,4 +412,5 @@ func _apply_responsive_shell() -> void:
 	_version_badge.visible = size.x >= 880
 	_strategy_button.visible = size.x >= 900
 	_statistics_button.visible = size.x >= 760
+	_players_button.visible = size.x >= 1080
 	_match_button.visible = not compact or not _match_button.disabled

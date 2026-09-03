@@ -257,6 +257,8 @@ static func _develop_player(league: LeagueState, player: PlayerData, team_id: St
 	player.overall = clampi(player.overall + overall_delta, 45, 99)
 	if overall_delta > 0:
 		player.overall = mini(player.overall, player.potential)
+	if player.madden_ratings != null:
+		player.madden_ratings.apply_overall_delta(player.overall - old_overall)
 	var changes := {}
 	for attribute_name in ["speed", "power", "technique", "awareness", "durability"]:
 		var old_value := int(player.get(attribute_name))

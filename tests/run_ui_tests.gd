@@ -71,6 +71,10 @@ func _run() -> void:
 	statistics_screen.size = Vector2(540, 900)
 	statistics_screen._apply_responsive_layout()
 	_check(statistics_screen._content_grid.columns == 1, "Player profile cards should stack on a narrow display")
+	var statistics_profile_routes: Array[String] = []
+	statistics_screen.player_profile_requested.connect(func(player_id: String): statistics_profile_routes.append(player_id))
+	statistics_screen._full_profile_button.pressed.emit()
+	_check(statistics_profile_routes == [quarterback.id], "A Statistics Center dossier should route to the selected full player profile")
 
 	statistics_screen._select_view("LEAGUE LEADERS")
 	await process_frame
@@ -108,6 +112,40 @@ func _run() -> void:
 	_check(statistics_screen._selected_view == "PLAYER PROFILE" and statistics_screen._selected_player_id == participant_id, "Box-score participants should link to their full player profile")
 	statistics_screen.queue_free()
 
+	var players_scene: PackedScene = load("res://scenes/screens/players_screen.tscn")
+	var players_screen := players_scene.instantiate()
+	players_screen.setup(stats_career, quarterback.id)
+	root.add_child(players_screen)
+	await process_frame
+	_check(players_screen._selected_player_id == quarterback.id, "The Player Database should open a directly requested player")
+	_check(players_screen._directory_list.get_child_count() == players_screen.MAX_DIRECTORY_ROWS, "The Player Database should cap rendered directory rows while retaining all searchable records")
+	_check(players_screen._result_label.text.begins_with("2035 RESULTS"), "The Player Database should report the complete hybrid player pool")
+	_check(players_screen._attribute_grid.get_child_count() == PlayerRatingsData.CATEGORY_FIELDS.size(), "The full player profile should render every Madden attribute category")
+	_check(players_screen._profile_host.get_child_count() >= 6, "The full player profile should include identity, contract, ratings, and attribute sections")
+	players_screen.size = Vector2(540, 900)
+	players_screen._apply_responsive_layout()
+	_check(players_screen._content_grid.columns == 1 and players_screen._attribute_grid.columns == 1, "Player directory and attributes should stack on a narrow display")
+	players_screen.size = Vector2(1440, 900)
+	players_screen._apply_responsive_layout()
+	_check(players_screen._content_grid.columns == 2 and players_screen._attribute_grid.columns == 2, "Player directory and attributes should use two columns on a wide display")
+	var player_statistics_routes: Array[String] = []
+	players_screen.statistics_requested.connect(func(player_id: String): player_statistics_routes.append(player_id))
+	players_screen._statistics_button.pressed.emit()
+	_check(player_statistics_routes == [quarterback.id], "A full player profile should route back to that player's statistics")
+	players_screen.queue_free()
+
+	var free_agency_scene: PackedScene = load("res://scenes/screens/free_agency_screen.tscn")
+	var free_agency_screen := free_agency_scene.instantiate()
+	free_agency_screen.setup(stats_career)
+	root.add_child(free_agency_screen)
+	await process_frame
+	var selected_free_agent_id: String = free_agency_screen._selected_player_id
+	var free_agent_profile_routes: Array[String] = []
+	free_agency_screen.player_profile_requested.connect(func(player_id: String): free_agent_profile_routes.append(player_id))
+	free_agency_screen._full_profile_button.pressed.emit()
+	_check(not selected_free_agent_id.is_empty() and free_agent_profile_routes == [selected_free_agent_id], "Free agency should route its selected player to the full attribute profile")
+	free_agency_screen.queue_free()
+
 	var match_teams := SampleLeague.create_teams()
 	var play_simulator := FootballSimulator.new(match_teams[0], match_teams[1], 99021)
 	var coached_team: TeamData = match_teams[0]
@@ -144,7 +182,7 @@ func _run() -> void:
 	_check(play_simulator.state.is_final, "The existing Finish Game control should still complete an automatically called game")
 	match_screen.queue_free()
 	if _failures.is_empty():
-		print("PASS: %d assertions across responsive career-creation, Trade Center, Statistics Center, and playcalling checks." % _assertions)
+		print("PASS: %d assertions across responsive career-creation, Trade Center, Statistics Center, Player Database, free agency, and playcalling checks." % _assertions)
 		quit(0)
 	else:
 		for failure in _failures:
