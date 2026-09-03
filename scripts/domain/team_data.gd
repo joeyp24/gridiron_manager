@@ -17,6 +17,7 @@ var conference: String
 var division := ""
 var primary_color: Color
 var secondary_color: Color
+var logo_url := ""
 var offense_rating: int
 var defense_rating: int
 var special_teams_rating: int
@@ -218,6 +219,7 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 	clone.salary_cap = salary_cap
 	clone.roster_limit = roster_limit
 	clone.dead_cap = dead_cap
+	clone.logo_url = logo_url
 	clone.set_strategy(strategy_dict())
 	clone.set_strategy(strategy)
 	return clone
@@ -267,6 +269,7 @@ func to_dict() -> Dictionary:
 		"division": division,
 		"primary_color": primary_color.to_html(false),
 		"secondary_color": secondary_color.to_html(false),
+		"logo_url": logo_url,
 		"offense_rating": offense_rating,
 		"defense_rating": defense_rating,
 		"special_teams_rating": special_teams_rating,
@@ -302,6 +305,7 @@ static func from_dict(data: Dictionary) -> TeamData:
 	team.salary_cap = int(data.get("salary_cap", DEFAULT_SALARY_CAP))
 	team.roster_limit = int(data.get("roster_limit", DEFAULT_ROSTER_LIMIT))
 	team.dead_cap = int(data.get("dead_cap", 0))
+	team.logo_url = str(data.get("logo_url", ""))
 	return team
 
 

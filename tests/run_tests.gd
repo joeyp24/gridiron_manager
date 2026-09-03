@@ -18,6 +18,7 @@ func _init() -> void:
 	_test_strategy_cloning_is_isolated()
 	_test_full_rosters_and_depth_charts()
 	_test_league_data_pack_catalog()
+	_test_hybrid_player_database()
 	_test_nflverse_career_flow()
 	_test_round_robin_schedule()
 	_test_weekly_health_progression()
@@ -47,6 +48,7 @@ func _init() -> void:
 	_test_version_five_save_migration()
 	_test_version_seven_trade_save_migration()
 	_test_version_eight_statistics_save_migration()
+	_test_version_nine_hybrid_ratings_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -346,13 +348,51 @@ func _test_league_data_pack_catalog() -> void:
 			_check(not team.depth_players(position_name).is_empty(), "%s nflverse roster is missing %s" % [team.abbreviation, position_name])
 		for player in team.players:
 			player_ids[player.id] = true
-			_check(player.generation_source == "nflverse 2026", "%s should retain nflverse provenance" % player.full_name)
-			_check(not JSON.stringify(player.to_dict()).contains("http"), "%s should not contain a portrait or external URL" % player.full_name)
-	_check(player_ids.size() == 1696, "Every rostered nflverse player should retain a unique GSIS ID")
+			_check(player.generation_source in ["NFLverse + Madden NFL 26", "Madden NFL 26"], "%s should retain hybrid source provenance" % player.full_name)
+	_check(player_ids.size() == 1696, "Every rostered hybrid player should retain a unique stable ID")
 	var first_team: TeamData = first_teams.front()
 	var second_team: TeamData = second_teams.front()
 	first_team.players.front().energy = 12
 	_check(second_team.players.front().energy == 100, "Data-pack loads should create isolated mutable career objects")
+
+
+func _test_hybrid_player_database() -> void:
+	var bundle := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	var teams: Array = bundle.get("teams", [])
+	var free_agents: Array = bundle.get("free_agents", [])
+	var all_players: Array[PlayerData] = []
+	var source_ids: Dictionary = {}
+	var complete_ratings := 0
+	var matching_overalls := 0
+	var valid_media_urls := 0
+	for team: TeamData in teams:
+		_check(team.logo_url.begins_with("https://"), "%s should retain its Madden team-mark reference" % team.abbreviation)
+		for player in team.players:
+			all_players.append(player)
+	for player: PlayerData in free_agents:
+		all_players.append(player)
+	for player in all_players:
+		if player.madden_ratings != null and player.madden_ratings.has_madden_source() and player.madden_ratings.attributes.size() >= 54:
+			complete_ratings += 1
+		if player.madden_ratings != null and player.overall == player.madden_ratings.source_overall:
+			matching_overalls += 1
+		if player.madden_ratings != null and (player.madden_ratings.portrait_url.is_empty() or player.madden_ratings.portrait_url.begins_with("https://")):
+			valid_media_urls += 1
+		if player.madden_ratings != null:
+			source_ids[player.madden_ratings.source_player_id] = true
+	_check(all_players.size() == 2035, "The hybrid database should include every player in the Madden ratings snapshot")
+	_check(free_agents.size() == 339, "Rated players outside the 32 active rosters should populate the expanded free-agent market")
+	_check(complete_ratings == all_players.size(), "Every hybrid player should retain the complete Madden attribute set")
+	_check(matching_overalls == all_players.size(), "Every initial hybrid overall should match its Madden source overall")
+	_check(valid_media_urls == all_players.size(), "Every remote player media reference should be empty or HTTPS")
+	_check(source_ids.size() == all_players.size(), "Every hybrid player should retain a unique Madden source ID")
+	var rated_player: PlayerData = all_players.front()
+	var serialized := PlayerData.from_dict(JSON.parse_string(JSON.stringify(rated_player.to_dict())))
+	_check(serialized.jersey_number == rated_player.jersey_number, "Player serialization should preserve jersey numbers")
+	_check(serialized.madden_ratings.attributes == rated_player.madden_ratings.attributes, "Player serialization should preserve every detailed Madden attribute")
+	_check(serialized.madden_ratings.portrait_url == rated_player.madden_ratings.portrait_url, "Player serialization should preserve remote portrait references")
+	var projected := PlayerData.from_dict({"id": "future_player", "full_name": "Future Player", "position": "QB", "overall": 71, "speed": 78, "power": 72, "technique": 70, "awareness": 66, "durability": 80, "age": 22})
+	_check(not projected.madden_ratings.has_madden_source() and projected.madden_ratings.attributes.size() >= 54, "Future generated players should receive a compatible projected attribute profile")
 
 
 func _test_nflverse_career_flow() -> void:
@@ -1030,6 +1070,41 @@ func _test_version_eight_statistics_save_migration() -> void:
 	if loaded != null:
 		_check(loaded.league.statistics.seasons.is_empty(), "Pre-statistics saves should start recording from their next completed game")
 		_check(loaded.league.statistics.career_player_totals.is_empty(), "Migration should not invent historical player totals")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_nine_hybrid_ratings_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v9_hybrid_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("nfl_buf", 90903, LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	var source_player: PlayerData = career.user_team().players.front()
+	var source_jersey := source_player.jersey_number
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	var team_data: Dictionary
+	for candidate: Dictionary in league_data["teams"]:
+		if str(candidate.get("id", "")) == career.user_team().id:
+			team_data = candidate
+			break
+	team_data.erase("logo_url")
+	for player_data: Dictionary in team_data.get("players", []):
+		if str(player_data.get("id", "")) == source_player.id:
+			player_data.erase("madden_ratings")
+			player_data.erase("jersey_number")
+			break
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 9, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-nine career should migrate into the hybrid ratings schema")
+	if loaded != null:
+		var restored := loaded.league.player_by_id(source_player.id)
+		_check(restored != null and restored.madden_ratings.has_madden_source(), "A migrated player with a stable source ID should recover the real Madden profile")
+		_check(restored != null and restored.madden_ratings.attributes.size() >= 54, "Hybrid save migration should restore the complete detailed attribute set")
+		_check(restored != null and restored.jersey_number == source_jersey, "Hybrid save migration should restore the source jersey number")
+		_check(loaded.user_team().logo_url.begins_with("https://"), "Hybrid save migration should restore the club's remote team-mark reference")
 	DirAccess.remove_absolute(absolute_path)
 
 

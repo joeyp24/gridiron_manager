@@ -9,6 +9,7 @@ signal front_office_requested
 signal free_agency_requested
 signal trade_center_requested
 signal statistics_requested
+signal players_requested
 signal offseason_requested
 signal save_requested
 
@@ -79,6 +80,9 @@ func _build_interface() -> void:
 	var statistics := UIFactory.button("STATISTICS", "SecondaryButton")
 	statistics.pressed.connect(func(): statistics_requested.emit())
 	actions.add_child(statistics)
+	var players := UIFactory.button("PLAYERS", "SecondaryButton")
+	players.pressed.connect(func(): players_requested.emit())
+	actions.add_child(players)
 	var save := UIFactory.button("SAVE CAREER", "SecondaryButton")
 	save.pressed.connect(func(): save_requested.emit())
 	actions.add_child(save)

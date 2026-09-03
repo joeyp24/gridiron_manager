@@ -11,10 +11,10 @@ static func source_descriptors() -> Array[Dictionary]:
 	return [
 		{
 			"id": SOURCE_NFLVERSE_FULL,
-			"label": "NFLVERSE 2026",
-			"title": "32-team pro football league",
-			"description": "All 32 clubs, full 53-player rosters, an expanded veteran market, and the published 2026 schedule.",
-			"badge": "REAL DATA",
+			"label": "NFLVERSE + MADDEN 26",
+			"title": "Hybrid 32-team player database",
+			"description": "All 32 clubs and the 2026 schedule from nflverse, joined to 2,035 Madden-rated players, complete attributes, contracts, and an expanded free-agent market.",
+			"badge": "HYBRID DATA",
 		},
 	]
 

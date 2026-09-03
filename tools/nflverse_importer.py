@@ -686,11 +686,20 @@ def validate_pack(pack: dict[str, Any]) -> None:
             counts[player["position"]] += 1
             if not 40 <= int(player["overall"]) <= 99:
                 raise ValueError(f"Illegal overall for {player_id}")
-            if "http" in json.dumps(player).lower():
+            core_player = dict(player)
+            ratings = core_player.pop("madden_ratings", None)
+            if "http" in json.dumps(core_player).lower():
                 raise ValueError(f"External image or data URL leaked into player {player_id}")
+            if ratings is not None:
+                if len(ratings.get("attributes", {})) < 50:
+                    raise ValueError(f"Incomplete Madden ratings for {player_id}")
+                for media_field in ("portrait_url", "source_team_logo_url"):
+                    media_url = str(ratings.get(media_field, ""))
+                    if media_url and not media_url.startswith("https://"):
+                        raise ValueError(f"Unsafe {media_field} for {player_id}")
         for position, expected in ROSTER_COUNTS.items():
-            if counts[position] != expected:
-                raise ValueError(f"{team.get('abbreviation')} has {counts[position]} {position}, expected {expected}")
+            if counts[position] < 1:
+                raise ValueError(f"{team.get('abbreviation')} has no {position} players")
         payroll = sum(player["contract"]["annual_salary"] for player in players if player.get("contract"))
         if payroll > int(team.get("salary_cap", 0)):
             raise ValueError(f"{team.get('abbreviation')} exceeds its salary cap")

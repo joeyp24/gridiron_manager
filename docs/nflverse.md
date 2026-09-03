@@ -1,23 +1,24 @@
 # nflverse full-league data pack
 
-Gridiron Manager ships an offline 32-team league generated from public nflverse data. The game does not call nflverse at runtime. A deterministic build tool converts published CSV assets into a compact, versioned JSON pack committed with the project, so career creation and simulation work without a connection and cannot change underneath an existing build.
+Gridiron Manager ships an offline 32-team league whose structure, schedule, contracts, and matched identities originate in public nflverse data. The game does not call nflverse at runtime. A deterministic build tool converts published CSV assets into a versioned JSON foundation; the hybrid ratings importer then joins it to the Madden NFL 26 player snapshot committed with the project. Career creation and simulation therefore remain available without a connection.
 
 ## Full-league scope
 
-The data pack uses an August 26, 2026 preseason roster snapshot and weighted regular-season performance from 2023 through 2025. It contains all 32 current clubs, eight four-team divisions, 53 selected players per club, and the published 272-game 2026 schedule. The game uses seven playoff qualifiers per conference: four division winners and three wild cards.
+The nflverse foundation uses an August 26, 2026 preseason roster snapshot and weighted regular-season performance from 2023 through 2025. The final hybrid pack contains all 32 current clubs, eight four-team divisions, 53 Madden-rated players per club, 339 rated free agents, and the published 272-game 2026 schedule. The game uses seven playoff qualifiers per conference: four division winners and three wild cards.
 
 The committed pack includes:
 
-- stable GSIS player IDs, names, positions, age, measurements, college, experience, and draft origin;
-- deterministic overall, potential, archetype, personality, and simulation attributes;
+- stable GSIS player IDs, names, biographical fields, and contracts for the 1,506 successfully matched source records;
+- the complete 2,035-player Madden snapshot with source overall, all detailed attributes, jersey numbers, archetypes, abilities, and remote media references;
+- deterministic game IDs and generated contracts for rated players without an nflverse identity match;
 - active-contract summaries joined through nflverse player and OverTheCap IDs, then normalized to the prototype salary cap;
 - team colors, conference/division identity, and stat-derived tactical tendencies;
-- 134 simulation-market players with up to eight at each internal position, drawn from source-roster depth outside the active squads and imported without contracts;
+- 339 rated free agents outside the active 53-player club rosters;
 - 272 regular-season matchups across 18 weeks, with 17 games and one bye for every club;
 - a serialized league-format manifest covering roster size, offseason limit, calendar, playoff field, schedule strategy, and template season;
 - source filenames, SHA-256 hashes, snapshot date, performance seasons, rating-model version, license, attribution, and limitations.
 
-Logos, wordmarks, headshots, portrait URLs, and every other external media URL are intentionally excluded.
+The pack stores HTTPS references for Madden headshots and team marks. These images are downloaded and cached on demand; they are not required for offline simulation. See [`hybrid_player_database.md`](hybrid_player_database.md) for the join and runtime model.
 
 ## Refreshing the snapshot
 
@@ -27,7 +28,7 @@ From the repository root, run:
 python tools/nflverse_importer.py
 ```
 
-The importer downloads missing assets into `tools/.cache/nflverse`, then writes `data/leagues/nflverse_2026_full.json`. Cache files are ignored by Git. For a controlled or disconnected rebuild, populate the cache and use:
+The importer downloads missing assets into `tools/.cache/nflverse`, then writes a pristine nflverse `data/leagues/nflverse_2026_full.json`. Cache files are ignored by Git. This overwrites the hybrid pack, so retain a copy as the input to `tools/hybrid_ratings_importer.py` and run the hybrid step before committing. For a controlled or disconnected nflverse rebuild, populate the cache and use:
 
 ```powershell
 python tools/nflverse_importer.py --offline
@@ -40,7 +41,7 @@ python tools/nflverse_importer.py --validate-only data/leagues/nflverse_2026_ful
 python -m unittest tests/test_nflverse_importer.py
 ```
 
-The importer rejects schema mismatches, duplicate IDs, missing positional depth, illegal rating bounds, roster-count drift, over-cap clubs, contracted free agents, player records containing external URLs, incomplete schedules, duplicate weekly appearances, and any club not playing exactly 17 games. Inputs are processed deterministically; identical source files and arguments produce identical ratings, rosters, market, and schedule.
+The validator rejects schema mismatches, duplicate IDs, missing positional depth, illegal rating bounds, roster-count drift, over-cap clubs, contracted free agents, unsafe or misplaced external URLs, incomplete schedules, duplicate weekly appearances, and any club not playing exactly 17 games. HTTPS media references are allowed only inside the detailed ratings record. Inputs are processed deterministically; identical source files and arguments produce identical ratings, rosters, market, and schedule.
 
 ## Rating model v1
 
@@ -54,4 +55,4 @@ The importer records exact hashes for the assets used from the [nflverse-data re
 
 The data pack declares the nflverse distribution license as [CC BY 4.0](https://github.com/nflverse/nflverse-data/blob/main/LICENSE.md) and carries attribution in the pack and every resulting career save. Review upstream dataset documentation and license notices before redistribution or commercial release, since individual upstream sources and trademark/publicity rights may impose additional obligations.
 
-Gridiron Manager is not an official NFL product and is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, or OverTheCap. Team and player names are used only as simulation data; official visual identities are not shipped.
+Gridiron Manager is not an official NFL product and is not affiliated with or endorsed by the NFL, its clubs, the NFLPA, nflverse, EA, Madden, or OverTheCap. Team/player names and remote visual references are used as simulation data; review the rights applicable to every source before redistribution.

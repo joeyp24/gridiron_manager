@@ -1,0 +1,3230 @@
+{
+  "ambiguous_resolution_count": 5,
+  "ambiguous_resolutions": [
+    {
+      "candidate_player_ids": [
+        "00-0036924",
+        "00-0036501"
+      ],
+      "full_name": "Michael Carter",
+      "ratings_player_id": "21568",
+      "selected_player_id": "00-0036924"
+    },
+    {
+      "candidate_player_ids": [
+        "00-0039137",
+        "00-0038978"
+      ],
+      "full_name": "Byron Young",
+      "ratings_player_id": "22938",
+      "selected_player_id": "00-0039137"
+    },
+    {
+      "candidate_player_ids": [
+        "00-0036322",
+        "00-0041075"
+      ],
+      "full_name": "Justin Jefferson",
+      "ratings_player_id": "20961",
+      "selected_player_id": "00-0036322"
+    },
+    {
+      "candidate_player_ids": [
+        "00-0035236",
+        "00-0039309"
+      ],
+      "full_name": "Byron Murphy Jr",
+      "ratings_player_id": "20599",
+      "selected_player_id": "00-0035236"
+    },
+    {
+      "candidate_player_ids": [
+        "00-0040201",
+        "00-0039433"
+      ],
+      "full_name": "Marcus Harris",
+      "ratings_player_id": "15311",
+      "selected_player_id": "00-0040201"
+    }
+  ],
+  "game_player_count": 2035,
+  "matched_player_count": 1506,
+  "ratings_player_count": 2035,
+  "unmatched": [
+    {
+      "full_name": "Kedon Slovis",
+      "position": "QB",
+      "ratings_player_id": "14618",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Zay Jones",
+      "position": "WR",
+      "ratings_player_id": "12564",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Jalen Brooks",
+      "position": "WR",
+      "ratings_player_id": "23118",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Pharaoh Brown",
+      "position": "TE",
+      "ratings_player_id": "12673",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Kelvin Beachum",
+      "position": "LT",
+      "ratings_player_id": "11673",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Will Hernandez",
+      "position": "RG",
+      "ratings_player_id": "13114",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Bilal Nichols",
+      "position": "DT",
+      "ratings_player_id": "13424",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "J.J. Russell",
+      "position": "LB",
+      "ratings_player_id": "22669",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Kei'Trel Clark",
+      "position": "CB",
+      "ratings_player_id": "23054",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Starling Thomas V",
+      "position": "CB",
+      "ratings_player_id": "23078",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Kitan Crawford",
+      "position": "S",
+      "ratings_player_id": "15343",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "KhaDarel Hodge",
+      "position": "WR",
+      "ratings_player_id": "13870",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "David Sills V",
+      "position": "WR",
+      "ratings_player_id": "20350",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Malik Heath",
+      "position": "WR",
+      "ratings_player_id": "23126",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Jack Nelson",
+      "position": "LT",
+      "ratings_player_id": "15145",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Leonard Floyd",
+      "position": "EDGE",
+      "ratings_player_id": "17554",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Josh Woods",
+      "position": "LB",
+      "ratings_player_id": "13893",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "DeMarcco Hellams",
+      "position": "S",
+      "ratings_player_id": "23050",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Jammie Robinson",
+      "position": "S",
+      "ratings_player_id": "23045",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Bralen Trice",
+      "position": "EDGE",
+      "ratings_player_id": "14754",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Cooper Rush",
+      "position": "QB",
+      "ratings_player_id": "12931",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "DeAndre Hopkins",
+      "position": "WR",
+      "ratings_player_id": "506",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Corey Bullock",
+      "position": "C",
+      "ratings_player_id": "4708",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Joe Noteboom",
+      "position": "RT",
+      "ratings_player_id": "13190",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Kyle Van Noy",
+      "position": "EDGE",
+      "ratings_player_id": "12387",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Brent Urban",
+      "position": "DT",
+      "ratings_player_id": "2109",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Jay Higgins IV",
+      "position": "LB",
+      "ratings_player_id": "15261",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Robert Longerbeam",
+      "position": "CB",
+      "ratings_player_id": "15324",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Bilhal Kone",
+      "position": "CB",
+      "ratings_player_id": "15304",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Brandin Cooks",
+      "position": "WR",
+      "ratings_player_id": "10847",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Joshua Palmer",
+      "position": "WR",
+      "ratings_player_id": "21615",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Curtis Samuel",
+      "position": "WR",
+      "ratings_player_id": "12579",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Gabe Davis",
+      "position": "WR",
+      "ratings_player_id": "20935",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Dawson Knox",
+      "position": "TE",
+      "ratings_player_id": "20523",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Joey Bosa",
+      "position": "EDGE",
+      "ratings_player_id": "17537",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "A.J. Epenesa",
+      "position": "EDGE",
+      "ratings_player_id": "20984",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "DaQuan Jones",
+      "position": "DT",
+      "ratings_player_id": "12336",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Larry Ogunjobi",
+      "position": "DT",
+      "ratings_player_id": "12604",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Matt Milano",
+      "position": "LB",
+      "ratings_player_id": "12781",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Shaq Thompson",
+      "position": "LB",
+      "ratings_player_id": "2562",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Baylon Spector",
+      "position": "LB",
+      "ratings_player_id": "22412",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Tre'Davious White",
+      "position": "CB",
+      "ratings_player_id": "12548",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Taylor Rapp",
+      "position": "S",
+      "ratings_player_id": "20622",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Jordan Poyer",
+      "position": "S",
+      "ratings_player_id": "12280",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Matt Prater",
+      "position": "K",
+      "ratings_player_id": "28229",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "David Moore",
+      "position": "WR",
+      "ratings_player_id": "12859",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Mitchell Evans",
+      "position": "TE",
+      "ratings_player_id": "15103",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Brady Christensen",
+      "position": "LT",
+      "ratings_player_id": "21532",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Nick Samac",
+      "position": "C",
+      "ratings_player_id": "1149",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Yosh Nijman",
+      "position": "RT",
+      "ratings_player_id": "20677",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "A'Shawn Robinson",
+      "position": "DT",
+      "ratings_player_id": "17562",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Krys Barnes",
+      "position": "LB",
+      "ratings_player_id": "21409",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Maema Njongmeta",
+      "position": "LB",
+      "ratings_player_id": "1272",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Damarri Mathis",
+      "position": "CB",
+      "ratings_player_id": "22236",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Trevis Gipson",
+      "position": "EDGE",
+      "ratings_player_id": "21130",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Case Keenum",
+      "position": "QB",
+      "ratings_player_id": "11222",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Drew Dalman",
+      "position": "C",
+      "ratings_player_id": "21547",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Ryan Bates",
+      "position": "C",
+      "ratings_player_id": "20538",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Joe Tryon-Shoyinka",
+      "position": "EDGE",
+      "ratings_player_id": "21519",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Shemar Turner",
+      "position": "DT",
+      "ratings_player_id": "15205",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Jalen Reeves-Maybin",
+      "position": "LB",
+      "ratings_player_id": "12832",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Nick McCloud",
+      "position": "CB",
+      "ratings_player_id": "21992",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Zah Frazier",
+      "position": "CB",
+      "ratings_player_id": "15301",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Ke'Shawn Williams",
+      "position": "WR",
+      "ratings_player_id": "4754",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Matt Lee",
+      "position": "C",
+      "ratings_player_id": "1161",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "T.J. Slaton",
+      "position": "DT",
+      "ratings_player_id": "21889",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Jordan Jefferson",
+      "position": "DT",
+      "ratings_player_id": "14881",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Brian Asamoah II",
+      "position": "LB",
+      "ratings_player_id": "22190",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Dax Hill",
+      "position": "CB",
+      "ratings_player_id": "22263",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Cam Sample",
+      "position": "EDGE",
+      "ratings_player_id": "21687",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Isaiah Foskey",
+      "position": "EDGE",
+      "ratings_player_id": "22917",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "DeAndre Carter",
+      "position": "WR",
+      "ratings_player_id": "13859",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Cam Robinson",
+      "position": "LT",
+      "ratings_player_id": "12557",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Cornelius Lucas III",
+      "position": "LT",
+      "ratings_player_id": "2308",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Joel Bitonio",
+      "position": "LG",
+      "ratings_player_id": "10831",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Ethan Pocic",
+      "position": "C",
+      "ratings_player_id": "12644",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Jack Conklin",
+      "position": "RT",
+      "ratings_player_id": "17663",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Isaiah McGuire",
+      "position": "EDGE",
+      "ratings_player_id": "22971",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Cameron Thomas",
+      "position": "EDGE",
+      "ratings_player_id": "22312",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Shelby Harris",
+      "position": "DT",
+      "ratings_player_id": "2099",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Jerome Baker",
+      "position": "LB",
+      "ratings_player_id": "13200",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Sam Webb",
+      "position": "CB",
+      "ratings_player_id": "22271",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Rayshawn Jenkins",
+      "position": "S",
+      "ratings_player_id": "12690",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Chris Edmonds",
+      "position": "S",
+      "ratings_player_id": "4762",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Miles Sanders",
+      "position": "RB",
+      "ratings_player_id": "20492",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Jaydon Blue",
+      "position": "RB",
+      "ratings_player_id": "15051",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Jonathan Mingo",
+      "position": "WR",
+      "ratings_player_id": "22770",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Jadeveon Clowney",
+      "position": "EDGE",
+      "ratings_player_id": "10845",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Logan Wilson",
+      "position": "LB",
+      "ratings_player_id": "21148",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Kenneth Murray Jr",
+      "position": "LB",
+      "ratings_player_id": "20998",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Caelen Carson",
+      "position": "CB",
+      "ratings_player_id": "14945",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Trikweze Bridges",
+      "position": "CB",
+      "ratings_player_id": "16155",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "C.J. Goodwin",
+      "position": "CB",
+      "ratings_player_id": "2700",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Donovan Wilson",
+      "position": "S",
+      "ratings_player_id": "20713",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Alex Forsyth",
+      "position": "C",
+      "ratings_player_id": "22875",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Karene Reid",
+      "position": "LB",
+      "ratings_player_id": "15259",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Patrick Surtain II",
+      "position": "CB",
+      "ratings_player_id": "21764",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "JL Skinner",
+      "position": "S",
+      "ratings_player_id": "23034",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Sam Mustipher",
+      "position": "LG",
+      "ratings_player_id": "20833",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Sai'vion Jones",
+      "position": "DT",
+      "ratings_player_id": "15181",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Dominic Lovett",
+      "position": "WR",
+      "ratings_player_id": "15060",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Shane Zylstra",
+      "position": "TE",
+      "ratings_player_id": "22633",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Taylor Decker",
+      "position": "LT",
+      "ratings_player_id": "17665",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Graham Glasgow",
+      "position": "C",
+      "ratings_player_id": "17700",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Michael Niese",
+      "position": "RG",
+      "ratings_player_id": "1336",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Josh Paschal",
+      "position": "EDGE",
+      "ratings_player_id": "22151",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Marcus Davenport",
+      "position": "EDGE",
+      "ratings_player_id": "13102",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Zach Cunningham",
+      "position": "LB",
+      "ratings_player_id": "12581",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Arthur Maulet",
+      "position": "CB",
+      "ratings_player_id": "12897",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Jalen Mills",
+      "position": "S",
+      "ratings_player_id": "17682",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Desmond Ridder",
+      "position": "QB",
+      "ratings_player_id": "22047",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Donovan Jennings",
+      "position": "RG",
+      "ratings_player_id": "14749",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Colby Wooden",
+      "position": "DT",
+      "ratings_player_id": "22929",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Jordon Riley",
+      "position": "DT",
+      "ratings_player_id": "23280",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Kristian Welch",
+      "position": "LB",
+      "ratings_player_id": "21434",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Trevon Diggs",
+      "position": "CB",
+      "ratings_player_id": "21260",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Kamal Hadden",
+      "position": "CB",
+      "ratings_player_id": "14961",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Brandon McManus",
+      "position": "K",
+      "ratings_player_id": "2278",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Matt Orzech",
+      "position": "LS",
+      "ratings_player_id": "20842",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Joe Mixon",
+      "position": "RB",
+      "ratings_player_id": "12625",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Nick Chubb",
+      "position": "RB",
+      "ratings_player_id": "13129",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Xavier Hutchinson",
+      "position": "WR",
+      "ratings_player_id": "22769",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Denico Autry",
+      "position": "EDGE",
+      "ratings_player_id": "2366",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Derek Barnett",
+      "position": "EDGE",
+      "ratings_player_id": "12530",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Folorunso Fatukasi",
+      "position": "DT",
+      "ratings_player_id": "13294",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Tim Settle Jr",
+      "position": "DT",
+      "ratings_player_id": "13123",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Jamal Hill",
+      "position": "LB",
+      "ratings_player_id": "1104",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Jimmie Ward",
+      "position": "S",
+      "ratings_player_id": "12389",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Mario Edwards Jr",
+      "position": "DT",
+      "ratings_player_id": "2537",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Philip Rivers",
+      "position": "QB",
+      "ratings_player_id": "17273",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Salvon Ahmed",
+      "position": "RB",
+      "ratings_player_id": "20930",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Mo Alie-Cox",
+      "position": "TE",
+      "ratings_player_id": "13872",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Drew Ogletree",
+      "position": "TE",
+      "ratings_player_id": "22482",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Dalton Tucker",
+      "position": "LG",
+      "ratings_player_id": "1338",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Chris Wormley",
+      "position": "DT",
+      "ratings_player_id": "12586",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Germaine Pratt",
+      "position": "LB",
+      "ratings_player_id": "20424",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Jacob Phillips",
+      "position": "LB",
+      "ratings_player_id": "20997",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "John Bullock",
+      "position": "LB",
+      "ratings_player_id": "4734",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Kenny Moore II",
+      "position": "CB",
+      "ratings_player_id": "12965",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Jaylon Jones",
+      "position": "CB",
+      "ratings_player_id": "23032",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Justin Walley",
+      "position": "CB",
+      "ratings_player_id": "15320",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Rodney Thomas II",
+      "position": "S",
+      "ratings_player_id": "22492",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "George Odum",
+      "position": "S",
+      "ratings_player_id": "13713",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "LeQuint Allen",
+      "position": "RB",
+      "ratings_player_id": "15052",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Johnny Mundt",
+      "position": "TE",
+      "ratings_player_id": "13038",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Jonah Monheim",
+      "position": "C",
+      "ratings_player_id": "15155",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Emmanuel Ogbah",
+      "position": "EDGE",
+      "ratings_player_id": "17686",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Dawuane Smoot",
+      "position": "EDGE",
+      "ratings_player_id": "12596",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Austin Johnson",
+      "position": "DT",
+      "ratings_player_id": "17742",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Foyesade Oluokun",
+      "position": "LB",
+      "ratings_player_id": "13468",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Danny Striggow",
+      "position": "EDGE",
+      "ratings_player_id": "4673",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "Chris Oladokun",
+      "position": "QB",
+      "ratings_player_id": "22480",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Kareem Hunt",
+      "position": "RB",
+      "ratings_player_id": "12633",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Jalen Royals",
+      "position": "WR",
+      "ratings_player_id": "15056",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Mike Danna",
+      "position": "EDGE",
+      "ratings_player_id": "21231",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Charles Omenihu",
+      "position": "EDGE",
+      "ratings_player_id": "20403",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Derrick Nnadi",
+      "position": "DT",
+      "ratings_player_id": "13136",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Mike Pennel",
+      "position": "DT",
+      "ratings_player_id": "2276",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Nazeeh Johnson",
+      "position": "CB",
+      "ratings_player_id": "22495",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Mike Edwards",
+      "position": "S",
+      "ratings_player_id": "20457",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Raheem Mostert",
+      "position": "RB",
+      "ratings_player_id": "2832",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Zamir White",
+      "position": "RB",
+      "ratings_player_id": "22340",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Dylan Laube",
+      "position": "RB",
+      "ratings_player_id": "1122",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Tyler Lockett",
+      "position": "WR",
+      "ratings_player_id": "2448",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Dont'e Thornton Jr",
+      "position": "WR",
+      "ratings_player_id": "15065",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Alex Bachman",
+      "position": "WR",
+      "ratings_player_id": "20806",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Will Putnam",
+      "position": "C",
+      "ratings_player_id": "4707",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Alex Cappa",
+      "position": "RG",
+      "ratings_player_id": "13297",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Charles Snowden",
+      "position": "EDGE",
+      "ratings_player_id": "21477",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Elandon Roberts",
+      "position": "LB",
+      "ratings_player_id": "17854",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Devin White",
+      "position": "LB",
+      "ratings_player_id": "20581",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Jamal Adams",
+      "position": "LB",
+      "ratings_player_id": "12524",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Kyu Blu Kelly",
+      "position": "CB",
+      "ratings_player_id": "23040",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Chigozie Anusiem",
+      "position": "CB",
+      "ratings_player_id": "1429",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Daniel Carlson",
+      "position": "K",
+      "ratings_player_id": "13382",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Jacob Bobenmoyer",
+      "position": "LS",
+      "ratings_player_id": "24435",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Najee Harris",
+      "position": "RB",
+      "ratings_player_id": "21829",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Scott Matlock",
+      "position": "RB",
+      "ratings_player_id": "23268",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Keenan Allen",
+      "position": "WR",
+      "ratings_player_id": "505",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Will Dissly",
+      "position": "TE",
+      "ratings_player_id": "13392",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Bradley Bozeman",
+      "position": "C",
+      "ratings_player_id": "13133",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Andre James",
+      "position": "C",
+      "ratings_player_id": "20672",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Mekhi Becton Sr",
+      "position": "RG",
+      "ratings_player_id": "20969",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Da'Shawn Hand",
+      "position": "DT",
+      "ratings_player_id": "13241",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Hassan Haskins",
+      "position": "RB",
+      "ratings_player_id": "22053",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Kyle Kennard",
+      "position": "EDGE",
+      "ratings_player_id": "15183",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Jimmy Garoppolo",
+      "position": "QB",
+      "ratings_player_id": "10866",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "D.J. Humphries",
+      "position": "LT",
+      "ratings_player_id": "2500",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Justin Dedich",
+      "position": "LG",
+      "ratings_player_id": "22864",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Rob Havenstein",
+      "position": "RT",
+      "ratings_player_id": "2512",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Nick Hampton",
+      "position": "EDGE",
+      "ratings_player_id": "22979",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Troy Reeder",
+      "position": "LB",
+      "ratings_player_id": "20838",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Darious Williams",
+      "position": "CB",
+      "ratings_player_id": "13178",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Kamren Curl",
+      "position": "S",
+      "ratings_player_id": "21012",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Jake McQuaide",
+      "position": "LS",
+      "ratings_player_id": "10983",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Davis Allen",
+      "position": "TE",
+      "ratings_player_id": "22840",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Alexander Mattison",
+      "position": "RB",
+      "ratings_player_id": "20641",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Alec Ingold",
+      "position": "RB",
+      "ratings_player_id": "20390",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Tyreek Hill",
+      "position": "WR",
+      "ratings_player_id": "17838",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Dee Eskridge",
+      "position": "WR",
+      "ratings_player_id": "21614",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Darren Waller",
+      "position": "TE",
+      "ratings_player_id": "2457",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Kendall Lamm",
+      "position": "LT",
+      "ratings_player_id": "2807",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Liam Eichenberg",
+      "position": "LG",
+      "ratings_player_id": "21650",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Aaron Brewer",
+      "position": "C",
+      "ratings_player_id": "21365",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "James Daniels",
+      "position": "RG",
+      "ratings_player_id": "13137",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Cameron Goode",
+      "position": "EDGE",
+      "ratings_player_id": "21898",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Quinton Bell",
+      "position": "EDGE",
+      "ratings_player_id": "20743",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Benito Jones",
+      "position": "DT",
+      "ratings_player_id": "21132",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Jordan Colbert",
+      "position": "LB",
+      "ratings_player_id": "4748",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Jackson Woodard",
+      "position": "LB",
+      "ratings_player_id": "15251",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Rasul Douglas",
+      "position": "CB",
+      "ratings_player_id": "12609",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "JuJu Brents",
+      "position": "CB",
+      "ratings_player_id": "23062",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Artie Burns",
+      "position": "CB",
+      "ratings_player_id": "17657",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Ifeatu Melifonwu",
+      "position": "S",
+      "ratings_player_id": "21471",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "John Wolford",
+      "position": "QB",
+      "ratings_player_id": "21367",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Rondale Moore",
+      "position": "WR",
+      "ratings_player_id": "21600",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Myles Price",
+      "position": "WR",
+      "ratings_player_id": "4657",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Gavin Bartholomew",
+      "position": "TE",
+      "ratings_player_id": "15113",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Joe Huber",
+      "position": "LG",
+      "ratings_player_id": "15135",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Ryan Kelly",
+      "position": "C",
+      "ratings_player_id": "17679",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Bo Richter",
+      "position": "EDGE",
+      "ratings_player_id": "28422",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Fabian Moreau",
+      "position": "CB",
+      "ratings_player_id": "12724",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Jeff Okudah",
+      "position": "CB",
+      "ratings_player_id": "21010",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Harrison Smith",
+      "position": "S",
+      "ratings_player_id": "11440",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Joshua Dobbs",
+      "position": "QB",
+      "ratings_player_id": "12708",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Antonio Gibson",
+      "position": "RB",
+      "ratings_player_id": "21048",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Jack Westover",
+      "position": "RB",
+      "ratings_player_id": "4728",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Stefon Diggs",
+      "position": "WR",
+      "ratings_player_id": "2454",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "DeMario Douglas",
+      "position": "WR",
+      "ratings_player_id": "22797",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "CJ Dippre",
+      "position": "TE",
+      "ratings_player_id": "15111",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Thayer Munford Jr",
+      "position": "RT",
+      "ratings_player_id": "21844",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Bradyn Swinson",
+      "position": "EDGE",
+      "ratings_player_id": "15173",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Joshua Farmer",
+      "position": "DT",
+      "ratings_player_id": "15240",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Jahlani Tavai",
+      "position": "LB",
+      "ratings_player_id": "20592",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Kobee Minor",
+      "position": "CB",
+      "ratings_player_id": "16154",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Andres Borregales",
+      "position": "K",
+      "ratings_player_id": "15364",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Jaquelin Roy",
+      "position": "DT",
+      "ratings_player_id": "22923",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Devin Neal",
+      "position": "RB",
+      "ratings_player_id": "14835",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Audric Estime",
+      "position": "RB",
+      "ratings_player_id": "14625",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Ja'Lynn Polk",
+      "position": "WR",
+      "ratings_player_id": "14655",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Mason Tipton",
+      "position": "WR",
+      "ratings_player_id": "1356",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Dante Pettis",
+      "position": "WR",
+      "ratings_player_id": "13222",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Taysom Hill",
+      "position": "TE",
+      "ratings_player_id": "12922",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Cameron Jordan",
+      "position": "EDGE",
+      "ratings_player_id": "10697",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Ugo Amadi",
+      "position": "CB",
+      "ratings_player_id": "20623",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Michael Davis",
+      "position": "CB",
+      "ratings_player_id": "13007",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Jonah Williams",
+      "position": "DT",
+      "ratings_player_id": "21996",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Russell Wilson",
+      "position": "QB",
+      "ratings_player_id": "11217",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Eric Gray",
+      "position": "RB",
+      "ratings_player_id": "22736",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Isaiah Hodgins",
+      "position": "WR",
+      "ratings_player_id": "20937",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Jalin Hyatt",
+      "position": "WR",
+      "ratings_player_id": "22696",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Bryce Ford-Wheaton",
+      "position": "WR",
+      "ratings_player_id": "22795",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Greg Van Roten",
+      "position": "RG",
+      "ratings_player_id": "11842",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Roy Robertson-Harris",
+      "position": "DT",
+      "ratings_player_id": "17897",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Bobby Okereke",
+      "position": "LB",
+      "ratings_player_id": "20425",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Neville Hewitt",
+      "position": "LB",
+      "ratings_player_id": "2816",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Chris Board",
+      "position": "LB",
+      "ratings_player_id": "13850",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Dru Phillips",
+      "position": "CB",
+      "ratings_player_id": "14968",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Rico Payton",
+      "position": "CB",
+      "ratings_player_id": "1362",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Beau Brade",
+      "position": "S",
+      "ratings_player_id": "14952",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Graham Gano",
+      "position": "K",
+      "ratings_player_id": "28887",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Jamie Gillan",
+      "position": "P",
+      "ratings_player_id": "20794",
+      "team": "New York Giants"
+    },
+    {
+      "full_name": "Brady Cook",
+      "position": "QB",
+      "ratings_player_id": "14784",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Khalil Herbert",
+      "position": "RB",
+      "ratings_player_id": "21628",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Josh Reynolds",
+      "position": "WR",
+      "ratings_player_id": "12662",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "John Metchie III",
+      "position": "WR",
+      "ratings_player_id": "22361",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Jelani Woods",
+      "position": "TE",
+      "ratings_player_id": "22351",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Olu Fashanu",
+      "position": "LT",
+      "ratings_player_id": "14695",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Xavier Newman",
+      "position": "RG",
+      "ratings_player_id": "22429",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Tyler Baron",
+      "position": "EDGE",
+      "ratings_player_id": "15185",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Mazi Smith",
+      "position": "DT",
+      "ratings_player_id": "22931",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Khalen Saunders",
+      "position": "DT",
+      "ratings_player_id": "20409",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Cam Jones",
+      "position": "LB",
+      "ratings_player_id": "23020",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Kris Boyd",
+      "position": "CB",
+      "ratings_player_id": "20449",
+      "team": "New York Jets"
+    },
+    {
+      "full_name": "Will Shipley",
+      "position": "RB",
+      "ratings_player_id": "14630",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Johnny Wilson",
+      "position": "WR",
+      "ratings_player_id": "14658",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Willie Lampkin IV",
+      "position": "RG",
+      "ratings_player_id": "4639",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Brandon Graham",
+      "position": "EDGE",
+      "ratings_player_id": "9837",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Ty Robinson",
+      "position": "DT",
+      "ratings_player_id": "15209",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Jaire Alexander",
+      "position": "CB",
+      "ratings_player_id": "13109",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Adoree' Jackson",
+      "position": "CB",
+      "ratings_player_id": "12563",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Charley Hughlett",
+      "position": "LS",
+      "ratings_player_id": "2769",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Skylar Thompson",
+      "position": "QB",
+      "ratings_player_id": "22385",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Jonnu Smith",
+      "position": "TE",
+      "ratings_player_id": "12700",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Andrus Peat",
+      "position": "LT",
+      "ratings_player_id": "2498",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Calvin Anderson",
+      "position": "RT",
+      "ratings_player_id": "20365",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Donte Kent",
+      "position": "CB",
+      "ratings_player_id": "14995",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Cory Trice Jr",
+      "position": "CB",
+      "ratings_player_id": "23149",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Chuck Clark",
+      "position": "S",
+      "ratings_player_id": "12785",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Jabrill Peppers",
+      "position": "S",
+      "ratings_player_id": "12531",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Daniel Ekuale",
+      "position": "DT",
+      "ratings_player_id": "13552",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Kyle Juszczyk",
+      "position": "RB",
+      "ratings_player_id": "1599",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Brandon Aiyuk",
+      "position": "WR",
+      "ratings_player_id": "21069",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Connor Colby",
+      "position": "LG",
+      "ratings_player_id": "15158",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Bryce Huff",
+      "position": "EDGE",
+      "ratings_player_id": "21239",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Yetur Gross-Matos",
+      "position": "EDGE",
+      "ratings_player_id": "20995",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Kevin Givens",
+      "position": "DT",
+      "ratings_player_id": "20682",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Eric Kendricks",
+      "position": "LB",
+      "ratings_player_id": "2559",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Darrell Luter Jr",
+      "position": "CB",
+      "ratings_player_id": "23086",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Thomas Morstead",
+      "position": "P",
+      "ratings_player_id": "20305",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Clelin Ferrell",
+      "position": "EDGE",
+      "ratings_player_id": "20567",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Robbie Ouzts",
+      "position": "RB",
+      "ratings_player_id": "15109",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "George Holani",
+      "position": "RB",
+      "ratings_player_id": "9718",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Elijah Arroyo",
+      "position": "TE",
+      "ratings_player_id": "15119",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Amari Kight",
+      "position": "LT",
+      "ratings_player_id": "4700",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Jalen Sundell",
+      "position": "C",
+      "ratings_player_id": "1372",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Olusegun Oluwatimi",
+      "position": "C",
+      "ratings_player_id": "22886",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Rylie Mills",
+      "position": "DT",
+      "ratings_player_id": "15215",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Tariq Woolen",
+      "position": "CB",
+      "ratings_player_id": "22247",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Mike Morris",
+      "position": "DT",
+      "ratings_player_id": "22976",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Sterling Shepard",
+      "position": "WR",
+      "ratings_player_id": "17592",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Ko Kieft",
+      "position": "TE",
+      "ratings_player_id": "22483",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Michael Jordan",
+      "position": "LG",
+      "ratings_player_id": "20541",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Haason Reddick",
+      "position": "EDGE",
+      "ratings_player_id": "12560",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Greg Gaines",
+      "position": "DT",
+      "ratings_player_id": "20408",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Lavonte David",
+      "position": "LB",
+      "ratings_player_id": "11306",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Anthony Walker Jr",
+      "position": "LB",
+      "ratings_player_id": "12598",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Deion Jones",
+      "position": "LB",
+      "ratings_player_id": "17677",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Christian Izien",
+      "position": "CB",
+      "ratings_player_id": "23287",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "JJ Roberts",
+      "position": "S",
+      "ratings_player_id": "4614",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Elijah Roberts",
+      "position": "DT",
+      "ratings_player_id": "15189",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Elic Ayomanor",
+      "position": "WR",
+      "ratings_player_id": "15099",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "James Proche II",
+      "position": "WR",
+      "ratings_player_id": "21082",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Chigoziem Okonkwo",
+      "position": "TE",
+      "ratings_player_id": "22347",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Kevin Zeitler",
+      "position": "RG",
+      "ratings_player_id": "11489",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Blake Hance",
+      "position": "RG",
+      "ratings_player_id": "21479",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Brandon Crenshaw-Dickson",
+      "position": "RT",
+      "ratings_player_id": "15157",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Jihad Ward",
+      "position": "EDGE",
+      "ratings_player_id": "17692",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Sebastian Joseph-Day",
+      "position": "DT",
+      "ratings_player_id": "13466",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "James Lynch",
+      "position": "DT",
+      "ratings_player_id": "20988",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Joe Bachie",
+      "position": "LB",
+      "ratings_player_id": "21276",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Dorian Mausi Jr",
+      "position": "LB",
+      "ratings_player_id": "4620",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Jalyn Armour-Davis",
+      "position": "CB",
+      "ratings_player_id": "22254",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Xavier Woods",
+      "position": "S",
+      "ratings_player_id": "12846",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Josh Johnson",
+      "position": "QB",
+      "ratings_player_id": "28334",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Austin Ekeler",
+      "position": "RB",
+      "ratings_player_id": "12948",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Deebo Samuel Sr",
+      "position": "WR",
+      "ratings_player_id": "20348",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Noah Brown",
+      "position": "WR",
+      "ratings_player_id": "12645",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Jaylin Lane",
+      "position": "WR",
+      "ratings_player_id": "15068",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Chris Moore",
+      "position": "WR",
+      "ratings_player_id": "17628",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Zach Ertz",
+      "position": "TE",
+      "ratings_player_id": "857",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "John Bates",
+      "position": "TE",
+      "ratings_player_id": "21767",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "George Fant",
+      "position": "RT",
+      "ratings_player_id": "12448",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Von Miller",
+      "position": "EDGE",
+      "ratings_player_id": "10737",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Preston Smith",
+      "position": "EDGE",
+      "ratings_player_id": "2534",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Eddie Goldman",
+      "position": "DT",
+      "ratings_player_id": "2546",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Bobby Wagner",
+      "position": "LB",
+      "ratings_player_id": "11567",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Nick Bellore",
+      "position": "LB",
+      "ratings_player_id": "10939",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Kain Medrano",
+      "position": "LB",
+      "ratings_player_id": "15258",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Ale Kaho",
+      "position": "LB",
+      "ratings_player_id": "4735",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Marshon Lattimore",
+      "position": "CB",
+      "ratings_player_id": "12528",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Jonathan Jones",
+      "position": "CB",
+      "ratings_player_id": "17711",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Percy Butler",
+      "position": "S",
+      "ratings_player_id": "22450",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Deatrich Wise Jr",
+      "position": "EDGE",
+      "ratings_player_id": "12607",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Drake Jackson",
+      "position": "EDGE",
+      "ratings_player_id": "22310",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Landon Jackson",
+      "position": "EDGE",
+      "ratings_player_id": "15174",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Tyquan Lewis",
+      "position": "EDGE",
+      "ratings_player_id": "13232",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Matt Haack",
+      "position": "P",
+      "ratings_player_id": "12935",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "James Houston IV",
+      "position": "EDGE",
+      "ratings_player_id": "22406",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Jordan James",
+      "position": "RB",
+      "ratings_player_id": "15048",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Joshua Karty",
+      "position": "K",
+      "ratings_player_id": "15005",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Braxton Berrios",
+      "position": "WR",
+      "ratings_player_id": "13377",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Chase Edmonds",
+      "position": "RB",
+      "ratings_player_id": "13341",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Ogbo Okoronkwo",
+      "position": "EDGE",
+      "ratings_player_id": "13090",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Jordan Phillips",
+      "position": "DT",
+      "ratings_player_id": "2548",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Dante Stills",
+      "position": "DT",
+      "ratings_player_id": "22960",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Shy Tuttle",
+      "position": "DT",
+      "ratings_player_id": "20853",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Mac McWilliams",
+      "position": "CB",
+      "ratings_player_id": "15318",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Taven Bryan",
+      "position": "DT",
+      "ratings_player_id": "13096",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Victor Dimukeje",
+      "position": "EDGE",
+      "ratings_player_id": "21869",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Jordan Hancock",
+      "position": "S",
+      "ratings_player_id": "15316",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Daniel Brunskill",
+      "position": "RG",
+      "ratings_player_id": "12753",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Eyioma Uwazurike",
+      "position": "DT",
+      "ratings_player_id": "22303",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Phidarian Mathis",
+      "position": "DT",
+      "ratings_player_id": "22167",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Javon Solomon",
+      "position": "EDGE",
+      "ratings_player_id": "14896",
+      "team": "Buffalo Bills"
+    },
+    {
+      "full_name": "Cedric Johnson",
+      "position": "EDGE",
+      "ratings_player_id": "14876",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "McKinnley Jackson",
+      "position": "DT",
+      "ratings_player_id": "14860",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Daniel Scott",
+      "position": "S",
+      "ratings_player_id": "23085",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Tyler Lacy",
+      "position": "DT",
+      "ratings_player_id": "22962",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Sam Okuayinonu",
+      "position": "EDGE",
+      "ratings_player_id": "22661",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Daniel Hardy",
+      "position": "EDGE",
+      "ratings_player_id": "22500",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Cory Durden",
+      "position": "DT",
+      "ratings_player_id": "22177",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "A.J. Green III",
+      "position": "CB",
+      "ratings_player_id": "21162",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "L.J. Collier",
+      "position": "DT",
+      "ratings_player_id": "20422",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Sheldon Day",
+      "position": "DT",
+      "ratings_player_id": "17739",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Jaylen Reed",
+      "position": "S",
+      "ratings_player_id": "15348",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Vernon Broughton",
+      "position": "DT",
+      "ratings_player_id": "15217",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Tahj Washington",
+      "position": "WR",
+      "ratings_player_id": "15017",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Tanner Hudson",
+      "position": "TE",
+      "ratings_player_id": "13731",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Jalyn Holmes",
+      "position": "EDGE",
+      "ratings_player_id": "13239",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Dare Ogunbowale",
+      "position": "RB",
+      "ratings_player_id": "12799",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Johnathan Edwards",
+      "position": "CB",
+      "ratings_player_id": "4678",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Dylan Horton",
+      "position": "EDGE",
+      "ratings_player_id": "22961",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Kurt Hinish",
+      "position": "DT",
+      "ratings_player_id": "22634",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "D.J. Davidson",
+      "position": "DT",
+      "ratings_player_id": "22306",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Christopher Smith II",
+      "position": "S",
+      "ratings_player_id": "22244",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "LaBryan Ray",
+      "position": "DT",
+      "ratings_player_id": "22178",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Matthew Butler",
+      "position": "DT",
+      "ratings_player_id": "22169",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Perrion Winfrey",
+      "position": "DT",
+      "ratings_player_id": "22165",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Kene Nwangwu",
+      "position": "RB",
+      "ratings_player_id": "21729",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Khalid Kareem",
+      "position": "EDGE",
+      "ratings_player_id": "21283",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Donald Parham",
+      "position": "TE",
+      "ratings_player_id": "20436",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "JJ Pegues",
+      "position": "DT",
+      "ratings_player_id": "15208",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Beaux Collins",
+      "position": "WR",
+      "ratings_player_id": "15090",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Braiden McGregor",
+      "position": "EDGE",
+      "ratings_player_id": "14884",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Cade Stover",
+      "position": "TE",
+      "ratings_player_id": "14680",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Ethan Bonner",
+      "position": "CB",
+      "ratings_player_id": "1348",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Chris Roland-Wallace",
+      "position": "CB",
+      "ratings_player_id": "1251",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Dalen Cambre",
+      "position": "WR",
+      "ratings_player_id": "4780",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Gage Larvadain",
+      "position": "WR",
+      "ratings_player_id": "4698",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Ryan Miller",
+      "position": "WR",
+      "ratings_player_id": "28419",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Evan Hull",
+      "position": "RB",
+      "ratings_player_id": "23128",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Thomas Incoom",
+      "position": "EDGE",
+      "ratings_player_id": "22964",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Connor Heyward",
+      "position": "TE",
+      "ratings_player_id": "22249",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Esezi Otomewo",
+      "position": "DT",
+      "ratings_player_id": "22182",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Janarius Robinson",
+      "position": "EDGE",
+      "ratings_player_id": "21515",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Lucas Niang",
+      "position": "RT",
+      "ratings_player_id": "21296",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Max Scharping",
+      "position": "RG",
+      "ratings_player_id": "20364",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Xavier Weaver",
+      "position": "WR",
+      "ratings_player_id": "183",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Kyonte Hamilton",
+      "position": "DT",
+      "ratings_player_id": "16147",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Nazir Stackhouse",
+      "position": "DT",
+      "ratings_player_id": "15219",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Jaylin Simpson",
+      "position": "S",
+      "ratings_player_id": "14965",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Chris Lammons",
+      "position": "CB",
+      "ratings_player_id": "13585",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Sanoussi Kane",
+      "position": "S",
+      "ratings_player_id": "1170",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Isaiah Johnson",
+      "position": "CB",
+      "ratings_player_id": "4779",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Adin Huntington",
+      "position": "DT",
+      "ratings_player_id": "4669",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Markees Watts",
+      "position": "EDGE",
+      "ratings_player_id": "23356",
+      "team": "Tampa Bay Buccaneers"
+    },
+    {
+      "full_name": "Desjuan Johnson",
+      "position": "EDGE",
+      "ratings_player_id": "23284",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Jerrick Reed II",
+      "position": "S",
+      "ratings_player_id": "23267",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Tyrus Wheat",
+      "position": "EDGE",
+      "ratings_player_id": "23151",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Brodric Martin",
+      "position": "DT",
+      "ratings_player_id": "22942",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Cameron Latu",
+      "position": "TE",
+      "ratings_player_id": "22827",
+      "team": "Philadelphia Eagles"
+    },
+    {
+      "full_name": "Deven Thompkins",
+      "position": "WR",
+      "ratings_player_id": "22677",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Elijah Garcia",
+      "position": "DT",
+      "ratings_player_id": "22562",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "PJ Mustipher",
+      "position": "DT",
+      "ratings_player_id": "22174",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Jeremiah Moon",
+      "position": "EDGE",
+      "ratings_player_id": "22163",
+      "team": "Pittsburgh Steelers"
+    },
+    {
+      "full_name": "Buddy Johnson",
+      "position": "LB",
+      "ratings_player_id": "21901",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Josiah Deguara",
+      "position": "TE",
+      "ratings_player_id": "21094",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Trayveon Williams",
+      "position": "RB",
+      "ratings_player_id": "20510",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Deon Bush",
+      "position": "S",
+      "ratings_player_id": "17751",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Alijah Clark",
+      "position": "S",
+      "ratings_player_id": "15355",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Hunter Wohler",
+      "position": "S",
+      "ratings_player_id": "15351",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Cobee Bryant",
+      "position": "CB",
+      "ratings_player_id": "15310",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Thomas Fidone II",
+      "position": "TE",
+      "ratings_player_id": "15121",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Kalen King",
+      "position": "CB",
+      "ratings_player_id": "14937",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Eric Watts",
+      "position": "EDGE",
+      "ratings_player_id": "14882",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Art Green",
+      "position": "CB",
+      "ratings_player_id": "1427",
+      "team": "NY Giants"
+    },
+    {
+      "full_name": "Tyler Owens",
+      "position": "S",
+      "ratings_player_id": "1379",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Will Clapp",
+      "position": "C",
+      "ratings_player_id": "13187",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Trent Taylor",
+      "position": "WR",
+      "ratings_player_id": "12743",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Tip Reiman",
+      "position": "TE",
+      "ratings_player_id": "1072",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Ajani Carter",
+      "position": "CB",
+      "ratings_player_id": "4769",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Dean Clark",
+      "position": "S",
+      "ratings_player_id": "4761",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Kevin Knowles",
+      "position": "CB",
+      "ratings_player_id": "4755",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "BJ Green II",
+      "position": "EDGE",
+      "ratings_player_id": "4737",
+      "team": "Jacksonville Jaguars"
+    },
+    {
+      "full_name": "D.J. Montgomery",
+      "position": "WR",
+      "ratings_player_id": "23377",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Irvin Charles",
+      "position": "WR",
+      "ratings_player_id": "23353",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Keidron Smith",
+      "position": "S",
+      "ratings_player_id": "23299",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Kendall Williamson",
+      "position": "S",
+      "ratings_player_id": "23283",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Joey Blount",
+      "position": "S",
+      "ratings_player_id": "22604",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Mike Brown",
+      "position": "S",
+      "ratings_player_id": "22537",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Chris Williams",
+      "position": "DT",
+      "ratings_player_id": "21993",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Jake Curhan",
+      "position": "RG",
+      "ratings_player_id": "21546",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Jake Hansen",
+      "position": "LB",
+      "ratings_player_id": "21498",
+      "team": "Houston Texans"
+    },
+    {
+      "full_name": "Khalil Dorsey",
+      "position": "CB",
+      "ratings_player_id": "21422",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Nick Vannett",
+      "position": "TE",
+      "ratings_player_id": "17651",
+      "team": "Los Angeles Rams"
+    },
+    {
+      "full_name": "Marcus Bryant",
+      "position": "RT",
+      "ratings_player_id": "16149",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Eric Gregory",
+      "position": "DT",
+      "ratings_player_id": "15227",
+      "team": "New England Patriots"
+    },
+    {
+      "full_name": "Jared Harrison-Hunte",
+      "position": "DT",
+      "ratings_player_id": "15216",
+      "team": "Carolina Panthers"
+    },
+    {
+      "full_name": "Garrett Dellinger",
+      "position": "LG",
+      "ratings_player_id": "15150",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Anthony Firkser",
+      "position": "TE",
+      "ratings_player_id": "13858",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Frank Crum",
+      "position": "LT",
+      "ratings_player_id": "1333",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Johnathan Baldwin",
+      "position": "S",
+      "ratings_player_id": "4786",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "C.J. Okoye",
+      "position": "DT",
+      "ratings_player_id": "4752",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Dom Jones",
+      "position": "CB",
+      "ratings_player_id": "4749",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Easton Mascarenas-Arnold",
+      "position": "LB",
+      "ratings_player_id": "4736",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "C.J. Ravenell",
+      "position": "DT",
+      "ratings_player_id": "4721",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "PJ Jules",
+      "position": "S",
+      "ratings_player_id": "4719",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Reuben Lowery III",
+      "position": "S",
+      "ratings_player_id": "4718",
+      "team": "Indianapolis Colts"
+    },
+    {
+      "full_name": "Josh Fryar",
+      "position": "RT",
+      "ratings_player_id": "4710",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Jordan Clark",
+      "position": "CB",
+      "ratings_player_id": "4684",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "AJ Finley",
+      "position": "S",
+      "ratings_player_id": "23292",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Brayden Willis",
+      "position": "TE",
+      "ratings_player_id": "22848",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Jonathan Ford",
+      "position": "DT",
+      "ratings_player_id": "22454",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "John FitzPatrick",
+      "position": "TE",
+      "ratings_player_id": "22345",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Hakeem Adeniji",
+      "position": "RT",
+      "ratings_player_id": "21108",
+      "team": "Dallas Cowboys"
+    },
+    {
+      "full_name": "Yodny Cajuste",
+      "position": "LT",
+      "ratings_player_id": "20360",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Mason Richman",
+      "position": "RT",
+      "ratings_player_id": "16150",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "John Williams",
+      "position": "RG",
+      "ratings_player_id": "15131",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Jake Briningstool",
+      "position": "TE",
+      "ratings_player_id": "15107",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Kendell Brooks",
+      "position": "S",
+      "ratings_player_id": "1497",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Natrone Brooks",
+      "position": "CB",
+      "ratings_player_id": "1444",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Elijah Campbell",
+      "position": "S",
+      "ratings_player_id": "13522",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Storm Duck",
+      "position": "CB",
+      "ratings_player_id": "1347",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Jamarco Jones",
+      "position": "RT",
+      "ratings_player_id": "13181",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Jarius Monroe",
+      "position": "S",
+      "ratings_player_id": "4781",
+      "team": "NY Jets"
+    },
+    {
+      "full_name": "Elijah Williams",
+      "position": "DT",
+      "ratings_player_id": "4720",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Eric Rogers",
+      "position": "CB",
+      "ratings_player_id": "4717",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Drew Moss",
+      "position": "RG",
+      "ratings_player_id": "4709",
+      "team": "Tennessee Titans"
+    },
+    {
+      "full_name": "Benjamin Yurosek",
+      "position": "TE",
+      "ratings_player_id": "4665",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Donovan McMillon",
+      "position": "S",
+      "ratings_player_id": "4612",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Tarron Jackson",
+      "position": "EDGE",
+      "ratings_player_id": "21505",
+      "team": "San Francisco 49ers"
+    },
+    {
+      "full_name": "Jalin Conyers",
+      "position": "TE",
+      "ratings_player_id": "15112",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Esa Pole",
+      "position": "LT",
+      "ratings_player_id": "4697",
+      "team": "Kansas City Chiefs"
+    },
+    {
+      "full_name": "Brady Russell",
+      "position": "TE",
+      "ratings_player_id": "23360",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Travis Vokolek",
+      "position": "TE",
+      "ratings_player_id": "22845",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Andre Baccellia",
+      "position": "WR",
+      "ratings_player_id": "22616",
+      "team": "Arizona Cardinals"
+    },
+    {
+      "full_name": "Sam Kamara",
+      "position": "DT",
+      "ratings_player_id": "22009",
+      "team": "Cleveland Browns"
+    },
+    {
+      "full_name": "Jeff Driskel",
+      "position": "QB",
+      "ratings_player_id": "17568",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Torricelli Simpkins III",
+      "position": "RG",
+      "ratings_player_id": "15151",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Xavier Truss",
+      "position": "RT",
+      "ratings_player_id": "15148",
+      "team": "New Orleans Saints"
+    },
+    {
+      "full_name": "Cam Grandy",
+      "position": "TE",
+      "ratings_player_id": "1442",
+      "team": "Cincinnati Bengals"
+    },
+    {
+      "full_name": "Dan Skipper",
+      "position": "RT",
+      "ratings_player_id": "12735",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Nick Kallerup",
+      "position": "TE",
+      "ratings_player_id": "4729",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Keondre Jackson",
+      "position": "S",
+      "ratings_player_id": "4675",
+      "team": "Baltimore Ravens"
+    },
+    {
+      "full_name": "Johnny Walker Jr",
+      "position": "LB",
+      "ratings_player_id": "4628",
+      "team": "Denver Broncos"
+    },
+    {
+      "full_name": "Lecitus Smith",
+      "position": "C",
+      "ratings_player_id": "22117",
+      "team": "Green Bay Packers"
+    },
+    {
+      "full_name": "Carter Runyon",
+      "position": "TE",
+      "ratings_player_id": "4666",
+      "team": "Las Vegas Raiders"
+    },
+    {
+      "full_name": "Tucker Fisk",
+      "position": "TE",
+      "ratings_player_id": "23379",
+      "team": "Los Angeles Chargers"
+    },
+    {
+      "full_name": "Caleb Johnson",
+      "position": "LB",
+      "ratings_player_id": "21985",
+      "team": "Miami Dolphins"
+    },
+    {
+      "full_name": "Amen Ogbongbemiga",
+      "position": "LB",
+      "ratings_player_id": "21905",
+      "team": "Chicago Bears"
+    },
+    {
+      "full_name": "Jared Ivey",
+      "position": "EDGE",
+      "ratings_player_id": "15187",
+      "team": "Seattle Seahawks"
+    },
+    {
+      "full_name": "Max Brosmer",
+      "position": "QB",
+      "ratings_player_id": "14792",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Zeke Correll",
+      "position": "C",
+      "ratings_player_id": "4644",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Ezekiel Turner",
+      "position": "LB",
+      "ratings_player_id": "13711",
+      "team": "Detroit Lions"
+    },
+    {
+      "full_name": "Brett Rypien",
+      "position": "QB",
+      "ratings_player_id": "20331",
+      "team": "Minnesota Vikings"
+    },
+    {
+      "full_name": "Tyree Jackson",
+      "position": "TE",
+      "ratings_player_id": "20428",
+      "team": "Washington Commanders"
+    },
+    {
+      "full_name": "Feleipe Franks",
+      "position": "TE",
+      "ratings_player_id": "21622",
+      "team": "Atlanta Falcons"
+    },
+    {
+      "full_name": "Matt Nelson",
+      "position": "RT",
+      "ratings_player_id": "20791",
+      "team": "Minnesota Vikings"
+    }
+  ],
+  "unmatched_player_count": 529
+}

@@ -1,6 +1,7 @@
 extends Control
 
 signal back_requested
+signal player_profile_requested(player_id: String)
 
 const VIEW_LEADERS := "LEAGUE LEADERS"
 const VIEW_TEAMS := "TEAM RANKINGS"
@@ -42,6 +43,7 @@ var _leader_rows: Array[Dictionary] = []
 var _team_rows: Array[Dictionary] = []
 var _game_books: Array[GameBookData] = []
 var _category_buttons: Array[Button] = []
+var _full_profile_button: Button
 
 
 func setup(career: CareerSession, initial_player_id: String = "") -> void:
@@ -313,6 +315,9 @@ func _build_player_profile() -> void:
 	var back_to_leaders := UIFactory.button("VIEW LEADERS", "SecondaryButton")
 	back_to_leaders.pressed.connect(_select_view.bind(VIEW_LEADERS))
 	heading.add_child(back_to_leaders)
+	_full_profile_button = UIFactory.button("FULL PLAYER PROFILE", "PrimaryButton")
+	_full_profile_button.pressed.connect(func(): player_profile_requested.emit(_selected_player_id))
+	heading.add_child(_full_profile_button)
 	_content_host.add_child(heading)
 	_content_host.add_child(_player_picker(selectable_rows, _selected_player_id))
 

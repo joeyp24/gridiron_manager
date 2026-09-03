@@ -90,6 +90,30 @@ func free_agent_by_id(player_id: String) -> PlayerData:
 	return null
 
 
+func player_by_id(player_id: String) -> PlayerData:
+	for team in teams:
+		var player := team.player_by_id(player_id)
+		if player != null:
+			return player
+	return free_agent_by_id(player_id)
+
+
+func team_for_player(player_id: String) -> TeamData:
+	for team in teams:
+		if team.player_by_id(player_id) != null:
+			return team
+	return null
+
+
+func all_players(include_free_agents: bool = true) -> Array[PlayerData]:
+	var result: Array[PlayerData] = []
+	for team in teams:
+		result.append_array(team.players)
+	if include_free_agents:
+		result.append_array(free_agents)
+	return result
+
+
 func record_transaction(transaction: TransactionData, headline: String) -> void:
 	transactions.push_front(transaction)
 	news.push_front(headline)
