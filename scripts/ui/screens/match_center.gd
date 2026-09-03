@@ -25,6 +25,15 @@ var _rematch_button: Button
 var _return_button: Button
 var _final_label: Label
 var _body_grid: GridContainer
+var _call_sheet_card: PanelContainer
+var _call_sheet_context: Label
+var _call_sheet_status: Label
+var _play_grid: GridContainer
+var _tempo_menu: OptionButton
+var _play_category_buttons: Dictionary = {}
+var _recommendation_buttons: Array[Button] = []
+var _displayed_play_ids: Array[String] = []
+var _selected_play_category := "RECOMMENDED"
 
 
 func setup(simulator: FootballSimulator, user_team: TeamData, career_mode: bool = false) -> void:
@@ -126,6 +135,7 @@ func _build_interface() -> void:
 
 	_metrics_row = UIFactory.hbox(10)
 	match_column.add_child(_metrics_row)
+	_build_call_sheet(match_column)
 
 	var feed_card := UIFactory.card()
 	feed_card.custom_minimum_size = Vector2(300, 300)
@@ -175,6 +185,56 @@ func _build_interface() -> void:
 	page.add_child(controls)
 
 
+func _build_call_sheet(parent: VBoxContainer) -> void:
+	_call_sheet_card = UIFactory.card("RaisedCardPanel")
+	_call_sheet_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(_call_sheet_card)
+	var column := UIFactory.vbox(10)
+	_call_sheet_card.add_child(column)
+
+	var header := HFlowContainer.new()
+	header.add_theme_constant_override("h_separation", 10)
+	header.add_theme_constant_override("v_separation", 8)
+	var identity := UIFactory.vbox(1)
+	identity.custom_minimum_size.x = 260
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_child(UIFactory.label("COACH MODE", "EyebrowLabel"))
+	identity.add_child(UIFactory.label("Offensive Call Sheet", "SectionTitleLabel"))
+	_call_sheet_context = UIFactory.wrapped_label("Choose a concept or use the simulation controls below.", "CaptionLabel")
+	_call_sheet_context.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_child(_call_sheet_context)
+	header.add_child(identity)
+	var tempo_group := UIFactory.vbox(3)
+	tempo_group.add_child(UIFactory.label("TEMPO", "EyebrowLabel"))
+	_tempo_menu = OptionButton.new()
+	_tempo_menu.custom_minimum_size = Vector2(150, 40)
+	for tempo_name in PlayCallData.TEMPOS:
+		_tempo_menu.add_item(tempo_name)
+		_tempo_menu.set_item_metadata(_tempo_menu.item_count - 1, tempo_name)
+	tempo_group.add_child(_tempo_menu)
+	header.add_child(tempo_group)
+	column.add_child(header)
+
+	var category_flow := HFlowContainer.new()
+	category_flow.add_theme_constant_override("h_separation", 8)
+	category_flow.add_theme_constant_override("v_separation", 8)
+	for category_name in ["RECOMMENDED", "RUN", "PASS", "SPECIAL / CLOCK"]:
+		var category_button := UIFactory.button(category_name, "SecondaryButton" if category_name == _selected_play_category else "GhostButton")
+		category_button.pressed.connect(_select_play_category.bind(category_name))
+		category_flow.add_child(category_button)
+		_play_category_buttons[category_name] = category_button
+	column.add_child(category_flow)
+
+	_play_grid = GridContainer.new()
+	_play_grid.columns = 2
+	_play_grid.add_theme_constant_override("h_separation", 8)
+	_play_grid.add_theme_constant_override("v_separation", 8)
+	_play_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_play_grid)
+	_call_sheet_status = UIFactory.wrapped_label("", "CaptionLabel")
+	column.add_child(_call_sheet_status)
+
+
 func _build_team_score(team: TeamData, align_right: bool) -> HBoxContainer:
 	var block := UIFactory.hbox(12)
 	block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -217,6 +277,29 @@ func _finish_game() -> void:
 	_refresh()
 
 
+func _select_play_category(category_name: String) -> void:
+	_selected_play_category = category_name
+	_rebuild_call_sheet()
+
+
+func _call_play(play_id: String) -> void:
+	if _simulator.state.is_final or _simulator.state.possession_team_id != _user_team.id:
+		_call_sheet_status.text = "Play calls are available when your offense has possession."
+		return
+	var tempo := PlayCallData.TEMPO_NORMAL
+	if _tempo_menu.selected >= 0:
+		tempo = str(_tempo_menu.get_item_metadata(_tempo_menu.selected))
+	var error := _simulator.call_validation_error(play_id)
+	if not error.is_empty():
+		_call_sheet_status.text = error
+		return
+	var result := _simulator.simulate_called_play(play_id, tempo)
+	if result == null:
+		_call_sheet_status.text = "The call could not be submitted in this situation."
+		return
+	_refresh()
+
+
 func _refresh() -> void:
 	var state := _simulator.state
 	_away_score.text = str(state.away_score)
@@ -233,6 +316,7 @@ func _refresh() -> void:
 		_last_play_description.text = latest.description
 	_rebuild_feed()
 	_rebuild_metrics()
+	_rebuild_call_sheet()
 
 	var controls_enabled := not state.is_final
 	_next_button.disabled = not controls_enabled
@@ -250,6 +334,65 @@ func _refresh() -> void:
 func _apply_responsive_layout() -> void:
 	if _body_grid != null:
 		_body_grid.columns = 2 if size.x >= 980 else 1
+	if _play_grid != null:
+		_play_grid.columns = 3 if size.x >= 1350 else (2 if size.x >= 720 else 1)
+
+
+func _rebuild_call_sheet() -> void:
+	if _call_sheet_card == null:
+		return
+	_recommendation_buttons.clear()
+	_displayed_play_ids.clear()
+	for child in _play_grid.get_children():
+		_play_grid.remove_child(child)
+		child.queue_free()
+	var state := _simulator.state
+	var user_on_offense := not state.is_final and state.possession_team_id == _user_team.id
+	_tempo_menu.disabled = not user_on_offense
+	for category_name in _play_category_buttons:
+		var button: Button = _play_category_buttons[category_name]
+		button.disabled = not user_on_offense
+		button.theme_type_variation = "SecondaryButton" if category_name == _selected_play_category else "GhostButton"
+	if state.is_final:
+		_call_sheet_context.text = "The final whistle has ended coach mode."
+		_call_sheet_status.text = "Review the completed game or use the return controls below."
+		return
+	if not user_on_offense:
+		_call_sheet_context.text = "%s has possession." % state.offense().display_name()
+		_call_sheet_status.text = "Your defensive coordinator is calling this series. Use Next Play or Simulate Drive to advance."
+		return
+
+	_call_sheet_context.text = "%s · %s · %s ball" % [state.down_and_distance_label(), state.field_position_label(), state.offense().abbreviation]
+	var plays: Array[PlayDefinitionData] = []
+	if _selected_play_category == "RECOMMENDED":
+		plays = _simulator.recommended_play_calls(3)
+	else:
+		for play in _simulator.available_play_calls():
+			if _selected_play_category == "RUN" and play.category == "Run":
+				plays.append(play)
+			elif _selected_play_category == "PASS" and play.category == "Pass":
+				plays.append(play)
+			elif _selected_play_category == "SPECIAL / CLOCK" and play.category in ["Special", "Clock"]:
+				plays.append(play)
+	_call_sheet_status.text = "Calls resolve against the opponent coordinator, player ratings, fatigue, and recent tendencies."
+	if plays.is_empty():
+		_call_sheet_status.text = "No calls in this section are available for the current personnel and field position."
+		return
+	for play in plays:
+		var button := UIFactory.button(
+			"%s\n%s · %s PERSONNEL\n%s · %s RISK" % [play.display_name.to_upper(), play.formation, play.personnel, play.concept, play.risk.to_upper()],
+			"TeamCardButton"
+		)
+		button.custom_minimum_size = Vector2(210, 82)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.tooltip_text = play.description
+		button.pressed.connect(_call_play.bind(play.id))
+		_play_grid.add_child(button)
+		_displayed_play_ids.append(play.id)
+		if _selected_play_category == "RECOMMENDED":
+			_recommendation_buttons.append(button)
+	_apply_responsive_layout()
 
 
 func _rebuild_feed() -> void:
@@ -290,6 +433,8 @@ func _play_feed_row(play: PlayResult) -> PanelContainer:
 	meta.add_child(UIFactory.spacer())
 	meta.add_child(UIFactory.label(play.title.to_upper(), "EyebrowLabel"))
 	column.add_child(meta)
+	if not play.call_name.is_empty():
+		column.add_child(UIFactory.label("%s · %s personnel · %s vs %s" % [play.call_name, play.call_personnel, play.call_tempo, play.defensive_call_name], "CaptionLabel"))
 	column.add_child(UIFactory.wrapped_label(play.description, "MutedLabel"))
 	return panel
 

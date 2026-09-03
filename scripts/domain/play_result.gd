@@ -9,6 +9,15 @@ var defense_id: String
 var down: int
 var yards_to_first: int
 var starting_field_position: int
+var call_id: String
+var call_name: String
+var call_formation: String
+var call_personnel: String
+var call_concept: String
+var call_tempo: String
+var call_was_user_selected: bool
+var defensive_call_id: String
+var defensive_call_name: String
 var title: String
 var description: String
 var play_type: String
@@ -59,6 +68,15 @@ func _init() -> void:
 	down = 1
 	yards_to_first = 10
 	starting_field_position = 25
+	call_id = ""
+	call_name = ""
+	call_formation = ""
+	call_personnel = ""
+	call_concept = ""
+	call_tempo = PlayCallData.TEMPO_NORMAL
+	call_was_user_selected = false
+	defensive_call_id = ""
+	defensive_call_name = ""
 	title = ""
 	description = ""
 	play_type = ""

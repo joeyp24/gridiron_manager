@@ -6,6 +6,9 @@ var _assertions := 0
 
 func _init() -> void:
 	_test_seeded_games_are_deterministic()
+	_test_playbook_catalog_and_call_validation()
+	_test_called_plays_are_deterministic()
+	_test_clock_management_calls()
 	_test_games_reach_a_legal_final_state()
 	_test_statistics_balance()
 	_test_player_statistics_reconcile_with_team_totals()
@@ -63,6 +66,86 @@ func _test_seeded_games_are_deterministic() -> void:
 	second.simulate_to_end()
 	_check(first.state.summary_signature() == second.state.summary_signature(), "Identical seeds should produce identical games")
 	_check(first.state.play_count == second.state.play_count, "Deterministic games should have the same play count")
+
+
+func _test_playbook_catalog_and_call_validation() -> void:
+	var playbook := PlaybookCatalog.pro_style_offense()
+	_check(playbook.plays.size() == 26, "The pro-style call sheet should load all 26 initial concepts")
+	var play_ids: Dictionary = {}
+	for play in playbook.plays:
+		play_ids[play.id] = true
+	_check(play_ids.size() == playbook.plays.size(), "Every playbook concept should have a unique stable ID")
+	_check(playbook.plays_in_category("Run").size() == 8, "The initial call sheet should contain eight run concepts")
+	_check(playbook.plays_in_category("Pass").size() == 14, "The initial call sheet should contain fourteen pass concepts")
+	var round_trip := PlaybookData.from_dict(JSON.parse_string(JSON.stringify(playbook.to_dict())))
+	_check(round_trip.plays.size() == playbook.plays.size() and round_trip.play_by_id("four_verticals") != null, "Playbook data should survive a JSON round trip")
+	var submitted := PlayCallData.from_dict(PlayCallData.new("mesh", PlayCallData.TEMPO_HURRY, true).to_dict())
+	_check(submitted.play_id == "mesh" and submitted.tempo == PlayCallData.TEMPO_HURRY and submitted.user_selected, "Submitted play calls should preserve selection and tempo")
+
+	var teams := SampleLeague.create_teams()
+	var simulator := FootballSimulator.new(teams[0], teams[1], 22031)
+	_check(not simulator.available_play_calls().is_empty(), "A legal offense should expose callable playbook concepts")
+	_check(simulator.recommended_play_calls().size() == 3, "The coordinator should provide three situational recommendations")
+	_check(not simulator.call_validation_error("missing_play").is_empty(), "Unknown play IDs should be rejected before simulation")
+	_check(not simulator.call_validation_error("field_goal").is_empty(), "Out-of-range field goals should be unavailable")
+	simulator.state.field_position = 60
+	_check(simulator.call_validation_error("field_goal").is_empty(), "Field goals should become available in range")
+
+
+func _test_called_plays_are_deterministic() -> void:
+	var teams := SampleLeague.create_teams()
+	var first := FootballSimulator.new(teams[2], teams[3], 993811)
+	var second := FootballSimulator.new(teams[2], teams[3], 993811)
+	for index in range(24):
+		if first.state.is_final or second.state.is_final:
+			break
+		var play_id := "inside_zone" if index % 2 == 0 else "quick_slants"
+		var first_result := first.simulate_called_play(play_id, PlayCallData.TEMPO_NORMAL)
+		var second_result := second.simulate_called_play(play_id, PlayCallData.TEMPO_NORMAL)
+		_check(first_result != null and second_result != null, "A legal selected concept should resolve one snap")
+		if first_result == null or second_result == null:
+			break
+		_check(first_result.call_id == play_id and first_result.call_was_user_selected, "A resolved snap should retain its submitted call metadata")
+		_check(not first_result.defensive_call_id.is_empty(), "A selected offensive call should resolve against an AI defensive call")
+	_check(first.state.summary_signature() == second.state.summary_signature(), "The same seed and submitted call sequence should produce identical results")
+
+	var neutral_defense := DefensiveCallData.new("neutral", "Neutral Front")
+	neutral_defense.personnel = "Base"
+	neutral_defense.coverage = "Zone"
+	var repeated_play := PlaybookCatalog.pro_style_offense().play_by_id("inside_zone")
+	var clean := PlayCallerService.matchup_modifiers(repeated_play, neutral_defense, [])
+	var history: Array[PlayResult] = []
+	for index in range(3):
+		var previous := PlayResult.new()
+		previous.call_id = repeated_play.id
+		history.append(previous)
+	var anticipated := PlayCallerService.matchup_modifiers(repeated_play, neutral_defense, history)
+	_check(float(anticipated.get("yardage", 0.0)) < float(clean.get("yardage", 0.0)), "Repeating the same call should create a defensive anticipation penalty")
+
+
+func _test_clock_management_calls() -> void:
+	var teams := SampleLeague.create_teams()
+	var spike_simulator := FootballSimulator.new(teams[4], teams[5], 77102)
+	spike_simulator.state.quarter = 4
+	spike_simulator.state.clock_seconds = 30
+	spike_simulator.state.down = 1
+	spike_simulator.state.add_score(spike_simulator.state.defense().id, 3)
+	var recommendations := spike_simulator.recommended_play_calls()
+	_check(recommendations.any(func(play: PlayDefinitionData): return play.id == "spike"), "A trailing offense inside 45 seconds should receive a spike recommendation")
+	var spike := spike_simulator.simulate_called_play("spike", PlayCallData.TEMPO_HURRY)
+	_check(spike != null and spike.play_type == "pass" and spike.call_id == "spike", "A spike should be recorded as a selected pass call")
+	_check(spike_simulator.state.down == 2 and spike_simulator.state.clock_seconds == 29, "A spike should sacrifice one down and one second")
+	_check(spike_simulator.state.stats[spike.offense_id]["passing_attempts"] == 1, "A spike should count as a team pass attempt")
+
+	var kneel_simulator := FootballSimulator.new(teams[6], teams[7], 77103)
+	kneel_simulator.state.quarter = 4
+	kneel_simulator.state.clock_seconds = 70
+	kneel_simulator.state.add_score(kneel_simulator.state.offense().id, 7)
+	var kneel_recommendations := kneel_simulator.recommended_play_calls()
+	_check(kneel_recommendations.any(func(play: PlayDefinitionData): return play.id == "kneel"), "A leading offense late in the fourth quarter should receive a kneel recommendation")
+	var kneel := kneel_simulator.simulate_called_play("kneel", PlayCallData.TEMPO_CHEW)
+	_check(kneel != null and kneel.play_type == "run" and kneel.ball_carrier_id == kneel_simulator.state.team_by_id(kneel.offense_id).player_at("QB").id, "A kneel should be credited to the quarterback as a rushing play")
+	_check(kneel_simulator.state.clock_seconds < 35, "Chew Clock should drain the clock on a kneel-down")
 
 
 func _test_games_reach_a_legal_final_state() -> void:

@@ -38,6 +38,7 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `StandingData` tracks regular-season records and tiebreak metrics.
 - `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, future-pick ownership, trade history, phase, and championship state.
 - `GameStateData` and `PlayResult` describe a live match.
+- `PlayDefinitionData`, `PlaybookData`, `PlayCallData`, and `DefensiveCallData` define stable, serializable coaching intent separately from the outcome of a snap.
 
 Stable IDs are the boundary between runtime objects, schedules, depth charts, and save files. New systems should preserve that rule instead of relying on node paths or object identity.
 
@@ -45,12 +46,13 @@ Stable IDs are the boundary between runtime objects, schedules, depth charts, an
 
 The simulation layer contains focused, UI-independent services:
 
-- `FootballSimulator` resolves seeded plays, drives, regulation, and overtime.
+- `FootballSimulator` resolves seeded selected or automatic plays, drives, regulation, and overtime through one statistics-compatible snap boundary.
+- `PlayCallerService` validates calls, ranks situational recommendations, chooses AI offense and defense calls, and calculates concept-versus-coverage and repetition modifiers.
 - `GameStatAccumulator` consumes structured play participants and outcomes, then reconciles player credits with the live team box score.
 - `ScheduleGenerator` clones the published 2026 schedule and rotates its division-preserving template for deterministic future 17-game seasons. The round-robin path remains for legacy saves.
 - `LeagueSimulator` coordinates AI games, weekly recovery, fatigue, and injuries.
 
-As match detail grows, play calling, penalties, injuries, clock rules, and special teams can move into narrower collaborators while the existing public commands remain stable.
+As match detail grows, user defensive calls, penalties, injuries, clock rules, and special teams can move into narrower collaborators while the existing public commands remain stable.
 
 ### Application
 
@@ -72,7 +74,7 @@ Application sessions are the composition point between content, simulation, save
 
 ### Data
 
-`LeagueCatalog` is the composition boundary for career databases. New careers and exhibitions use the complete versioned nflverse JSON snapshot through `LeagueDataPackProvider`; `SampleLeague` remains an internal legacy fixture for save migration and focused tests. Providers return fresh mutable domain objects, league-format rules, schedule templates, and source metadata. `PlayerGenerator` remains the seeded source for future draft prospects, veteran free agents, and emergency replacements. Importers remain build-time tooling and never become a runtime network dependency.
+`LeagueCatalog` is the composition boundary for career databases. New careers and exhibitions use the complete versioned nflverse JSON snapshot through `LeagueDataPackProvider`; `SampleLeague` remains an internal legacy fixture for save migration and focused tests. Providers return fresh mutable domain objects, league-format rules, schedule templates, and source metadata. `PlaybookCatalog` loads versioned play definitions from JSON so new formations and concepts do not require Match Center changes. `PlayerGenerator` remains the seeded source for future draft prospects, veteran free agents, and emergency replacements. Importers remain build-time tooling and never become a runtime network dependency.
 
 ```text
 LeagueCatalog
@@ -84,7 +86,7 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ### Presentation
 
-`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
+`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. The Match Center adds an optional responsive offensive call sheet without replacing its automatic snap, drive, or full-game controls. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
 
 ## Intended expansion path
 
@@ -93,6 +95,6 @@ The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, 
 1. Injured reserve, practice squads, waivers, game-day activation, and deeper roster-cut logic.
 2. AI-initiated trade offers, trade-block discovery, staff, facilities, finances, objectives, and job security.
 3. League/franchise records, awards, and richer modeled categories such as penalties and returns, extending the responsive Statistics Center.
-4. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
+4. User defensive playcalling, audibles, timeouts, penalties, return attribution, special-teams decisions, and richer tactical interaction.
 
 Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.
