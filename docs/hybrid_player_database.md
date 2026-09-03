@@ -16,7 +16,7 @@ Development and regression apply the same overall delta to the detailed profile.
 
 ## Player interface and media
 
-The Players tab provides a searchable league directory with club and position filters. Its profile shows overall, source archetype, contract or market estimate, availability, measurements, core simulation ratings, abilities, and every detailed attribute category. League Statistics and Free Agency both link directly to this profile, which can route back to the player's statistical dossier.
+The Players tab provides a compact dropdown containing the searchable league directory, supported by club and position filters. The selector stays in the toolbar so the full content width belongs to the active profile. That profile shows overall, source archetype, contract or market estimate, availability, measurements, core simulation ratings, abilities, and every detailed attribute category. League Statistics and Free Agency both link directly to this profile, which can route back to the player's statistical dossier.
 
 Headshots and team marks remain HTTPS references rather than embedded binaries. `CachedRemoteImage` downloads them on demand, writes a persistent cache under the game's user-data directory, and falls back to initials or a club abbreviation when the game is offline or a source image is unavailable. The league itself remains fully playable offline.
 
