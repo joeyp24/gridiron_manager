@@ -3,8 +3,6 @@ extends Control
 signal back_requested
 signal statistics_requested(player_id: String)
 
-const MAX_DIRECTORY_ROWS := 250
-
 var _career: CareerSession
 var _initial_player_id := ""
 var _selected_player_id := ""
@@ -12,15 +10,14 @@ var _search_text := ""
 var _team_filter := "ALL"
 var _position_filter := "ALL"
 
-var _directory_list: VBoxContainer
 var _profile_host: VBoxContainer
 var _content_grid: GridContainer
 var _attribute_grid: GridContainer
 var _search_input: LineEdit
+var _player_menu: OptionButton
 var _team_menu: OptionButton
 var _position_menu: OptionButton
 var _result_label: Label
-var _button_group := ButtonGroup.new()
 var _statistics_button: Button
 
 
@@ -34,7 +31,7 @@ func _ready() -> void:
 	_build_interface()
 	resized.connect(_apply_responsive_layout)
 	_apply_responsive_layout()
-	_rebuild_directory()
+	_rebuild_player_selector()
 
 
 func _build_interface() -> void:
@@ -79,6 +76,16 @@ func _build_interface() -> void:
 	_search_input.text_changed.connect(_search_changed)
 	search_group.add_child(_search_input)
 	filter_flow.add_child(search_group)
+	var player_group := UIFactory.vbox(5)
+	player_group.add_child(UIFactory.label("LEAGUE DIRECTORY", "EyebrowLabel"))
+	_player_menu = OptionButton.new()
+	_player_menu.custom_minimum_size = Vector2(420, 44)
+	_player_menu.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_player_menu.fit_to_longest_item = false
+	_player_menu.clip_text = true
+	_player_menu.item_selected.connect(_player_selected)
+	player_group.add_child(_player_menu)
+	filter_flow.add_child(player_group)
 	var team_group := UIFactory.vbox(5)
 	team_group.add_child(UIFactory.label("CLUB", "EyebrowLabel"))
 	_team_menu = OptionButton.new()
@@ -109,80 +116,48 @@ func _build_interface() -> void:
 	page.add_child(filters)
 
 	_content_grid = GridContainer.new()
-	_content_grid.columns = 2
+	_content_grid.columns = 1
 	_content_grid.add_theme_constant_override("h_separation", 14)
 	_content_grid.add_theme_constant_override("v_separation", 14)
 	_content_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(_content_grid)
 
-	var directory_card := UIFactory.card()
-	directory_card.custom_minimum_size = Vector2(410, 760)
-	directory_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var directory_column := UIFactory.vbox(10)
-	directory_card.add_child(directory_column)
-	var directory_heading := UIFactory.hbox(8)
-	directory_heading.add_child(UIFactory.label("LEAGUE DIRECTORY", "SectionTitleLabel"))
-	directory_heading.add_child(UIFactory.spacer())
-	directory_heading.add_child(UIFactory.label("OVR · AGE · CLUB", "CaptionLabel"))
-	directory_column.add_child(directory_heading)
-	var directory_scroll := ScrollContainer.new()
-	directory_scroll.custom_minimum_size = Vector2(0, 690)
-	directory_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	directory_column.add_child(directory_scroll)
-	_directory_list = UIFactory.vbox(7)
-	_directory_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	directory_scroll.add_child(_directory_list)
-	_content_grid.add_child(directory_card)
-
 	var profile_card := UIFactory.card("RaisedCardPanel")
-	profile_card.custom_minimum_size = Vector2(660, 760)
+	profile_card.custom_minimum_size = Vector2(0, 760)
 	profile_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_profile_host = UIFactory.vbox(15)
 	profile_card.add_child(_profile_host)
 	_content_grid.add_child(profile_card)
 
 
-func _rebuild_directory() -> void:
-	if _directory_list == null:
+func _rebuild_player_selector() -> void:
+	if _player_menu == null:
 		return
-	_clear(_directory_list)
-	_button_group = ButtonGroup.new()
+	_player_menu.clear()
 	var players := _filtered_players()
-	var visible_players: Array[PlayerData] = []
-	for index in range(mini(players.size(), MAX_DIRECTORY_ROWS)):
-		visible_players.append(players[index])
 	if players.is_empty():
 		_result_label.text = "0 RESULTS"
 		_selected_player_id = ""
-		_directory_list.add_child(UIFactory.wrapped_label("No players match the active filters.", "MutedLabel"))
+		_player_menu.add_item("No players match the active filters")
+		_player_menu.set_item_disabled(0, true)
 		_rebuild_profile()
 		return
 	if not players.any(func(player: PlayerData): return player.id == _selected_player_id):
 		_selected_player_id = players.front().id
-	elif not visible_players.any(func(player: PlayerData): return player.id == _selected_player_id):
-		visible_players.pop_back()
-		visible_players.push_front(_career.league.player_by_id(_selected_player_id))
-	_result_label.text = "%d RESULT%s%s" % [
-		players.size(),
-		"" if players.size() == 1 else "S",
-		" · TOP %d SHOWN" % MAX_DIRECTORY_ROWS if players.size() > MAX_DIRECTORY_ROWS else "",
-	]
-	for player in visible_players:
+	var selected_index := 0
+	for player in players:
 		var team := _career.league.team_for_player(player.id)
 		var club := team.abbreviation if team != null else "FA"
 		var jersey := "#%d " % player.jersey_number if player.jersey_number > 0 else ""
-		var button := UIFactory.button(
-			"%s%s  %s\n%s · OVR %d · AGE %d" % [jersey, player.position, player.full_name, club, player.overall, player.age],
-			"TeamCardButton"
+		_player_menu.add_item(
+			"%s%s · %s · %s · OVR %d · AGE %d" % [jersey, player.position, player.full_name, club, player.overall, player.age]
 		)
-		button.custom_minimum_size = Vector2(0, 70)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.toggle_mode = true
-		button.button_group = _button_group
-		button.button_pressed = player.id == _selected_player_id
-		button.pressed.connect(_select_player.bind(player.id))
-		_directory_list.add_child(button)
+		var index := _player_menu.item_count - 1
+		_player_menu.set_item_metadata(index, player.id)
+		if player.id == _selected_player_id:
+			selected_index = index
+	_player_menu.select(selected_index)
+	_result_label.text = "%d RESULT%s" % [players.size(), "" if players.size() == 1 else "S"]
 	_rebuild_profile()
 
 
@@ -193,7 +168,7 @@ func _rebuild_profile() -> void:
 	var player := _career.league.player_by_id(_selected_player_id)
 	if player == null:
 		_profile_host.add_child(UIFactory.label("NO PLAYER SELECTED", "SectionTitleLabel"))
-		_profile_host.add_child(UIFactory.wrapped_label("Select a player from the league directory to open the complete profile.", "MutedLabel"))
+		_profile_host.add_child(UIFactory.wrapped_label("Adjust the filters and select a player from the league directory dropdown to open the complete profile.", "MutedLabel"))
 		return
 	var team := _career.league.team_for_player(player.id)
 	var team_color := team.primary_color if team != null else GridironTheme.ACCENT
@@ -258,7 +233,7 @@ func _rebuild_profile() -> void:
 	if ratings != null and not ratings.abilities.is_empty():
 		_profile_host.add_child(_build_abilities_card(ratings))
 	_profile_host.add_child(UIFactory.label("COMPLETE ATTRIBUTE PROFILE", "SectionTitleLabel"))
-	_profile_host.add_child(UIFactory.wrapped_label("Every source attribute is retained. Position-relevant groups appear first; expand the directory width to compare two groups per row.", "CaptionLabel"))
+	_profile_host.add_child(UIFactory.wrapped_label("Every source attribute is retained. Position-relevant groups appear first; wider windows show two attribute groups per row.", "CaptionLabel"))
 	_attribute_grid = GridContainer.new()
 	_attribute_grid.columns = 2
 	_attribute_grid.add_theme_constant_override("h_separation", 12)
@@ -374,22 +349,34 @@ func _filtered_players() -> Array[PlayerData]:
 
 func _select_player(player_id: String) -> void:
 	_selected_player_id = player_id
+	for index in range(_player_menu.item_count):
+		if str(_player_menu.get_item_metadata(index)) == player_id:
+			_player_menu.select(index)
+			break
+	_rebuild_profile()
+
+
+func _player_selected(index: int) -> void:
+	var player_id := str(_player_menu.get_item_metadata(index))
+	if player_id.is_empty():
+		return
+	_selected_player_id = player_id
 	_rebuild_profile()
 
 
 func _search_changed(value: String) -> void:
 	_search_text = value.strip_edges().to_lower()
-	_rebuild_directory()
+	_rebuild_player_selector()
 
 
 func _team_filter_changed(index: int) -> void:
 	_team_filter = str(_team_menu.get_item_metadata(index))
-	_rebuild_directory()
+	_rebuild_player_selector()
 
 
 func _position_filter_changed(index: int) -> void:
 	_position_filter = "ALL" if index == 0 else TeamData.ROSTER_POSITIONS[index - 1]
-	_rebuild_directory()
+	_rebuild_player_selector()
 
 
 func _header_metric(title: String, value: String) -> VBoxContainer:
@@ -431,6 +418,6 @@ func _clear(container: Container) -> void:
 
 func _apply_responsive_layout() -> void:
 	if _content_grid != null:
-		_content_grid.columns = 2 if size.x >= 1180 else 1
+		_content_grid.columns = 1
 	if _attribute_grid != null:
 		_attribute_grid.columns = 2 if size.x >= 1180 else 1

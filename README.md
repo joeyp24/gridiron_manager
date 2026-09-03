@@ -20,7 +20,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - A staged offseason with season review, re-signing, player development, retirement decisions, draft preparation, a live draft, roster decisions, and new-league-year readiness
 - Player potential, deterministic age curves, attribute growth/regression, and squad development reports
 - A unified seeded player generator for original rosters, draft prospects, veteran free agents, and emergency replacements
-- A dedicated responsive Player Database with search and club/position filters, full Madden attributes, overall, contract terms, status, archetype, abilities, measurements, career context, headshots, and team marks
+- A dedicated responsive Player Database with a compact searchable player dropdown, club/position filters, and a full-width profile covering Madden attributes, overall, contract terms, status, archetype, abilities, measurements, career context, headshots, and team marks
 - Direct full-profile navigation from league-stat dossiers and the free-agent market, plus return links into each player's statistics
 - Position-aware career aging, deterministic retirement decisions, retirement dead money, and a permanent career archive
 - Free-agent population balancing that preserves positional coverage across long-running careers
