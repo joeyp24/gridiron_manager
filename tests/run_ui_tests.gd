@@ -56,8 +56,53 @@ func _run() -> void:
 	await process_frame
 	_check(trade_screen._user_pick_ids.is_empty() and trade_screen._partner.id == trade_screen._partners[1].id, "Changing trade partners should clear stale offer assets")
 	trade_screen.queue_free()
+
+	var stats_career := CareerSession.new_career("seattle_orcas", 401927, LeagueCatalog.SOURCE_FICTIONAL)
+	stats_career.simulate_current_week()
+	var quarterback: PlayerData = stats_career.user_team().player_at("QB")
+	var statistics_scene: PackedScene = load("res://scenes/screens/statistics_center_screen.tscn")
+	var statistics_screen := statistics_scene.instantiate()
+	statistics_screen.setup(stats_career, quarterback.id)
+	root.add_child(statistics_screen)
+	await process_frame
+	_check(statistics_screen._selected_view == "PLAYER PROFILE", "Roster navigation should open the requested player's statistical profile")
+	statistics_screen.size = Vector2(540, 900)
+	statistics_screen._apply_responsive_layout()
+	_check(statistics_screen._content_grid.columns == 1, "Player profile cards should stack on a narrow display")
+
+	statistics_screen._select_view("LEAGUE LEADERS")
+	await process_frame
+	_check(statistics_screen._category_buttons.size() == StatisticsService.PLAYER_CATEGORIES.size(), "League leaders should expose every statistical category")
+	_check(not statistics_screen._leader_rows.is_empty(), "League leaders should render recorded and zero-stat players")
+	statistics_screen._sort_players("passing_yards")
+	await process_frame
+	var low_line: StatLineData = statistics_screen._leader_rows.front().get("stats")
+	var high_line: StatLineData = statistics_screen._leader_rows.back().get("stats")
+	_check(StatisticsService.metric_value(low_line, "passing_yards") <= StatisticsService.metric_value(high_line, "passing_yards"), "Clicking an active leader column should reverse its sort direction")
+
+	statistics_screen._select_view("TEAM RANKINGS")
+	await process_frame
+	_check(statistics_screen._team_rows.size() == stats_career.league.teams.size(), "Team rankings should render every club")
+	statistics_screen._sort_teams("points")
+	await process_frame
+	var top_team_line: StatLineData = statistics_screen._team_rows.front().get("stats")
+	var bottom_team_line: StatLineData = statistics_screen._team_rows.back().get("stats")
+	_check(StatisticsService.metric_value(top_team_line, "points") >= StatisticsService.metric_value(bottom_team_line, "points"), "A newly selected team column should sort from highest to lowest")
+
+	statistics_screen._select_view("GAME BOOKS")
+	await process_frame
+	_check(statistics_screen._game_books.size() == 4, "Game Books should list every completed week-one game")
+	_check(statistics_screen._content_grid.columns == 1, "Game Book list and detail should stack on a narrow display")
+	statistics_screen.size = Vector2(1440, 900)
+	statistics_screen._apply_responsive_layout()
+	_check(statistics_screen._content_grid.columns == 2, "Game Book list and detail should share a row on a wide display")
+	var participant_id := str(statistics_screen._game_books.front().player_stats.keys().front())
+	statistics_screen._open_player(participant_id)
+	await process_frame
+	_check(statistics_screen._selected_view == "PLAYER PROFILE" and statistics_screen._selected_player_id == participant_id, "Box-score participants should link to their full player profile")
+	statistics_screen.queue_free()
 	if _failures.is_empty():
-		print("PASS: %d assertions across responsive career-creation and Trade Center checks." % _assertions)
+		print("PASS: %d assertions across responsive career-creation, Trade Center, and Statistics Center checks." % _assertions)
 		quit(0)
 	else:
 		for failure in _failures:

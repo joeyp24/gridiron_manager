@@ -61,6 +61,7 @@ As match detail grows, play calling, penalties, injuries, clock rules, and speci
 - `RetirementService` owns deterministic career-exit decisions, retirement dead money, archival history, announcements, and free-agent population balance.
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
 - `TradeService` owns the trade window, future draft capital, package valuation, partner evaluation, counteroffers, projected roster/cap validation, dead-cap transfer rules, atomic execution, and history.
+- `StatisticsService` provides UI-ready league leaders, team rankings, derived rates, player game logs and club splits, completed-game lookup, and reusable sorting/filtering without mutating stored totals.
 - `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
 
 Application sessions are the composition point between content, simulation, saves, and presentation. UI screens request actions from these sessions rather than calculating outcomes themselves.
@@ -83,7 +84,7 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ### Presentation
 
-`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
+`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
 
 ## Intended expansion path
 
@@ -91,7 +92,7 @@ The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, 
 
 1. Injured reserve, practice squads, waivers, game-day activation, and deeper roster-cut logic.
 2. AI-initiated trade offers, trade-block discovery, staff, facilities, finances, objectives, and job security.
-3. A responsive Statistics Center, league/franchise records, awards, and richer modeled categories such as penalties and returns.
+3. League/franchise records, awards, and richer modeled categories such as penalties and returns, extending the responsive Statistics Center.
 4. Focused match services for penalties, play calling, special teams, and richer tactical interaction.
 
 Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.

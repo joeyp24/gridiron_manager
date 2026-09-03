@@ -2,6 +2,7 @@ extends Control
 
 signal back_requested
 signal roster_changed
+signal player_statistics_requested(player_id: String)
 
 var _career: CareerSession
 var _team: TeamData
@@ -117,6 +118,11 @@ func _player_row(player: PlayerData, index: int, starter: PlayerData) -> PanelCo
 		row.add_child(_small_metric("TEC", player.technique))
 		row.add_child(_small_metric("AWR", player.awareness))
 	row.add_child(_small_metric("OVR", player.effective_overall()))
+	if _show_attributes:
+		var stats := UIFactory.button("STATS", "GhostButton")
+		stats.custom_minimum_size = Vector2(66, 40)
+		stats.pressed.connect(func(): player_statistics_requested.emit(player.id))
+		row.add_child(stats)
 	var up := UIFactory.button("↑", "GhostButton")
 	up.custom_minimum_size = Vector2(40, 40)
 	up.disabled = index == 0

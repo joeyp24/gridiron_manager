@@ -47,8 +47,14 @@ Automated tests protect the accounting boundaries used by future leaderboards an
 - sacks taken equal team sacks allowed; and
 - credited touchdowns, field goals, and automatic extra points equal the final score.
 
+## Presentation queries
+
+`StatisticsService` is the read-only boundary between stored game books and the Statistics Center. It supplies filterable player and team rows, category-aware sorting, derived rates, current-roster zero rows, player game logs and club splits, and completed-game lookup. The responsive screen owns only view state: season, regular-season/postseason split, club, position, category, selected player, selected game, and sort direction.
+
+The Statistics Center exposes league leaders, team rankings, season and career player dossiers, year and club splits, weekly game logs, and complete player/team box scores. Roster rows and game-book participants link into the same player dossier, while stable player IDs keep those profiles valid through trades and releases.
+
 ## Extending the model
 
 New simulated categories should be added at the play-result and accumulator boundary, not calculated inside a screen. Add the stat name to `StatLineData`, attribute it from a structured event, add a reconciliation or deterministic test, and let the existing game-book serialization and rollups carry it into every scope.
 
-The next presentation pass can build sortable league leaders, team rankings, player game logs, season/career profiles, and records directly from `LeagueStatisticsData` without modifying match simulation.
+Records and awards can build directly on the same query boundary. They should persist immutable winners and record events rather than reconstructing historical outcomes from mutable rosters.
