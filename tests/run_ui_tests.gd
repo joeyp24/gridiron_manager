@@ -57,7 +57,7 @@ func _run() -> void:
 	_check(trade_screen._user_pick_ids.is_empty() and trade_screen._partner.id == trade_screen._partners[1].id, "Changing trade partners should clear stale offer assets")
 	trade_screen.queue_free()
 
-	var stats_career := CareerSession.new_career("seattle_orcas", 401927, LeagueCatalog.SOURCE_FICTIONAL)
+	var stats_career := career
 	stats_career.simulate_current_week()
 	var quarterback: PlayerData = stats_career.user_team().player_at("QB")
 	var statistics_scene: PackedScene = load("res://scenes/screens/statistics_center_screen.tscn")
@@ -66,6 +66,8 @@ func _run() -> void:
 	root.add_child(statistics_screen)
 	await process_frame
 	_check(statistics_screen._selected_view == "PLAYER PROFILE", "Roster navigation should open the requested player's statistical profile")
+	_check(statistics_screen._player_finder_card.size.y <= 120, "The player finder should remain a compact profile control")
+	_check(statistics_screen._player_picker_menu.size.y <= 48, "The player picker should not stretch vertically")
 	statistics_screen.size = Vector2(540, 900)
 	statistics_screen._apply_responsive_layout()
 	_check(statistics_screen._content_grid.columns == 1, "Player profile cards should stack on a narrow display")
@@ -74,6 +76,8 @@ func _run() -> void:
 	await process_frame
 	_check(statistics_screen._category_buttons.size() == StatisticsService.PLAYER_CATEGORIES.size(), "League leaders should expose every statistical category")
 	_check(not statistics_screen._leader_rows.is_empty(), "League leaders should render recorded and zero-stat players")
+	_check(statistics_screen._player_table_body.get_child_count() == mini(statistics_screen._leader_rows.size(), 100) + 1, "The league-leader table should build its header and visible player rows")
+	_check(statistics_screen._player_table_scroll.size.y >= statistics_screen._player_table_body.get_combined_minimum_size().y, "The league-leader viewport should expose every built row to the page scrollbar")
 	statistics_screen._sort_players("passing_yards")
 	await process_frame
 	var low_line: StatLineData = statistics_screen._leader_rows.front().get("stats")
@@ -83,6 +87,8 @@ func _run() -> void:
 	statistics_screen._select_view("TEAM RANKINGS")
 	await process_frame
 	_check(statistics_screen._team_rows.size() == stats_career.league.teams.size(), "Team rankings should render every club")
+	_check(statistics_screen._team_table_body.get_child_count() == statistics_screen._team_rows.size() + 1, "The team-ranking table should build one row for every club")
+	_check(statistics_screen._team_table_scroll.size.y >= statistics_screen._team_table_body.get_combined_minimum_size().y, "The team-ranking viewport should expose every club row to the page scrollbar")
 	statistics_screen._sort_teams("points")
 	await process_frame
 	var top_team_line: StatLineData = statistics_screen._team_rows.front().get("stats")
@@ -91,7 +97,7 @@ func _run() -> void:
 
 	statistics_screen._select_view("GAME BOOKS")
 	await process_frame
-	_check(statistics_screen._game_books.size() == 4, "Game Books should list every completed week-one game")
+	_check(statistics_screen._game_books.size() == 16, "Game Books should list every completed NFL week-one game")
 	_check(statistics_screen._content_grid.columns == 1, "Game Book list and detail should stack on a narrow display")
 	statistics_screen.size = Vector2(1440, 900)
 	statistics_screen._apply_responsive_layout()
