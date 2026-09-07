@@ -48,11 +48,14 @@ The simulation layer contains focused, UI-independent services:
 
 - `FootballSimulator` resolves seeded selected or automatic plays, drives, regulation, and overtime through one statistics-compatible snap boundary.
 - `PlayCallerService` validates calls, ranks situational recommendations, chooses AI offense and defense calls, and calculates concept-versus-coverage and repetition modifiers.
+- `PersonnelPackageService` turns offensive and defensive personnel labels into the actual eleven available depth-chart players used on a snap.
+- `AttributeMatchupService` builds deterministic run, pass, coverage, tackle, catching, kicking, and punting grades directly from detailed player attributes and fatigue.
+- `SimulationTuning` loads versioned coefficients from JSON so balancing does not require rewriting the snap resolver.
 - `GameStatAccumulator` consumes structured play participants and outcomes, then reconciles player credits with the live team box score.
 - `ScheduleGenerator` clones the published 2026 schedule and rotates its division-preserving template for deterministic future 17-game seasons. The round-robin path remains for legacy saves.
 - `LeagueSimulator` coordinates AI games, weekly recovery, fatigue, and injuries.
 
-As match detail grows, user defensive calls, penalties, injuries, clock rules, and special teams can move into narrower collaborators while the existing public commands remain stable.
+Every manual or automatic path uses the same Attribute Simulation v2 boundary. Its transient matchup context supports richer play-by-play and future scouting without changing the immutable game-book format. As match detail grows, user defensive calls, penalties, injuries, clock rules, and return teams can move into narrower collaborators while the existing public commands remain stable.
 
 ### Application
 

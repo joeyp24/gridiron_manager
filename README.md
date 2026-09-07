@@ -34,6 +34,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
 - Optional offensive coach mode with 26 data-driven calls, situational recommendations, tempo control, AI defensive responses, and preserved play/drive/full-game simulation
+- Attribute Simulation v2 with real 11-player personnel packages, direct Madden blocking/rushing/passing/coverage/catching/tackling/kicking matchups, fatigue-aware grades, and richer player-specific play-by-play
 - Player-attributed passing, rushing, receiving, defensive, kicking, and punting game books with depth-chart participation and snap counts
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
@@ -61,7 +62,7 @@ godot --headless --path . --script res://tests/run_full_league_tests.gd
 godot --headless --path . --script res://tests/run_ui_tests.gd
 ```
 
-The checks cover deterministic automatic and manually called matches; playbook loading, call validation, tempo, repetition, and clock management; legal game state; player generation; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams, 1,696 rostered players, 339 free agents, and 2,035 complete Madden attribute records; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive Match Center, Trade Center, Statistics Center, Player Database, and free-agency UI; serialization; and save migration.
+The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration for rushing, passing, and kicking; playbook loading, call validation, tempo, repetition, and clock management; legal game state; player generation; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams, 1,696 rostered players, 339 free agents, and 2,035 complete Madden attribute records; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive Match Center, Trade Center, Statistics Center, Player Database, and free-agency UI; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -95,6 +96,7 @@ The simulation and career layers do not depend on scenes or controls. The Statis
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 See [`docs/statistics.md`](docs/statistics.md) for the game-book schema, aggregation lifecycle, reconciliation rules, and UI extension points.
 See [`docs/playcalling.md`](docs/playcalling.md) for the call-sheet data model, simulation flow, matchup modifiers, and extension path.
+See [`docs/simulation_v2.md`](docs/simulation_v2.md) for personnel packages, direct-attribute matchups, tuning, and calibration.
 
 ## Current limitations
 

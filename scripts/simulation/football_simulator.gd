@@ -9,6 +9,8 @@ var playbook: PlaybookData
 var _rng := RandomNumberGenerator.new()
 var _offensive_starters: Dictionary = {}
 var _defensive_starters: Dictionary = {}
+var _offensive_lineups: Dictionary = {}
+var _defensive_lineups: Dictionary = {}
 
 
 func _init(
@@ -24,13 +26,12 @@ func _init(
 	_rng.seed = game_seed
 	state = GameStateData.new(home, away)
 	for team in [home, away]:
-		_offensive_starters[team.id] = _lineup_ids(team, {
-			"QB": 1, "RB": 1, "WR": 3, "TE": 1,
-			"LT": 1, "LG": 1, "C": 1, "RG": 1, "RT": 1,
-		})
-		_defensive_starters[team.id] = _lineup_ids(team, {
-			"EDGE": 2, "DT": 2, "LB": 3, "CB": 2, "S": 2,
-		})
+		for personnel in PersonnelPackageService.OFFENSIVE_PACKAGES:
+			_offensive_lineups[_lineup_cache_key(team.id, str(personnel))] = PersonnelPackageService.offensive_lineup(team, str(personnel))
+		for personnel in PersonnelPackageService.DEFENSIVE_PACKAGES:
+			_defensive_lineups[_lineup_cache_key(team.id, str(personnel))] = PersonnelPackageService.defensive_lineup(team, str(personnel))
+		_offensive_starters[team.id] = PersonnelPackageService.ids(_cached_offensive_lineup(team, "11"))
+		_defensive_starters[team.id] = PersonnelPackageService.ids(_cached_defensive_lineup(team, "Base"))
 	if _rng.randf() >= 0.5:
 		state.possession_team_id = home.id
 		state.opening_possession_team_id = home.id
@@ -71,7 +72,7 @@ func simulate_next_play(submitted_call: PlayCallData = null) -> PlayResult:
 	var modifiers := PlayCallerService.matchup_modifiers(play, defensive_call, state.play_history)
 	match play.play_type:
 		"run":
-			_resolve_run(result, call, play, modifiers)
+			_resolve_run(result, call, play, defensive_call, modifiers)
 		"pass":
 			_resolve_pass(result, call, play, defensive_call, modifiers)
 		"punt":
@@ -110,22 +111,53 @@ func simulate_to_end(max_plays: int = 500) -> Array[PlayResult]:
 	return results
 
 
-func _resolve_run(result: PlayResult, call: PlayCallData, play: PlayDefinitionData, modifiers: Dictionary) -> void:
+func _resolve_run(
+	result: PlayResult,
+	call: PlayCallData,
+	play: PlayDefinitionData,
+	defensive_call: DefensiveCallData,
+	modifiers: Dictionary
+) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
-	var runner := _select_depth_player(offense, play.runner_position)
-	var tackler := _select_defender(defense, ["LB", "S", "DT", "EDGE"])
-	var recovery_player := _select_defender(defense, ["LB", "S", "CB", "EDGE"])
-	_populate_scrimmage_participants(result, offense, defense, [runner], [tackler, recovery_player])
+	var offense_lineup := _cached_offensive_lineup(offense, play.personnel)
+	var defense_lineup := _cached_defensive_lineup(defense, defensive_call.personnel)
+	var runner := _select_lineup_player(offense_lineup, [play.runner_position], offense.player_at(play.runner_position))
+	var tackler := _select_lineup_player(defense_lineup, ["LB", "S", "DT", "EDGE", "CB"], defense.player_at("LB"))
+	var recovery_player := _select_lineup_player(defense_lineup, ["LB", "S", "CB", "EDGE"], tackler)
+	var blockers := PersonnelPackageService.blockers(offense_lineup, runner)
+	var front := PersonnelPackageService.rushers(defense_lineup)
+	var matchup := AttributeMatchupService.run_matchup(play, blockers, front, runner, tackler)
+	_populate_scrimmage_participants(result, offense, defense, [runner], [tackler, recovery_player], offense_lineup, defense_lineup)
 	result.ball_carrier_id = runner.id
 	if tackler != null:
 		result.tackler_ids.append(tackler.id)
-	var blocking_edge := float(offense.effective_offense_rating() - defense.effective_defense_rating()) * 0.07
-	var skill_edge := float(runner.power + runner.speed - 160) * 0.025
-	var expected_yards := 4.2 + blocking_edge + skill_edge + float(modifiers.get("yardage", 0.0))
-	var variance := 4.3 * float(modifiers.get("variance", 1.0))
+	var expected_yards := (
+		SimulationTuning.value("run", "base_yards", 4.15)
+		+ float(matchup["blocking_edge"]) * SimulationTuning.value("run", "blocking_edge_yards", 0.065)
+		+ float(matchup["carrier_edge"]) * SimulationTuning.value("run", "carrier_edge_yards", 0.045)
+		+ float(offense.offense_rating - defense.defense_rating) * SimulationTuning.value("run", "team_edge_yards", 0.015)
+		+ float(modifiers.get("yardage", 0.0))
+	)
+	var variance := SimulationTuning.value("run", "variance", 4.0) * float(modifiers.get("variance", 1.0))
 	var yards := clampi(roundi(_rng.randfn(expected_yards, variance)), -8, 40)
-	var fumble_chance := clampf(0.010 + float(defense.effective_defense_rating() - runner.awareness) * 0.0005 + float(modifiers.get("fumble", 0.0)), 0.002, 0.045)
+	var fumble_chance := clampf(
+		SimulationTuning.value("run", "base_fumble_chance", 0.012)
+		+ (float(matchup["hit_force"]) - float(matchup["ball_security"])) * SimulationTuning.value("run", "fumble_rating_coefficient", 0.00035)
+		+ float(modifiers.get("fumble", 0.0)),
+		SimulationTuning.value("run", "minimum_fumble_chance", 0.002),
+		SimulationTuning.value("run", "maximum_fumble_chance", 0.05)
+	)
+	result.matchup_context = matchup.duplicate(true)
+	result.matchup_context.merge({
+		"model": "attribute_simulation_v2",
+		"offensive_personnel": play.personnel,
+		"defensive_personnel": defensive_call.personnel,
+		"expected_yards": expected_yards,
+		"fumble_chance": fumble_chance,
+		"runner_id": runner.id,
+		"primary_tackler_id": tackler.id if tackler != null else "",
+	}, true)
 
 	result.play_type = "run"
 	result.title = play.display_name
@@ -140,7 +172,13 @@ func _resolve_run(result: PlayResult, call: PlayCallData, play: PlayDefinitionDa
 		result.forced_fumble_player_id = tackler.id if tackler != null else ""
 		result.recovery_player_id = recovery_player.id if recovery_player != null else result.forced_fumble_player_id
 		result.title = "Fumble"
-		result.description = "%s loses the football after a %d-yard run. %s recovers." % [runner.full_name, yards, defense.display_name()]
+		result.description = "%s attacks a %s, but %s jars the ball loose after %s. %s recovers." % [
+			runner.full_name,
+			str(matchup["lane_label"]),
+			tackler.full_name if tackler != null else defense.display_name(),
+			_yard_phrase(yards),
+			defense.display_name(),
+		]
 		result.drive_ended = true
 		result.possession_changed = true
 		_consume_clock(_called_clock(_rng.randi_range(22, 38), offense, call, play), offense.id)
@@ -148,9 +186,10 @@ func _resolve_run(result: PlayResult, call: PlayCallData, play: PlayDefinitionDa
 		return
 
 	result.yards = yards
-	result.description = "%s finds %s for %s." % [
+	result.description = "%s hits the %s and meets %s, gaining %s." % [
 		runner.full_name,
-		"a crease" if yards >= 5 else "limited room",
+		str(matchup["lane_label"]),
+		tackler.full_name if tackler != null else str(matchup["finish_label"]),
 		_yard_phrase(yards),
 	]
 	_record_yards(offense.id, "run", yards)
@@ -167,30 +206,43 @@ func _resolve_pass(
 ) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
-	var quarterback := offense.player_at("QB")
-	var receiver := _select_target(offense, play.target_positions)
-	var edge := _select_depth_player(defense, "EDGE")
-	var corner := _select_defender(defense, ["CB", "S"])
-	var safety := _select_depth_player(defense, "S")
-	var tackler := _select_defender(defense, ["CB", "S", "LB"])
-	_populate_scrimmage_participants(result, offense, defense, [quarterback, receiver], [edge, corner, safety, tackler])
+	var offense_lineup := _cached_offensive_lineup(offense, play.personnel)
+	var defense_lineup := _cached_defensive_lineup(defense, defensive_call.personnel)
+	var quarterback := _select_lineup_player(offense_lineup, ["QB"], offense.player_at("QB"))
+	var receiver := _select_target_from_lineup(offense_lineup, play.target_positions, offense)
+	var rushers := PersonnelPackageService.rushers(defense_lineup)
+	var edge := _select_rusher(rushers, defense.player_at("EDGE"))
+	var corner := _select_lineup_player(defense_lineup, ["CB", "S", "LB"], defense.player_at("CB"))
+	var tackler := _select_lineup_player(defense_lineup, ["CB", "S", "LB"], corner)
+	var protectors := PersonnelPackageService.pass_protectors(offense_lineup, quarterback)
+	if play.has_tag("max_protect"):
+		for player in offense_lineup:
+			if player != receiver and player.position in ["TE", "RB"]:
+				protectors.append(player)
+	var matchup := AttributeMatchupService.pass_matchup(play, defensive_call, protectors, rushers, quarterback, receiver, corner)
+	_populate_scrimmage_participants(result, offense, defense, [quarterback, receiver], [edge, corner, tackler], offense_lineup, defense_lineup)
 	result.passer_id = quarterback.id
 	result.target_id = receiver.id
-	var coverage_completion_adjustment := 0.0
-	var coverage_interception_adjustment := 0.0
-	var coverage_yards_adjustment := 0.0
-	match defensive_call.coverage:
-		"Zone":
-			coverage_completion_adjustment = float(quarterback.awareness - safety.awareness) * 0.0012
-			coverage_interception_adjustment = 0.004 + float(safety.awareness - quarterback.awareness) * 0.0004
-			coverage_yards_adjustment = -1.0
-		"Man":
-			coverage_completion_adjustment = float(receiver.speed - corner.speed) * 0.0014
-			coverage_interception_adjustment = float(corner.technique - receiver.technique) * 0.0003
-			coverage_yards_adjustment = 1.0
-	var pressure_edge := float(defense.effective_defense_rating() - offense.effective_offense_rating())
-	pressure_edge += (defense.blitz_rate - 0.42) * 15.0
-	var sack_chance := clampf(0.055 + pressure_edge * 0.0022 + float(edge.technique - 82) * 0.001 + float(modifiers.get("sack", 0.0)), 0.012, 0.20)
+	var pressure_edge := float(matchup["pressure_edge"]) + (defense.blitz_rate - 0.42) * 8.0
+	var sack_chance := clampf(
+		SimulationTuning.value("pass", "base_sack_chance", 0.052)
+		+ pressure_edge * SimulationTuning.value("pass", "pressure_sack_coefficient", 0.0028)
+		- (float(matchup["pocket_escape"]) - SimulationTuning.ratings_center()) * SimulationTuning.value("pass", "escape_sack_coefficient", 0.001)
+		+ float(modifiers.get("sack", 0.0)),
+		SimulationTuning.value("pass", "minimum_sack_chance", 0.012),
+		SimulationTuning.value("pass", "maximum_sack_chance", 0.20)
+	)
+	result.matchup_context = matchup.duplicate(true)
+	result.matchup_context.merge({
+		"model": "attribute_simulation_v2",
+		"offensive_personnel": play.personnel,
+		"defensive_personnel": defensive_call.personnel,
+		"sack_chance": sack_chance,
+		"passer_id": quarterback.id,
+		"receiver_id": receiver.id,
+		"coverage_defender_id": corner.id if corner != null else "",
+		"primary_rusher_id": edge.id if edge != null else "",
+	}, true)
 
 	result.play_type = "pass"
 	result.title = play.display_name
@@ -201,74 +253,115 @@ func _resolve_pass(
 		result.title = "Sack"
 		result.yards = sack_yards
 		result.sack = true
-		result.sack_player_id = edge.id
-		result.tackler_ids.append(edge.id)
-		result.description = "%s breaks through and drops %s for a loss of %d." % [edge.full_name, quarterback.full_name, absi(sack_yards)]
+		result.sack_player_id = edge.id if edge != null else ""
+		if edge != null:
+			result.tackler_ids.append(edge.id)
+		result.description = "%s creates %s and drops %s for a loss of %d." % [
+			edge.full_name if edge != null else defense.display_name(),
+			str(matchup["pressure_label"]),
+			quarterback.full_name,
+			absi(sack_yards),
+		]
 		_record_yards(offense.id, "pass", sack_yards)
 		_apply_standard_gain(result, sack_yards)
 		_consume_clock(_called_clock(_rng.randi_range(20, 34), offense, call, play), offense.id)
 		return
 
+	var depth_interception_adjustment := 0.012 if play.has_tag("deep") else (0.004 if play.has_tag("intermediate") else 0.0)
 	var interception_chance := clampf(
-		0.017
-		+ float(defense.effective_defense_rating() - quarterback.awareness) * 0.0012
+		SimulationTuning.value("pass", "base_interception_chance", 0.019)
+		+ (float(matchup["coverage"]) - float(matchup["decision"])) * SimulationTuning.value("pass", "coverage_interception_coefficient", 0.00115)
 		+ offense.aggression * 0.010
-		+ coverage_interception_adjustment
+		+ depth_interception_adjustment
 		+ float(modifiers.get("interception", 0.0)),
-		0.008,
-		0.085
+		SimulationTuning.value("pass", "minimum_interception_chance", 0.006),
+		SimulationTuning.value("pass", "maximum_interception_chance", 0.085)
 	)
+	result.matchup_context["interception_chance"] = interception_chance
 	if _rng.randf() < interception_chance:
-		var target_depth := clampi(roundi(_rng.randfn(9.0, 7.0)), 0, 28)
+		var target_depth := clampi(roundi(_rng.randfn(_air_yards_for(play), 5.0)), 0, 35)
 		state.field_position = clampi(state.field_position + target_depth, 1, 99)
 		state.stats[offense.id]["plays"] += 1
 		state.stats[offense.id]["turnovers"] += 1
 		result.yards = 0
 		result.interception = true
-		result.interceptor_id = corner.id
+		result.interceptor_id = corner.id if corner != null else ""
 		result.title = "Intercepted"
-		result.description = "%s reads the throw and intercepts %s." % [corner.full_name, quarterback.full_name]
+		result.description = "%s wins a %s and intercepts %s." % [
+			corner.full_name if corner != null else defense.display_name(),
+			str(matchup["coverage_label"]),
+			quarterback.full_name,
+		]
 		result.drive_ended = true
 		result.possession_changed = true
 		_consume_clock(_called_clock(_rng.randi_range(8, 18), offense, call, play), offense.id)
 		state.switch_possession()
 		return
 
-	var completion_chance := clampf(
-		0.60
-		+ float(quarterback.technique - defense.effective_defense_rating()) * 0.004
-		+ float(receiver.technique - corner.technique) * 0.0025
+	var catchable_chance := clampf(
+		SimulationTuning.value("pass", "base_catchable_chance", 0.625)
+		+ (float(matchup["accuracy"]) - SimulationTuning.ratings_center()) * SimulationTuning.value("pass", "accuracy_completion_coefficient", 0.0038)
+		+ float(matchup["separation_edge"]) * SimulationTuning.value("pass", "separation_completion_coefficient", 0.0026)
+		- maxf(pressure_edge, 0.0) * SimulationTuning.value("pass", "pressure_completion_coefficient", 0.0012)
 		- offense.aggression * 0.035
 		- (offense.passing_depth - 0.50) * 0.10
-		+ coverage_completion_adjustment
 		+ float(modifiers.get("completion", 0.0)),
-		0.24,
-		0.88
+		SimulationTuning.value("pass", "minimum_catchable_chance", 0.22),
+		SimulationTuning.value("pass", "maximum_catchable_chance", 0.91)
 	)
-	if _rng.randf() >= completion_chance:
+	var catch_chance := clampf(
+		SimulationTuning.value("pass", "base_catch_chance", 0.93)
+		+ (float(matchup["catch"]) - SimulationTuning.ratings_center()) * SimulationTuning.value("pass", "catch_rating_coefficient", 0.002)
+		- maxf(float(matchup["coverage"]) - float(matchup["route"]), 0.0) * SimulationTuning.value("pass", "coverage_catch_coefficient", 0.0008),
+		SimulationTuning.value("pass", "minimum_catch_chance", 0.72),
+		SimulationTuning.value("pass", "maximum_catch_chance", 0.985)
+	)
+	result.matchup_context["catchable_chance"] = catchable_chance
+	result.matchup_context["catch_chance"] = catch_chance
+	var catchable := _rng.randf() < catchable_chance
+	var caught := catchable and _rng.randf() < catch_chance
+	if not caught:
 		state.stats[offense.id]["plays"] += 1
 		result.yards = 0
-		if _rng.randf() < 0.14:
+		if catchable and _rng.randf() < 0.72:
 			result.dropped_pass = true
 		else:
-			result.pass_defended = _rng.randf() < 0.55
-			result.pass_defender_id = corner.id if result.pass_defended else ""
+			result.pass_defended = corner != null and (_rng.randf() < 0.58 or float(matchup["coverage"]) > float(matchup["route"]))
+			result.pass_defender_id = corner.id if result.pass_defended and corner != null else ""
 		result.title = "Incomplete"
-		result.description = "%s looks for %s, but the pass falls incomplete." % [quarterback.full_name, receiver.full_name]
+		if result.dropped_pass:
+			result.description = "%s delivers through a %s, but %s cannot finish the catch." % [quarterback.full_name, str(matchup["coverage_label"]), receiver.full_name]
+		elif result.pass_defended:
+			result.description = "%s closes a %s and breaks up %s's throw to %s." % [corner.full_name, str(matchup["coverage_label"]), quarterback.full_name, receiver.full_name]
+		else:
+			result.description = "%s faces %s and misses %s in a %s." % [quarterback.full_name, str(matchup["pressure_label"]), receiver.full_name, str(matchup["coverage_label"])]
 		_advance_down_after_no_gain(result)
 		_consume_clock(_called_clock(_rng.randi_range(5, 9), offense, call, play), offense.id)
 		return
 
-	var yards := clampi(
-		roundi(_rng.randfn(8.5 + float(offense.effective_offense_rating() - defense.effective_defense_rating()) * 0.08 + offense.aggression * 3.0 + (offense.passing_depth - 0.50) * 12.0 + coverage_yards_adjustment + float(modifiers.get("yardage", 0.0)), 7.0 * float(modifiers.get("variance", 1.0)))),
-		-2,
-		58 if play.has_tag("deep") else 42
+	var air_yards := roundi(_rng.randfn(
+		_air_yards_for(play) + float(modifiers.get("yardage", 0.0)) + (float(matchup["accuracy"]) - SimulationTuning.ratings_center()) * 0.025,
+		SimulationTuning.value("pass", "air_yard_variance", 4.6) * float(modifiers.get("variance", 1.0))
+	))
+	var expected_yac := (
+		SimulationTuning.value("pass", "base_yac", 3.2)
+		+ (float(matchup["yac"]) - float(matchup["tackle"])) * SimulationTuning.value("pass", "yac_rating_coefficient", 0.055)
 	)
+	var yards_after_catch := roundi(_rng.randfn(expected_yac, SimulationTuning.value("pass", "yac_variance", 3.8)))
+	var yards := clampi(air_yards + yards_after_catch, -2, 58 if play.has_tag("deep") else 42)
+	result.matchup_context["air_yards"] = air_yards
+	result.matchup_context["yards_after_catch"] = yards_after_catch
 	result.yards = yards
 	result.completed_pass = true
 	if tackler != null:
 		result.tackler_ids.append(tackler.id)
-	result.description = "%s connects with %s %s." % [quarterback.full_name, receiver.full_name, _for_yards(yards)]
+	result.description = "%s works from a %s and finds %s with %s %s." % [
+		quarterback.full_name,
+		str(matchup["pressure_label"]),
+		receiver.full_name,
+		str(matchup["coverage_label"]),
+		_for_yards(yards),
+	]
 	_record_yards(offense.id, "pass", yards)
 	_apply_standard_gain(result, yards)
 	_consume_clock(_called_clock(_rng.randi_range(17, 34), offense, call, play), offense.id)
@@ -277,13 +370,29 @@ func _resolve_pass(
 func _resolve_punt(result: PlayResult, call: PlayCallData, play: PlayDefinitionData) -> void:
 	var offense := state.offense()
 	var defense := state.defense()
-	var punt_distance := _rng.randi_range(38, 53)
 	var punter := offense.player_at("P")
 	var long_snapper := offense.player_at("LS")
+	var profile := AttributeMatchupService.punt_profile(punter)
+	var punt_distance := clampi(
+		roundi(_rng.randfn(float(profile["expected_distance"]), SimulationTuning.value("special_teams", "punt_distance_variance", 4.2))),
+		roundi(SimulationTuning.value("special_teams", "punt_minimum_distance", 28.0)),
+		roundi(SimulationTuning.value("special_teams", "punt_maximum_distance", 70.0))
+	)
+	var raw_landing_position := state.field_position + punt_distance
+	var placement_chance := clampf(0.28 + (float(profile["accuracy"]) - SimulationTuning.ratings_center()) * 0.012, 0.08, 0.70)
+	if raw_landing_position >= 100 and state.field_position <= 75 and _rng.randf() < placement_chance:
+		var target_landing := _rng.randi_range(96, 99)
+		punt_distance = maxi(target_landing - state.field_position, 1)
 	result.punter_id = punter.id
 	_append_player_id(result.special_teams_participant_ids, punter)
 	_append_player_id(result.special_teams_participant_ids, long_snapper)
 	var landing_position := state.field_position + punt_distance
+	result.matchup_context = profile.duplicate(true)
+	result.matchup_context.merge({
+		"model": "attribute_simulation_v2",
+		"placement_chance": placement_chance,
+		"landing_position": landing_position,
+	}, true)
 	result.play_type = "punt"
 	result.title = "Punt"
 	result.yards = punt_distance
@@ -294,12 +403,16 @@ func _resolve_punt(result: PlayResult, call: PlayCallData, play: PlayDefinitionD
 	if landing_position >= 100:
 		result.punt_touchback = true
 		result.net_yards = maxi(0, 75 - result.starting_field_position)
-		result.description = "%s punts into the end zone. %s starts at its 25." % [offense.display_name(), defense.abbreviation]
+		result.description = "%s drives the punt into the end zone. %s starts at its 25." % [punter.full_name, defense.abbreviation]
 		state.switch_possession(true)
 	else:
 		state.field_position = landing_position
 		state.switch_possession()
-		result.description = "%s flips the field with a %d-yard punt." % [offense.display_name(), punt_distance]
+		result.description = "%s flips the field with a %d-yard punt%s." % [
+			punter.full_name,
+			punt_distance,
+			", placed inside the 5" if landing_position >= 95 else "",
+		]
 
 
 func _resolve_field_goal(result: PlayResult, call: PlayCallData, play: PlayDefinitionData) -> void:
@@ -312,13 +425,10 @@ func _resolve_field_goal(result: PlayResult, call: PlayCallData, play: PlayDefin
 	result.kick_distance = kick_distance
 	_append_player_id(result.special_teams_participant_ids, kicker)
 	_append_player_id(result.special_teams_participant_ids, long_snapper)
-	var kick_chance := clampf(
-		0.94
-		+ float(offense.effective_special_teams_rating() - 80) * 0.007
-		- float(maxi(kick_distance - 35, 0)) * 0.018,
-		0.18,
-		0.97
-	)
+	var profile := AttributeMatchupService.field_goal_profile(kicker, kick_distance)
+	var kick_chance := float(profile["chance"])
+	result.matchup_context = profile.duplicate(true)
+	result.matchup_context.merge({"model": "attribute_simulation_v2", "distance": kick_distance}, true)
 	result.play_type = "field_goal"
 	result.drive_ended = true
 	result.possession_changed = true
@@ -326,14 +436,14 @@ func _resolve_field_goal(result: PlayResult, call: PlayCallData, play: PlayDefin
 	if _rng.randf() < kick_chance:
 		state.add_score(offense.id, 3)
 		result.title = "Field goal"
-		result.description = "%s converts from %d yards." % [offense.display_name(), kick_distance]
+		result.description = "%s converts from %d yards with power to spare." % [kicker.full_name, kick_distance]
 		result.points = 3
 		result.scoring_play = true
 		result.field_goal_made = true
 		state.switch_possession(true)
 	else:
 		result.title = "No good"
-		result.description = "%s misses the %d-yard attempt." % [offense.display_name(), kick_distance]
+		result.description = "%s misses the %d-yard attempt." % [kicker.full_name, kick_distance]
 		state.switch_possession()
 
 
@@ -370,15 +480,25 @@ func _apply_standard_gain(result: PlayResult, yards: int) -> void:
 	var offense_id := state.possession_team_id
 	state.field_position = clampi(state.field_position + yards, 1, 100)
 	if state.field_position >= 100:
-		state.add_score(offense_id, 7)
+		state.add_score(offense_id, 6)
 		result.title = "Touchdown"
 		result.description = "%s Touchdown — %s" % [state.offense().abbreviation, result.description]
-		result.points = 7
+		result.points = 6
 		result.scoring_play = true
 		result.touchdown = true
 		var kicker := state.team_by_id(offense_id).player_at("K")
 		if kicker != null:
 			result.kicker_id = kicker.id
+			result.extra_point_attempted = true
+			var extra_point_chance := AttributeMatchupService.extra_point_chance(kicker)
+			result.matchup_context["extra_point_chance"] = extra_point_chance
+			if _rng.randf() < extra_point_chance:
+				state.add_score(offense_id, 1)
+				result.points += 1
+				result.extra_point_made = true
+				result.description += " %s adds the extra point." % kicker.full_name
+			else:
+				result.description += " %s misses the extra point." % kicker.full_name
 		result.drive_ended = true
 		result.possession_changed = true
 		state.switch_possession(true)
@@ -509,84 +629,93 @@ func _populate_scrimmage_participants(
 	offense: TeamData,
 	defense: TeamData,
 	extra_offense: Array,
-	extra_defense: Array
+	extra_defense: Array,
+	offense_lineup: Array[PlayerData] = [],
+	defense_lineup: Array[PlayerData] = []
 ) -> void:
 	var offense_starters: Array[String] = _offensive_starters[offense.id]
 	var defense_starters: Array[String] = _defensive_starters[defense.id]
 	result.offensive_starter_ids = offense_starters.duplicate()
 	result.defensive_starter_ids = defense_starters.duplicate()
-	result.offensive_participant_ids = result.offensive_starter_ids.duplicate()
-	result.defensive_participant_ids = result.defensive_starter_ids.duplicate()
+	result.offensive_participant_ids = PersonnelPackageService.ids(offense_lineup) if not offense_lineup.is_empty() else result.offensive_starter_ids.duplicate()
+	result.defensive_participant_ids = PersonnelPackageService.ids(defense_lineup) if not defense_lineup.is_empty() else result.defensive_starter_ids.duplicate()
 	for player in extra_offense:
 		_replace_position_participant(result.offensive_participant_ids, offense, player)
 	for player in extra_defense:
 		_replace_position_participant(result.defensive_participant_ids, defense, player)
 
 
-func _lineup_ids(team: TeamData, position_counts: Dictionary) -> Array[String]:
-	var ids: Array[String] = []
-	for position_name in position_counts:
-		var needed := int(position_counts[position_name])
-		for player in team.depth_players(str(position_name)):
-			if not player.is_available():
-				continue
-			_append_player_id(ids, player)
-			needed -= 1
-			if needed <= 0:
-				break
-	return ids
+func _cached_offensive_lineup(team: TeamData, personnel: String) -> Array[PlayerData]:
+	var result: Array[PlayerData] = []
+	var cached = _offensive_lineups.get(_lineup_cache_key(team.id, personnel), [])
+	for player in cached:
+		result.append(player)
+	if result.is_empty():
+		return PersonnelPackageService.offensive_lineup(team, personnel)
+	return result
 
 
-func _select_depth_player(team: TeamData, position_name: String) -> PlayerData:
+func _cached_defensive_lineup(team: TeamData, personnel: String) -> Array[PlayerData]:
+	var result: Array[PlayerData] = []
+	var cached = _defensive_lineups.get(_lineup_cache_key(team.id, personnel), [])
+	for player in cached:
+		result.append(player)
+	if result.is_empty():
+		return PersonnelPackageService.defensive_lineup(team, personnel)
+	return result
+
+
+func _lineup_cache_key(team_id: String, personnel: String) -> String:
+	return "%s|%s" % [team_id, personnel]
+
+
+func _select_lineup_player(lineup_players: Array[PlayerData], positions: Array[String], fallback: PlayerData) -> PlayerData:
 	var candidates: Array[PlayerData] = []
 	var weights: Array[float] = []
-	var depth_index := 0
-	for player in team.depth_players(position_name):
-		if not player.is_available():
+	for player in lineup_players:
+		if player != null and player.position in positions:
+			candidates.append(player)
+			weights.append(maxf(float(player.effective_overall()), 1.0))
+	return _weighted_player(candidates, weights, fallback)
+
+
+func _select_target_from_lineup(lineup_players: Array[PlayerData], preferred_positions: Array[String], team: TeamData) -> PlayerData:
+	var candidates: Array[PlayerData] = []
+	var weights: Array[float] = []
+	var position_weight := {"WR": 1.0, "TE": 0.70, "RB": 0.42}
+	for player in lineup_players:
+		if player == null or not player.position in preferred_positions:
 			continue
 		candidates.append(player)
-		weights.append(maxf(float(player.effective_overall()), 1.0) * pow(0.38, depth_index))
-		depth_index += 1
-		if candidates.size() >= 4:
-			break
-	return _weighted_player(candidates, weights, team.player_at(position_name))
+		var receiving_skill := AttributeMatchupService.weighted_rating(player, {
+			"catching": 0.35, "shortRouteRunning": 0.18, "mediumRouteRunning": 0.18,
+			"deepRouteRunning": 0.12, "release": 0.09, "speed": 0.08,
+		})
+		weights.append(maxf(receiving_skill, 1.0) * float(position_weight.get(player.position, 0.5)))
+	var fallback_position: String = preferred_positions.front() if not preferred_positions.is_empty() else "WR"
+	return _weighted_player(candidates, weights, team.player_at(fallback_position))
 
 
-func _select_target(team: TeamData, preferred_positions: Array[String]) -> PlayerData:
-	var candidates: Array[PlayerData] = []
+func _select_rusher(rushers: Array[PlayerData], fallback: PlayerData) -> PlayerData:
 	var weights: Array[float] = []
-	var position_weight := {"WR": 1.0, "TE": 0.66, "RB": 0.38}
-	for position_name in preferred_positions:
-		var depth_index := 0
-		for player in team.depth_players(position_name):
-			if not player.is_available():
-				continue
-			candidates.append(player)
-			weights.append(
-				maxf(float(player.technique + player.speed), 1.0)
-				* float(position_weight.get(position_name, 0.5))
-				* pow(0.58, depth_index)
-			)
-			depth_index += 1
-			if depth_index >= 4:
-				break
-	return _weighted_player(candidates, weights, team.player_at(preferred_positions.front()))
+	for player in rushers:
+		weights.append(maxf(AttributeMatchupService.weighted_rating(player, {
+			"finesseMoves": 0.28, "powerMoves": 0.28, "blockShedding": 0.18,
+			"acceleration": 0.14, "strength": 0.12,
+		}), 1.0))
+	return _weighted_player(rushers, weights, fallback)
 
 
-func _select_defender(team: TeamData, positions: Array[String]) -> PlayerData:
-	var candidates: Array[PlayerData] = []
-	var weights: Array[float] = []
-	for position_name in positions:
-		var depth_index := 0
-		for player in team.depth_players(position_name):
-			if not player.is_available():
-				continue
-			candidates.append(player)
-			weights.append(maxf(float(player.awareness + player.technique), 1.0) * pow(0.52, depth_index))
-			depth_index += 1
-			if depth_index >= 3:
-				break
-	return _weighted_player(candidates, weights, team.player_at(positions.front()))
+func _air_yards_for(play: PlayDefinitionData) -> float:
+	if play.has_tag("screen"):
+		return SimulationTuning.value("pass", "screen_air_yards", 0.5)
+	if play.has_tag("quick"):
+		return SimulationTuning.value("pass", "quick_air_yards", 4.5)
+	if play.has_tag("deep"):
+		return SimulationTuning.value("pass", "deep_air_yards", 18.5)
+	if play.has_tag("intermediate") or play.has_tag("seam") or play.has_tag("crossing"):
+		return SimulationTuning.value("pass", "intermediate_air_yards", 10.5)
+	return SimulationTuning.value("pass", "default_air_yards", 7.5)
 
 
 func _weighted_player(candidates: Array[PlayerData], weights: Array[float], fallback: PlayerData) -> PlayerData:

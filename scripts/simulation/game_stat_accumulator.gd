@@ -218,13 +218,14 @@ static func _record_touchdown(state: GameStateData, result: PlayResult, offense:
 		if receiver != null:
 			receiver.stats.add("receiving_touchdowns")
 	var kicker := _line_for(state, offense, defense, result.kicker_id)
-	if kicker != null:
+	if kicker != null and result.extra_point_attempted:
 		state.stats[offense.id]["extra_point_attempts"] += 1
-		state.stats[offense.id]["extra_points_made"] += 1
 		kicker.mark_appearance(false)
 		kicker.stats.add("special_teams_snaps")
 		kicker.stats.add("extra_point_attempts")
-		kicker.stats.add("extra_points_made")
+		if result.extra_point_made:
+			state.stats[offense.id]["extra_points_made"] += 1
+			kicker.stats.add("extra_points_made")
 
 
 static func _line_for(

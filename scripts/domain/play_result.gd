@@ -38,6 +38,8 @@ var fumble_lost: bool
 var pass_defended: bool
 var field_goal_made: bool
 var punt_touchback: bool
+var extra_point_attempted: bool
+var extra_point_made: bool
 var kick_distance: int
 var passer_id: String
 var target_id: String
@@ -57,6 +59,7 @@ var defensive_participant_ids: Array[String] = []
 var special_teams_participant_ids: Array[String] = []
 var offensive_starter_ids: Array[String] = []
 var defensive_starter_ids: Array[String] = []
+var matchup_context: Dictionary = {}
 
 
 func _init() -> void:
@@ -97,6 +100,8 @@ func _init() -> void:
 	pass_defended = false
 	field_goal_made = false
 	punt_touchback = false
+	extra_point_attempted = false
+	extra_point_made = false
 	kick_distance = 0
 	passer_id = ""
 	target_id = ""
@@ -110,6 +115,7 @@ func _init() -> void:
 	kicker_id = ""
 	punter_id = ""
 	returner_id = ""
+	matchup_context = {}
 
 
 func clock_label() -> String:

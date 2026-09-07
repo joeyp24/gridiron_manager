@@ -25,7 +25,9 @@ Recommendations are deterministic evaluations of down, distance, field position,
 
 ## Resolution rules
 
-Calls adjust probabilities; they do not force outcomes. Player ratings, depth-chart availability, team tactics, and the game seed remain authoritative. Examples include quick concepts reducing pressure exposure, screens punishing aggressive calls, play action exploiting run commitment, power runs attacking light boxes, prevent defense limiting deep concepts, and repeated calls receiving an anticipation penalty.
+Calls adjust probabilities; they do not force outcomes. Each call first fields its actual 10, 11, 12, 21, or 22 offensive package against the defense's Base, Nickel, Dime, or Goal Line unit. Attribute Simulation v2 then compares detailed blockers against the front, rushers against protection, depth-specific quarterback accuracy against coverage, routes and hands against defenders, ball security against contact, and kickers or punters against the requested distance. Fatigue is applied to those detailed grades. Team tactics, concept modifiers, and the game seed remain authoritative alongside those matchups.
+
+Examples include quick concepts reducing pressure exposure, screens punishing aggressive calls, play action exploiting run commitment, power runs and heavy personnel attacking light boxes, prevent defense limiting deep concepts, max protection adding eligible blockers, and repeated calls receiving an anticipation penalty. Results retain their component matchup grades and calculated probabilities for play-by-play, testing, and future analysis.
 
 Every result retains the offensive call ID, formation, personnel, concept, tempo, whether it was user selected, and the AI defensive response. That metadata appears in play-by-play and is available for future opponent scouting and coordinator analysis.
 
@@ -34,3 +36,5 @@ Every result retains the offensive call ID, formation, personnel, concept, tempo
 Add a new offensive concept to `data/playbooks/pro_style_offense.json` rather than branching inside the Match Center. New outcome behavior belongs in `PlayCallerService` matchup tags or a focused resolver, while participant and statistic attribution remains in the existing accumulator boundary. Team-specific playbooks can later compose or filter the same stable definitions.
 
 The first pass intentionally leaves the user's defense with its coordinator. User defensive calls, audibles, timeouts, substitutions, formation familiarity, and team-specific playbook installation can extend the same call objects without changing automatic simulation.
+
+See [`simulation_v2.md`](simulation_v2.md) for the package mappings, direct attribute groups, balancing configuration, and calibration rules.

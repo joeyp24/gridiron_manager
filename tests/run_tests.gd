@@ -8,6 +8,8 @@ func _init() -> void:
 	_test_seeded_games_are_deterministic()
 	_test_playbook_catalog_and_call_validation()
 	_test_called_plays_are_deterministic()
+	_test_personnel_packages_and_attribute_matchups()
+	_test_detailed_attributes_drive_outcomes()
 	_test_clock_management_calls()
 	_test_games_reach_a_legal_final_state()
 	_test_statistics_balance()
@@ -123,6 +125,86 @@ func _test_called_plays_are_deterministic() -> void:
 		history.append(previous)
 	var anticipated := PlayCallerService.matchup_modifiers(repeated_play, neutral_defense, history)
 	_check(float(anticipated.get("yardage", 0.0)) < float(clean.get("yardage", 0.0)), "Repeating the same call should create a defensive anticipation penalty")
+
+
+func _test_personnel_packages_and_attribute_matchups() -> void:
+	var teams := SampleLeague.create_teams()
+	var offense := teams[0]
+	var defense := teams[1]
+	for personnel in ["10", "11", "12", "21", "22"]:
+		var lineup := PersonnelPackageService.offensive_lineup(offense, personnel)
+		var expected := PersonnelPackageService.offensive_counts(personnel)
+		_check(lineup.size() == 11, "%s offensive personnel should field exactly eleven players" % personnel)
+		for position_name in expected:
+			_check(_position_count(lineup, str(position_name)) == int(expected[position_name]), "%s personnel should honor its %s count" % [personnel, position_name])
+	for personnel in ["Base", "Nickel", "Dime", "Goal Line"]:
+		var lineup := PersonnelPackageService.defensive_lineup(defense, personnel)
+		var expected := PersonnelPackageService.defensive_counts(personnel)
+		_check(lineup.size() == 11, "%s defense should field exactly eleven players" % personnel)
+		for position_name in expected:
+			_check(_position_count(lineup, str(position_name)) == int(expected[position_name]), "%s defense should honor its %s count" % [personnel, position_name])
+
+	var play := PlaybookCatalog.pro_style_offense().play_by_id("inside_zone")
+	var offense_lineup := PersonnelPackageService.offensive_lineup(offense, "11")
+	var defense_lineup := PersonnelPackageService.defensive_lineup(defense, "Base")
+	var runner := offense.player_at("RB")
+	var tackler := defense.player_at("LB")
+	var run_matchup := AttributeMatchupService.run_matchup(
+		play,
+		PersonnelPackageService.blockers(offense_lineup, runner),
+		PersonnelPackageService.rushers(defense_lineup),
+		runner,
+		tackler
+	)
+	_check(run_matchup.has("blocking_edge") and run_matchup.has("ball_security"), "The run model should expose blocking, carrying, tackling, and ball-security context")
+	var simulator := FootballSimulator.new(offense, defense, 930114)
+	simulator.state.possession_team_id = offense.id
+	var result := simulator.simulate_called_play("inside_zone")
+	_check(result != null and result.matchup_context.get("model", "") == "attribute_simulation_v2", "Resolved plays should retain their direct-attribute matchup context")
+	_check(result != null and result.offensive_participant_ids.size() == 11 and result.defensive_participant_ids.size() == 11, "Resolved scrimmage plays should record both actual eleven-player packages")
+
+
+func _test_detailed_attributes_drive_outcomes() -> void:
+	var templates := SampleLeague.create_teams()
+	var high_run_yards := 0
+	var low_run_yards := 0
+	var high_completions := 0
+	var low_completions := 0
+	var high_field_goals := 0
+	var low_field_goals := 0
+	for trial in range(120):
+		var high_offense := templates[2].clone_with_strategy({})
+		var low_offense := templates[2].clone_with_strategy({})
+		var high_defense := templates[3].clone_with_strategy({})
+		var low_defense := templates[3].clone_with_strategy({})
+		_set_detailed_attributes(high_offense, 94)
+		_set_detailed_attributes(low_offense, 56)
+		var run_seed := 710000 + trial
+		var high_run := FootballSimulator.new(high_offense, high_defense, run_seed)
+		var low_run := FootballSimulator.new(low_offense, low_defense, run_seed)
+		high_run.state.possession_team_id = high_offense.id
+		low_run.state.possession_team_id = low_offense.id
+		high_run_yards += high_run.simulate_called_play("inside_zone").yards
+		low_run_yards += low_run.simulate_called_play("inside_zone").yards
+
+		var high_pass := FootballSimulator.new(high_offense, high_defense, run_seed + 2000)
+		var low_pass := FootballSimulator.new(low_offense, low_defense, run_seed + 2000)
+		high_pass.state.possession_team_id = high_offense.id
+		low_pass.state.possession_team_id = low_offense.id
+		high_completions += 1 if high_pass.simulate_called_play("quick_slants").completed_pass else 0
+		low_completions += 1 if low_pass.simulate_called_play("quick_slants").completed_pass else 0
+
+		var high_kick := FootballSimulator.new(high_offense, high_defense, run_seed + 4000)
+		var low_kick := FootballSimulator.new(low_offense, low_defense, run_seed + 4000)
+		high_kick.state.possession_team_id = high_offense.id
+		low_kick.state.possession_team_id = low_offense.id
+		high_kick.state.field_position = 60
+		low_kick.state.field_position = 60
+		high_field_goals += 1 if high_kick.simulate_called_play("field_goal").field_goal_made else 0
+		low_field_goals += 1 if low_kick.simulate_called_play("field_goal").field_goal_made else 0
+	_check(high_run_yards > low_run_yards + 60, "Elite detailed attributes should create a meaningful rushing advantage across seeded trials")
+	_check(high_completions > low_completions + 10, "Elite passing and receiving attributes should improve completion results across seeded trials")
+	_check(high_field_goals > low_field_goals + 10, "Kick accuracy and power should directly improve field-goal results across seeded trials")
 
 
 func _test_clock_management_calls() -> void:
@@ -1203,6 +1285,23 @@ func _make_user_roster_legal(career: CareerSession) -> void:
 		if not signed:
 			break
 		guard += 1
+
+
+func _position_count(players: Array[PlayerData], position_name: String) -> int:
+	var count := 0
+	for player in players:
+		if player.position == position_name:
+			count += 1
+	return count
+
+
+func _set_detailed_attributes(team: TeamData, value: int) -> void:
+	for player in team.players:
+		if player.madden_ratings == null:
+			continue
+		for attribute_name in player.madden_ratings.attributes:
+			if str(attribute_name) != "overall":
+				player.madden_ratings.attributes[attribute_name] = value
 
 
 func _check(condition: bool, message: String) -> void:
