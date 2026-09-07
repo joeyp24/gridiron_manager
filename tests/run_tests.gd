@@ -51,6 +51,7 @@ func _init() -> void:
 	_test_version_seven_trade_save_migration()
 	_test_version_eight_statistics_save_migration()
 	_test_version_nine_hybrid_ratings_save_migration()
+	_test_version_ten_fantasy_draft_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -1187,6 +1188,27 @@ func _test_version_nine_hybrid_ratings_save_migration() -> void:
 		_check(restored != null and restored.madden_ratings.attributes.size() >= 54, "Hybrid save migration should restore the complete detailed attribute set")
 		_check(restored != null and restored.jersey_number == source_jersey, "Hybrid save migration should restore the source jersey number")
 		_check(loaded.user_team().logo_url.begins_with("https://"), "Hybrid save migration should restore the club's remote team-mark reference")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_ten_fantasy_draft_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v10_fantasy_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("denver_summit", 100113, LeagueCatalog.SOURCE_FICTIONAL)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("career_mode")
+	league_data.erase("fantasy_draft")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 10, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-ten career should migrate into the fantasy-draft schema")
+	if loaded != null:
+		_check(loaded.league.career_mode == LeagueState.CAREER_MODE_STANDARD, "Existing careers should migrate to standard-roster mode")
+		_check(loaded.league.fantasy_draft == null, "Migration must not invent fantasy-draft progress for an existing career")
 	DirAccess.remove_absolute(absolute_path)
 
 

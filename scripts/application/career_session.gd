@@ -10,8 +10,16 @@ func _init(state: LeagueState = null) -> void:
 	league = state
 
 
-static func new_career(team_id: String, seed: int, source_id: String = LeagueCatalog.SOURCE_NFLVERSE_FULL) -> CareerSession:
-	return CareerSession.new(LeagueSimulator.create_season(team_id, seed, source_id))
+static func new_career(
+	team_id: String,
+	seed: int,
+	source_id: String = LeagueCatalog.SOURCE_NFLVERSE_FULL,
+	career_mode: String = LeagueState.CAREER_MODE_STANDARD
+) -> CareerSession:
+	var state := LeagueSimulator.create_season(team_id, seed, source_id)
+	if state != null and career_mode == LeagueState.CAREER_MODE_FANTASY_DRAFT:
+		FantasyDraftService.initialize(state)
+	return CareerSession.new(state)
 
 
 static func from_dict(data: Dictionary) -> CareerSession:
@@ -127,6 +135,26 @@ func auto_pick_draft_selection() -> Dictionary:
 	if bool(result.get("ok", false)) and league.phase == LeagueState.PHASE_ROSTER_DECISIONS:
 		OffseasonService.prepare_post_draft_ai_rosters(league)
 	return result
+
+
+func start_fantasy_draft() -> Dictionary:
+	return FantasyDraftService.start(league)
+
+
+func select_fantasy_player(player_id: String) -> Dictionary:
+	return FantasyDraftService.select_user_player(league, player_id)
+
+
+func auto_pick_fantasy_selection() -> Dictionary:
+	return FantasyDraftService.auto_pick_user(league)
+
+
+func simulate_fantasy_to_user_pick() -> Dictionary:
+	return FantasyDraftService.simulate_to_user_pick(league)
+
+
+func simulate_fantasy_draft() -> Dictionary:
+	return FantasyDraftService.simulate_remainder(league)
 
 
 func expiring_players() -> Array[PlayerData]:

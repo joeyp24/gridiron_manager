@@ -1,16 +1,19 @@
 extends Control
 
 signal back_requested
-signal career_requested(source_id: String, team_id: String)
+signal career_requested(source_id: String, team_id: String, career_mode: String)
 
 var _teams: Array[TeamData] = []
 var _sources: Array[Dictionary] = []
 var _selected_source_id := LeagueCatalog.SOURCE_NFLVERSE_FULL
 var _selected_index := 0
+var _selected_career_mode := LeagueState.CAREER_MODE_STANDARD
 var _team_grid: GridContainer
 var _details_host: VBoxContainer
 var _source_selector: OptionButton
 var _source_description: Label
+var _mode_selector: OptionButton
+var _mode_description: Label
 var _team_buttons: Array[Button] = []
 var _button_group := ButtonGroup.new()
 
@@ -62,6 +65,23 @@ func _build_interface() -> void:
 	source_row.add_child(_source_selector)
 	page.add_child(source_card)
 
+	var mode_card := UIFactory.card("InsetPanel")
+	var mode_row := UIFactory.hbox(14)
+	mode_card.add_child(mode_row)
+	var mode_copy := UIFactory.vbox(2)
+	mode_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mode_copy.add_child(UIFactory.label("CAREER FORMAT", "EyebrowLabel"))
+	_mode_description = UIFactory.wrapped_label("Use the authentic opening rosters and begin at Week 1.", "MutedLabel")
+	mode_copy.add_child(_mode_description)
+	mode_row.add_child(mode_copy)
+	_mode_selector = OptionButton.new()
+	_mode_selector.custom_minimum_size = Vector2(250, 44)
+	_mode_selector.add_item("STANDARD ROSTERS")
+	_mode_selector.add_item("FANTASY DRAFT")
+	_mode_selector.item_selected.connect(_select_career_mode)
+	mode_row.add_child(_mode_selector)
+	page.add_child(mode_card)
+
 	_team_grid = GridContainer.new()
 	_team_grid.columns = 4
 	_team_grid.add_theme_constant_override("h_separation", 12)
@@ -84,7 +104,7 @@ func _build_interface() -> void:
 	begin.custom_minimum_size = Vector2(200, 48)
 	begin.pressed.connect(func():
 		if not _teams.is_empty():
-			career_requested.emit(_selected_source_id, _teams[_selected_index].id)
+			career_requested.emit(_selected_source_id, _teams[_selected_index].id, _selected_career_mode)
 	)
 	actions.add_child(begin)
 	page.add_child(actions)
@@ -103,6 +123,15 @@ func _select_source(index: int) -> void:
 	_rebuild_team_grid()
 	if not _teams.is_empty():
 		_select_team(0)
+
+
+func _select_career_mode(index: int) -> void:
+	_selected_career_mode = LeagueState.CAREER_MODE_FANTASY_DRAFT if index == 1 else LeagueState.CAREER_MODE_STANDARD
+	_mode_description.text = (
+		"Randomize a 32-team snake order, draft complete 53-player rosters, and begin the normal season."
+		if _selected_career_mode == LeagueState.CAREER_MODE_FANTASY_DRAFT
+		else "Use the authentic opening rosters and begin at Week 1."
+	)
 
 
 func _rebuild_team_grid() -> void:

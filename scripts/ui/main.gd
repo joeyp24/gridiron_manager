@@ -14,6 +14,7 @@ const DRAFT_CENTER_SCENE := preload("res://scenes/screens/draft_center_screen.ts
 const TRADE_CENTER_SCENE := preload("res://scenes/screens/trade_center_screen.tscn")
 const STATISTICS_CENTER_SCENE := preload("res://scenes/screens/statistics_center_screen.tscn")
 const PLAYERS_SCENE := preload("res://scenes/screens/players_screen.tscn")
+const FANTASY_DRAFT_SCENE := preload("res://scenes/screens/fantasy_draft_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -143,12 +144,15 @@ func _show_career_select() -> void:
 	_mount(screen)
 
 
-func _start_new_career(source_id: String, team_id: String) -> void:
+func _start_new_career(source_id: String, team_id: String, career_mode: String) -> void:
 	var season_seed := int(Time.get_unix_time_from_system()) ^ Time.get_ticks_msec()
-	_career = CareerSession.new_career(team_id, season_seed, source_id)
+	_career = CareerSession.new_career(team_id, season_seed, source_id, career_mode)
 	_enable_career_navigation()
 	_save_career()
-	_show_career_dashboard()
+	if _career.league.is_fantasy_draft_active():
+		_show_fantasy_draft()
+	else:
+		_show_career_dashboard()
 
 
 func _continue_career() -> void:
@@ -159,11 +163,17 @@ func _continue_career() -> void:
 	_career = loaded
 	_enable_career_navigation()
 	_save_career()
-	_show_career_dashboard()
+	if _career.league.is_fantasy_draft_active():
+		_show_fantasy_draft()
+	else:
+		_show_career_dashboard()
 
 
 func _show_career_dashboard() -> void:
 	if _career == null:
+		return
+	if _career.league.is_fantasy_draft_active():
+		_show_fantasy_draft()
 		return
 	_section_label.text = "CAREER / HUB"
 	var screen := CAREER_DASHBOARD_SCENE.instantiate()
@@ -181,6 +191,29 @@ func _show_career_dashboard() -> void:
 	screen.offseason_requested.connect(_show_offseason)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
+
+
+func _show_fantasy_draft() -> void:
+	if _career == null or _career.league.fantasy_draft == null:
+		return
+	if not _career.league.is_fantasy_draft_active():
+		_enable_career_navigation()
+		_show_career_dashboard()
+		return
+	_section_label.text = "CAREER / FANTASY DRAFT"
+	var screen := FANTASY_DRAFT_SCENE.instantiate()
+	screen.setup(_career)
+	screen.portal_requested.connect(_show_main_menu)
+	screen.draft_changed.connect(_save_career)
+	screen.draft_completed.connect(_finish_fantasy_draft)
+	screen.player_profile_requested.connect(_show_players)
+	_mount(screen)
+
+
+func _finish_fantasy_draft() -> void:
+	_enable_career_navigation()
+	_save_career()
+	_show_career_dashboard()
 
 
 func _show_roster() -> void:
@@ -380,12 +413,14 @@ func _start_rematch() -> void:
 
 
 func _enable_career_navigation() -> void:
+	var draft_active := _career != null and _career.league.is_fantasy_draft_active()
 	_career_button.disabled = false
-	_roster_button.disabled = false
-	_players_button.disabled = false
-	_statistics_button.disabled = false
-	_strategy_button.disabled = false
-	_office_button.disabled = false
+	_roster_button.disabled = draft_active
+	_players_button.disabled = draft_active
+	_statistics_button.disabled = draft_active
+	_strategy_button.disabled = draft_active
+	_office_button.disabled = draft_active
+	_match_button.disabled = true
 
 
 func _mount(screen: Control) -> void:

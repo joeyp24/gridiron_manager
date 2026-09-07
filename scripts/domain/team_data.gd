@@ -240,6 +240,12 @@ func effective_special_teams_rating() -> int:
 	return roundi(float(special_teams_rating) * 0.55 + float(lineup) * 0.45)
 
 
+func recalculate_ratings_from_roster() -> void:
+	offense_rating = _unit_average(OFFENSIVE_POSITIONS)
+	defense_rating = _unit_average(DEFENSIVE_POSITIONS)
+	special_teams_rating = _unit_average(["K", "P"])
+
+
 func active_roster_count() -> int:
 	var count := 0
 	for player in players:

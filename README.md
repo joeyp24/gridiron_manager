@@ -13,6 +13,8 @@ Gridiron Manager is an extensible American football management simulation built 
 - Contract extensions, annual contract rollover, expirations, and dead-cap relief
 - A $280 million team salary cap, 53-player active rosters, 90-player offseason capacity, and release dead money
 - An expanded 339-player launch free-agent market containing every rated player outside the active 53-player rosters
+- A new-career Fantasy Draft mode that randomizes all 32 clubs, places all 2,035 players into one pool, and builds complete 53-player rosters through a resumable 53-round snake draft
+- Manual Fantasy Draft selections plus cap-aware AI drafting that weighs overall, potential, age, scheme, position value, roster needs, contract cost, and league-wide positional scarcity
 - Free-agent negotiation shaped by quality, age, position value, projected role, market demand, term, and offer strength
 - A responsive Trade Center with multi-player and multi-pick offers, live cap and roster validation, AI acceptance, deterministic counteroffers, and a Week 9 deadline
 - Three complete years of tradable seven-round draft capital whose ownership carries into the live draft
@@ -39,7 +41,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
 - Live play-by-play, field visualization, and team box-score statistics
-- Versioned JSON career saves with automatic migrations through schema version ten, hybrid player ratings, statistics history, trade history, future-pick ownership, and persistent data provenance
+- Versioned JSON career saves with automatic migrations through schema version eleven, resumable Fantasy Draft state, hybrid player ratings, statistics history, trade history, future-pick ownership, and persistent data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -59,10 +61,11 @@ From the repository root:
 godot --headless --path . --script res://tests/run_tests.gd
 godot --headless --path . --script res://tests/run_trade_tests.gd
 godot --headless --path . --script res://tests/run_full_league_tests.gd
+godot --headless --path . --script res://tests/run_fantasy_draft_tests.gd
 godot --headless --path . --script res://tests/run_ui_tests.gd
 ```
 
-The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration for rushing, passing, and kicking; playbook loading, call validation, tempo, repetition, and clock management; legal game state; player generation; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; development and retirement decisions; the permanent career archive; scouting uncertainty; draft order; rookie contracts; AI roster building; free-agent population balance; all 32 teams, 1,696 rostered players, 339 free agents, and 2,035 complete Madden attribute records; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive Match Center, Trade Center, Statistics Center, Player Database, and free-agency UI; serialization; and save migration.
+The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration for rushing, passing, and kicking; playbook loading, call validation, tempo, repetition, and clock management; legal game state; player generation; player/team stat reconciliation; weekly, season, team-split, and career aggregation; duplicate-game protection; statistics filtering and sorting; rosters and depth charts; injury substitutions; contracts and the salary cap; trade valuation, counteroffers, deadlines, atomic execution, dead cap, and future-pick ownership; Fantasy Draft order, snake reversal, manual and AI selections, mid-draft save/resume, 1,696-pick completion, roster legality, and free-agent conversion; development and retirement decisions; the permanent career archive; scouting uncertainty; rookie draft order and contracts; AI roster building; free-agent population balance; all 32 teams, 1,696 rostered players, 339 free agents, and 2,035 complete Madden attribute records; 17-game schedules; the complete playoff bracket; future schedule regeneration; multi-season advancement; responsive Fantasy Draft, Match Center, Trade Center, Statistics Center, Player Database, and free-agency UI; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -97,6 +100,7 @@ See [`docs/architecture.md`](docs/architecture.md) for dependency rules and exte
 See [`docs/statistics.md`](docs/statistics.md) for the game-book schema, aggregation lifecycle, reconciliation rules, and UI extension points.
 See [`docs/playcalling.md`](docs/playcalling.md) for the call-sheet data model, simulation flow, matchup modifiers, and extension path.
 See [`docs/simulation_v2.md`](docs/simulation_v2.md) for personnel packages, direct-attribute matchups, tuning, and calibration.
+See [`docs/fantasy_draft.md`](docs/fantasy_draft.md) for the career-mode flow, AI board, roster safeguards, persistence, and extension points.
 
 ## Current limitations
 
