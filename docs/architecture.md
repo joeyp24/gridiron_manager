@@ -30,6 +30,7 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `ScoutingReportData` stores a club-specific, progressively narrowed view of a prospect without mutating the prospect's true talent.
 - `DraftPickData` keeps original and current ownership separate across three future draft years and the live draft.
 - `DraftStateData` owns the class, reports, board favorites, pick clock, selection history, and undrafted conversion for one draft year.
+- `FantasyDraftStateData` and `FantasyDraftPickData` store the new-career draft order, 53-round snake pick clock, completed selections, and exact resume point independently of the annual rookie draft.
 - `TradeProposalData` stores immutable completed-deal packages, values, asset labels, clubs, timing, and summary history.
 - `StatLineData` is the sparse, extensible stat-value boundary shared by player game, season, career, and team records.
 - `GameBookData` stores an immutable completed-game snapshot; `SeasonStatisticsData` and `LeagueStatisticsData` own idempotent season and career aggregation.
@@ -65,6 +66,7 @@ Every manual or automatic path uses the same Attribute Simulation v2 boundary. I
 - `OffseasonService` owns stage transitions, AI retention, contract rollover, replacement depth, development, cap growth, roster readiness, and new-season setup.
 - `RetirementService` owns deterministic career-exit decisions, retirement dead money, archival history, announcements, and free-agent population balance.
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
+- `FantasyDraftService` owns the league-wide launch pool, randomized snake order, manual and AI selections, positional-scarcity protection, salary-cap reserves, 53-player roster construction, and Week 1 finalization.
 - `TradeService` owns the trade window, future draft capital, package valuation, partner evaluation, counteroffers, projected roster/cap validation, dead-cap transfer rules, atomic execution, and history.
 - `StatisticsService` provides UI-ready league leaders, team rankings, derived rates, player game logs and club splits, completed-game lookup, and reusable sorting/filtering without mutating stored totals.
 - `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
@@ -73,7 +75,7 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 9. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, and playoff seeds. Version eight adds three years of future draft-pick ownership and permanent completed-trade history. Version nine adds game books plus season and career statistics; older careers begin recording from their next completed game instead of receiving fabricated historical totals. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 11. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, rookie draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, playoff seeds, future draft-pick ownership, trade history, game books, season/career statistics, and hybrid Madden ratings. Version eleven adds an explicit career mode and optional resumable Fantasy Draft state; older careers migrate to standard-roster mode. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
 
 ### Data
 
@@ -89,7 +91,7 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ### Presentation
 
-`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. The Match Center adds an optional responsive offensive call sheet without replacing its automatic snap, drive, or full-game controls. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
+`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. Career creation selects standard rosters or Fantasy Draft mode; active Fantasy Draft saves route back into the war room until finalization, while other career sections remain locked against incomplete rosters. The Match Center adds an optional responsive offensive call sheet without replacing its automatic snap, drive, or full-game controls. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
 
 ## Intended expansion path
 

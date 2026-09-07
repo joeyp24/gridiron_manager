@@ -23,6 +23,10 @@ func _run() -> void:
 	_check(screen._team_buttons.size() == 32, "The real-data source should render all 32 selectable club cards")
 	_check(screen._selected_source_id == LeagueCatalog.SOURCE_NFLVERSE_FULL, "The complete league database should be active")
 	_check(screen._details_host.get_child_count() > 0, "The selected real-data club should render its profile")
+	_check(screen._mode_selector.item_count == 2, "Career creation should offer standard and fantasy-draft formats")
+	screen._select_career_mode(1)
+	_check(screen._selected_career_mode == LeagueState.CAREER_MODE_FANTASY_DRAFT, "Career creation should retain the fantasy-draft selection")
+	_check("53-player" in screen._mode_description.text, "The fantasy-draft option should explain the complete roster format")
 
 	screen.size = Vector2(1440, 900)
 	screen._apply_responsive_layout()
@@ -34,6 +38,35 @@ func _run() -> void:
 	_check(screen._team_buttons.size() == 32, "Refreshing the database should replace rather than duplicate club cards")
 
 	screen.queue_free()
+
+	var fantasy_career := CareerSession.new_career("nfl_buf", 891177, LeagueCatalog.SOURCE_NFLVERSE_FULL, LeagueState.CAREER_MODE_FANTASY_DRAFT)
+	var fantasy_scene: PackedScene = load("res://scenes/screens/fantasy_draft_screen.tscn")
+	var fantasy_screen := fantasy_scene.instantiate()
+	fantasy_screen.setup(fantasy_career)
+	root.add_child(fantasy_screen)
+	await process_frame
+	_check(fantasy_screen._metric_grid.get_child_count() == 4, "The Fantasy Draft should show order, clock, next pick, and pool metrics")
+	_check(fantasy_screen._body_grid.get_child_count() == 2, "The ready room should show the complete order and format safeguards")
+	fantasy_screen.size = Vector2(540, 900)
+	fantasy_screen._apply_responsive_layout()
+	_check(fantasy_screen._metric_grid.columns == 1 and fantasy_screen._body_grid.columns == 1, "The Fantasy Draft should stack metrics and content on a narrow display")
+	var fantasy_changes := [0]
+	fantasy_screen.draft_changed.connect(func(): fantasy_changes[0] += 1)
+	fantasy_screen._begin_draft()
+	await process_frame
+	_check(fantasy_career.league.fantasy_draft.status == FantasyDraftStateData.STATUS_IN_PROGRESS, "Entering the live draft should start the league simulation")
+	_check(fantasy_career.league.fantasy_draft.current_pick().team_id == fantasy_career.league.user_team_id, "The live room should stop with the managed club on the clock")
+	_check(not fantasy_screen._selected_player_id.is_empty(), "The live player board should select its top available player")
+	_check(fantasy_screen._body_grid.get_child_count() == 2, "The live room should show the player board and draft controls")
+	_check(fantasy_changes[0] == 1, "Starting the draft should request an immediate career save")
+	fantasy_screen.size = Vector2(1440, 900)
+	fantasy_screen._apply_responsive_layout()
+	_check(fantasy_screen._metric_grid.columns == 4 and fantasy_screen._body_grid.columns == 2, "The Fantasy Draft should use its full war-room layout on a wide display")
+	fantasy_screen._auto_pick()
+	await process_frame
+	_check(fantasy_career.user_team().players.size() == 1, "Fantasy auto-pick should add one player to the managed roster")
+	_check(fantasy_changes[0] == 2, "A fantasy selection should request an immediate career save")
+	fantasy_screen.queue_free()
 
 	var career := CareerSession.new_career("nfl_buf", 882601, LeagueCatalog.SOURCE_NFLVERSE_FULL)
 	var trade_scene: PackedScene = load("res://scenes/screens/trade_center_screen.tscn")
@@ -191,7 +224,7 @@ func _run() -> void:
 	_check(play_simulator.state.is_final, "The existing Finish Game control should still complete an automatically called game")
 	match_screen.queue_free()
 	if _failures.is_empty():
-		print("PASS: %d assertions across responsive career-creation, Trade Center, Statistics Center, Player Database, free agency, and playcalling checks." % _assertions)
+		print("PASS: %d assertions across responsive career creation, Fantasy Draft, Trade Center, Statistics Center, Player Database, free agency, and playcalling checks." % _assertions)
 		quit(0)
 	else:
 		for failure in _failures:
