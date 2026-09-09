@@ -198,6 +198,7 @@ static func _complete_draft(league: LeagueState) -> void:
 		for prospect in draft.available_prospects():
 			var player := prospect.to_player(draft.draft_year)
 			player.contract = null
+			player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 			league.free_agents.append(player)
 		draft.undrafted_converted = true
 		league.free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)

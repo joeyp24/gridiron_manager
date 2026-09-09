@@ -90,6 +90,29 @@ func _run() -> void:
 	_check(trade_screen._user_pick_ids.is_empty() and trade_screen._partner.id == trade_screen._partners[1].id, "Changing trade partners should clear stale offer assets")
 	trade_screen.queue_free()
 
+	var roster_scene: PackedScene = load("res://scenes/screens/roster_screen.tscn")
+	var roster_screen := roster_scene.instantiate()
+	roster_screen.setup(career)
+	root.add_child(roster_screen)
+	await process_frame
+	_check(roster_screen._tab_buttons.size() == 5, "Roster Management should expose depth, 53-man, IR, practice-squad, and waiver tabs")
+	_check(roster_screen._metric_labels.size() == 5, "Roster Management should summarize every controlled roster list and waiver priority")
+	roster_screen._select_tab(roster_screen.TAB_ROSTER)
+	await process_frame
+	_check(roster_screen._content_host.get_child_count() >= 54, "The 53-man tab should render the full roster and its heading")
+	roster_screen.size = Vector2(540, 900)
+	roster_screen._apply_responsive_layout()
+	_check(roster_screen._summary_grid.columns == 2, "Roster summary cards should reflow on a narrow display")
+	_check(roster_screen._action_grids.all(func(grid: GridContainer): return grid.columns == 2), "Roster actions should wrap into two columns on a narrow display")
+	_check(roster_screen._attribute_metrics.all(func(metric: Control): return not metric.visible), "Secondary attributes should collapse on a narrow roster display")
+	roster_screen._select_tab(roster_screen.TAB_PRACTICE)
+	await process_frame
+	_check(roster_screen._content_host.get_child_count() > 5, "The practice-squad tab should expose the club list, free agents, and other teams")
+	roster_screen.size = Vector2(1440, 900)
+	roster_screen._apply_responsive_layout()
+	_check(roster_screen._summary_grid.columns == 5, "Roster summary cards should use the full professional layout on a wide display")
+	roster_screen.queue_free()
+
 	var stats_career := career
 	stats_career.simulate_current_week()
 	var quarterback: PlayerData = stats_career.user_team().player_at("QB")

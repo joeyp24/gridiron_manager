@@ -286,6 +286,8 @@ static func execute_trade(
 		future_pick_by_id(league, pick_id).owner_team_id = proposer.id
 	proposer.initialize_depth_chart()
 	responder.initialize_depth_chart()
+	proposer.configure_game_day_roster()
+	responder.configure_game_day_roster()
 	var record := TradeProposalData.new(
 		"trade_%d_%d" % [league.season_year, league.trade_history.size() + 1],
 		league.season_year,

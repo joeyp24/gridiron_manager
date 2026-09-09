@@ -1,6 +1,13 @@
 class_name PlayerData
 extends RefCounted
 
+const STATUS_ACTIVE_ROSTER := "Active Roster"
+const STATUS_GAME_DAY_INACTIVE := "Game-Day Inactive"
+const STATUS_INJURED_RESERVE := "Injured Reserve"
+const STATUS_PRACTICE_SQUAD := "Practice Squad"
+const STATUS_WAIVERS := "Waivers"
+const STATUS_FREE_AGENT := "Free Agent"
+
 var id: String
 var full_name: String
 var position: String
@@ -32,6 +39,9 @@ var energy := 100
 var is_active := true
 var injury_type := ""
 var injury_weeks := 0
+var roster_status := STATUS_ACTIVE_ROSTER
+var status_changed_week := 0
+var eligible_return_week := 0
 var contract: PlayerContract
 
 
@@ -83,7 +93,17 @@ func rating_for(category: String) -> int:
 
 
 func is_available() -> bool:
-	return is_active and injury_weeks <= 0
+	return roster_status == STATUS_ACTIVE_ROSTER and is_active and injury_weeks <= 0
+
+
+func set_roster_status(status: String, week: int = 0) -> void:
+	roster_status = status
+	status_changed_week = week
+	is_active = status == STATUS_ACTIVE_ROSTER
+
+
+func is_on_active_roster() -> bool:
+	return roster_status in [STATUS_ACTIVE_ROSTER, STATUS_GAME_DAY_INACTIVE]
 
 
 func effective_overall() -> int:
@@ -115,10 +135,18 @@ func advance_injury_week() -> void:
 
 
 func availability_label() -> String:
+	if roster_status == STATUS_INJURED_RESERVE:
+		return "Injured reserve · %d wk" % injury_weeks if injury_weeks > 0 else "IR · return eligible Week %d" % eligible_return_week
+	if roster_status == STATUS_PRACTICE_SQUAD:
+		return "Practice squad"
+	if roster_status == STATUS_WAIVERS:
+		return "On waivers"
+	if roster_status == STATUS_FREE_AGENT:
+		return "Free agent"
 	if injury_weeks > 0:
 		return "%s · %d wk" % [injury_type, injury_weeks]
-	if not is_active:
-		return "Inactive"
+	if roster_status == STATUS_GAME_DAY_INACTIVE or not is_active:
+		return "Game-day inactive"
 	if energy < 65:
 		return "Tired · %d%%" % energy
 	return "Available · %d%%" % energy
@@ -181,6 +209,9 @@ func to_dict() -> Dictionary:
 		"is_active": is_active,
 		"injury_type": injury_type,
 		"injury_weeks": injury_weeks,
+		"roster_status": roster_status,
+		"status_changed_week": status_changed_week,
+		"eligible_return_week": eligible_return_week,
 		"contract": contract.to_dict() if contract != null else null,
 	}
 
@@ -203,6 +234,10 @@ static func from_dict(data: Dictionary) -> PlayerData:
 	player.is_active = bool(data.get("is_active", true))
 	player.injury_type = str(data.get("injury_type", ""))
 	player.injury_weeks = int(data.get("injury_weeks", 0))
+	player.roster_status = str(data.get("roster_status", STATUS_ACTIVE_ROSTER if player.is_active else STATUS_GAME_DAY_INACTIVE))
+	player.status_changed_week = int(data.get("status_changed_week", 0))
+	player.eligible_return_week = int(data.get("eligible_return_week", 0))
+	player.is_active = player.roster_status == STATUS_ACTIVE_ROSTER
 	player.archetype = str(data.get("archetype", "Balanced"))
 	player.personality = str(data.get("personality", "Professional"))
 	player.height_inches = int(data.get("height_inches", 72))

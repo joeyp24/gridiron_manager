@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 11
+const SAVE_VERSION := 12
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -97,6 +97,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 10:
 		migrated = _migrate_v10_to_v11(migrated)
 		current_version = 11
+	if current_version == 11:
+		migrated = _migrate_v11_to_v12(migrated)
+		current_version = 12
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -303,3 +306,40 @@ func _migrate_v10_to_v11(payload: Dictionary) -> Dictionary:
 	payload["career"] = career_data
 	payload["save_version"] = 11
 	return payload
+
+
+func _migrate_v11_to_v12(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var team_count := Array(league_data.get("teams", [])).size()
+	var format := LeagueFormatData.nfl_32() if team_count >= 32 else LeagueFormatData.legacy_eight()
+	var format_data: Dictionary = league_data.get("league_format", {})
+	format_data["game_day_active_limit"] = int(format_data.get("game_day_active_limit", format.game_day_active_limit))
+	format_data["practice_squad_limit"] = int(format_data.get("practice_squad_limit", format.practice_squad_limit))
+	format_data["practice_squad_veteran_limit"] = int(format_data.get("practice_squad_veteran_limit", format.practice_squad_veteran_limit))
+	format_data["injured_reserve_minimum_weeks"] = int(format_data.get("injured_reserve_minimum_weeks", format.injured_reserve_minimum_weeks))
+	format_data["waiver_period_weeks"] = int(format_data.get("waiver_period_weeks", format.waiver_period_weeks))
+	league_data["league_format"] = format_data
+	for team_data: Dictionary in league_data.get("teams", []):
+		team_data["injured_reserve"] = team_data.get("injured_reserve", [])
+		team_data["practice_squad"] = team_data.get("practice_squad", [])
+		team_data["game_day_active_limit"] = int(team_data.get("game_day_active_limit", format.game_day_active_limit))
+		team_data["practice_squad_limit"] = int(team_data.get("practice_squad_limit", format.practice_squad_limit))
+		team_data["practice_squad_veteran_limit"] = int(team_data.get("practice_squad_veteran_limit", format.practice_squad_veteran_limit))
+		team_data["injured_reserve_minimum_weeks"] = int(team_data.get("injured_reserve_minimum_weeks", format.injured_reserve_minimum_weeks))
+		for player_data: Dictionary in team_data.get("players", []):
+			_add_v12_player_status(player_data, PlayerData.STATUS_ACTIVE_ROSTER if bool(player_data.get("is_active", true)) else PlayerData.STATUS_GAME_DAY_INACTIVE)
+	for player_data: Dictionary in league_data.get("free_agents", []):
+		_add_v12_player_status(player_data, PlayerData.STATUS_FREE_AGENT)
+	league_data["waiver_wire"] = league_data.get("waiver_wire", [])
+	league_data["waiver_sequence"] = int(league_data.get("waiver_sequence", 0))
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 12
+	return payload
+
+
+func _add_v12_player_status(player_data: Dictionary, status: String) -> void:
+	player_data["roster_status"] = str(player_data.get("roster_status", status))
+	player_data["status_changed_week"] = int(player_data.get("status_changed_week", 0))
+	player_data["eligible_return_week"] = int(player_data.get("eligible_return_week", 0))

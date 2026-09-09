@@ -50,7 +50,7 @@ func _build_interface() -> void:
 	header.add_child(UIFactory.spacer())
 	header.add_child(_header_metric("RECORD", standing.record_label()))
 	header.add_child(_header_metric("OVR", str(team.overall_rating())))
-	header.add_child(_header_metric("ACTIVE", "%d/%d" % [team.active_roster_count(), team.players.size()]))
+	header.add_child(_header_metric("GAME DAY", "%d/%d" % [team.active_roster_count(), team.game_day_active_limit]))
 	header.add_child(_header_metric("CAP SPACE", PlayerContract.money_label(team.cap_space())))
 	page.add_child(header)
 
@@ -62,7 +62,7 @@ func _build_interface() -> void:
 	var portal := UIFactory.button("←  PORTAL", "GhostButton")
 	portal.pressed.connect(func(): portal_requested.emit())
 	actions.add_child(portal)
-	var roster := UIFactory.button("DEPTH CHART", "SecondaryButton")
+	var roster := UIFactory.button("ROSTER MANAGEMENT", "SecondaryButton")
 	roster.pressed.connect(func(): roster_requested.emit())
 	actions.add_child(roster)
 	var strategy := UIFactory.button("STRATEGY", "SecondaryButton")
@@ -89,20 +89,21 @@ func _build_interface() -> void:
 	var matchup := _career.current_matchup()
 	var can_play := matchup != null and not matchup.played and not _career.league.is_offseason()
 	var has_active_game := _career.active_simulator != null
+	var roster_ready := _career.game_day_errors().is_empty()
 	if _career.league.is_offseason():
 		var offseason := UIFactory.button("OPEN OFFSEASON  ->", "PrimaryButton")
 		offseason.pressed.connect(func(): offseason_requested.emit())
 		actions.add_child(offseason)
 	else:
 		var play := UIFactory.button("RESUME GAME" if has_active_game else "PLAY GAME", "SecondaryButton")
-		play.disabled = not can_play
+		play.disabled = not can_play or not roster_ready
 		play.pressed.connect(func(): play_requested.emit())
 		actions.add_child(play)
 		var simulate := UIFactory.button(
 			"SIMULATE CHAMPIONSHIP  ->" if _career.league.phase == LeagueState.PHASE_CHAMPIONSHIP else "SIMULATE WEEK  ->",
 			"PrimaryButton"
 		)
-		simulate.disabled = has_active_game
+		simulate.disabled = has_active_game or (matchup != null and not roster_ready)
 		simulate.pressed.connect(func(): simulate_requested.emit())
 		actions.add_child(simulate)
 	page.add_child(actions)
@@ -286,6 +287,17 @@ func _build_team_status_card() -> PanelContainer:
 	column.add_child(UIFactory.stat_bar("OFFENSE", team.effective_offense_rating(), team.primary_color))
 	column.add_child(UIFactory.stat_bar("DEFENSE", team.effective_defense_rating(), team.primary_color))
 	column.add_child(UIFactory.stat_bar("SPECIAL TEAMS", team.effective_special_teams_rating(), team.primary_color))
+	var roster_status := UIFactory.hbox(10)
+	roster_status.add_child(_finance_metric("53-MAN", "%d/%d" % [team.players.size(), team.roster_limit]))
+	roster_status.add_child(_finance_metric("GAME DAY", "%d/%d" % [team.active_roster_count(), team.game_day_active_limit]))
+	roster_status.add_child(_finance_metric("IR", str(team.injured_reserve.size())))
+	roster_status.add_child(_finance_metric("PRACTICE", "%d/%d" % [team.practice_squad.size(), team.practice_squad_limit]))
+	column.add_child(roster_status)
+	var game_day_errors := _career.game_day_errors()
+	if not _career.league.is_offseason() and not game_day_errors.is_empty():
+		var warning := UIFactory.wrapped_label("ROSTER ACTION REQUIRED · " + "  ".join(game_day_errors), "CaptionLabel")
+		warning.modulate = GridironTheme.DANGER
+		column.add_child(warning)
 	var status := UIFactory.hbox(10)
 	status.add_child(UIFactory.label("Run rate %d%%" % roundi(team.run_tendency * 100.0), "CaptionLabel"))
 	status.add_child(UIFactory.spacer())

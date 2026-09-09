@@ -24,12 +24,12 @@ static func process_offseason(league: LeagueState) -> Dictionary:
 	var retirement_count := 0
 	var dead_cap_total := 0
 	for team in league.teams:
-		for player: PlayerData in team.players.duplicate():
+		for player: PlayerData in team.all_contract_players():
 			if not should_retire(player, retirement_year, league.season_seed, false):
 				continue
 			var penalty: int = player.contract.retirement_penalty() if player.contract != null else 0
 			team.dead_cap += penalty
-			team.remove_player(player.id)
+			team.remove_owned_player(player.id)
 			_archive_player(league, player, team.id, retirement_year, "Retirement", _retirement_reason(player), penalty)
 			_record_departure(league, player, team.id, retirement_year, penalty, "Retirement")
 			retirement_count += 1

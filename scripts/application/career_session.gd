@@ -17,6 +17,8 @@ static func new_career(
 	career_mode: String = LeagueState.CAREER_MODE_STANDARD
 ) -> CareerSession:
 	var state := LeagueSimulator.create_season(team_id, seed, source_id)
+	if state != null:
+		RosterTransactionService.initialize_league(state)
 	if state != null and career_mode == LeagueState.CAREER_MODE_FANTASY_DRAFT:
 		FantasyDraftService.initialize(state)
 	return CareerSession.new(state)
@@ -53,6 +55,70 @@ func release_player(player_id: String) -> Dictionary:
 	if active_simulator != null:
 		return {"ok": false, "message": "Complete the active game before changing the roster."}
 	return TransactionService.release_player(league, league.user_team_id, player_id)
+
+
+func place_player_on_injured_reserve(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.place_on_injured_reserve(league, league.user_team_id, player_id)
+
+
+func activate_player_from_injured_reserve(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.activate_from_injured_reserve(league, league.user_team_id, player_id)
+
+
+func set_player_game_day_active(player_id: String, active: bool) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the game-day list."}
+	return RosterTransactionService.set_game_day_active(league, league.user_team_id, player_id, active)
+
+
+func sign_practice_squad_player(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.sign_to_practice_squad(league, league.user_team_id, player_id)
+
+
+func assign_roster_player_to_practice_squad(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.move_to_practice_squad(league, league.user_team_id, player_id)
+
+
+func promote_practice_squad_player(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.promote_from_practice_squad(league, league.user_team_id, player_id)
+
+
+func release_practice_squad_player(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.release_from_practice_squad(league, league.user_team_id, player_id)
+
+
+func poach_practice_squad_player(player_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the roster."}
+	return RosterTransactionService.poach_practice_squad_player(league, league.user_team_id, player_id)
+
+
+func submit_waiver_claim(entry_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before submitting a waiver claim."}
+	return RosterTransactionService.submit_waiver_claim(league, league.user_team_id, entry_id)
+
+
+func withdraw_waiver_claim(entry_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing a waiver claim."}
+	return RosterTransactionService.withdraw_waiver_claim(league, league.user_team_id, entry_id)
+
+
+func game_day_errors() -> Array[String]:
+	return RosterValidator.validate_game_day_roster(user_team())
 
 
 func preview_trade(
@@ -159,7 +225,7 @@ func simulate_fantasy_draft() -> Dictionary:
 
 func expiring_players() -> Array[PlayerData]:
 	var players: Array[PlayerData] = []
-	for player in user_team().players:
+	for player in user_team().all_contract_players():
 		if player.contract != null and player.contract.is_expiring_after(league.season_year):
 			players.append(player)
 	players.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
@@ -170,6 +236,8 @@ func begin_user_game() -> FootballSimulator:
 	if active_simulator != null:
 		return active_simulator
 	if league.is_offseason():
+		return null
+	if not game_day_errors().is_empty():
 		return null
 	active_matchup = current_matchup()
 	if active_matchup == null or active_matchup.played:
@@ -197,6 +265,8 @@ func complete_user_game() -> void:
 
 func simulate_current_week() -> void:
 	if league.is_offseason() or active_simulator != null:
+		return
+	if current_matchup() != null and not game_day_errors().is_empty():
 		return
 	var completed_week := league.current_week
 	LeagueSimulator.prepare_current_week(league)
@@ -237,5 +307,7 @@ func _add_week_news(completed_week: int) -> void:
 
 
 func _run_ai_front_offices() -> void:
+	if not league.is_offseason():
+		RosterTransactionService.run_ai_roster_management(league)
 	if league.current_week <= league.league_format.regular_season_weeks:
 		TransactionService.run_ai_roster_moves(league)

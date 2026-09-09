@@ -19,9 +19,10 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 
 `scripts/domain` contains lightweight runtime models with stable IDs:
 
-- `PlayerData` stores ratings, potential, age, position, energy, active status, injury state, archetype, personality, measurements, college, draft origin, experience, team history, and career peak.
+- `PlayerData` stores ratings, potential, age, position, energy, explicit roster status, game-day activation, injury/return state, archetype, personality, measurements, college, draft origin, experience, team history, and career peak.
 - `PlayerContract` stores salary, remaining term, fixed expiration year, guarantees, signing year, and projected role.
-- `TeamData` owns roster order, depth charts, cap accounting, roster limits, colors, conference/division identity, and tactics.
+- `TeamData` owns its 53-man, injured-reserve, and practice-squad lists; depth charts; game-day activation; cap accounting; configurable limits; colors; conference/division identity; and tactics.
+- `WaiverEntryData` owns one temporarily league-controlled player, release/deadline metadata, and the stable IDs of claiming clubs.
 - `TransactionData` records signings, releases, extensions, expirations, and completed club trade ledgers for history, news, and saves.
 - `SeasonHistoryData` stores immutable championship, standings, and managed-club snapshots.
 - `RetiredPlayerData` stores immutable career snapshots for retired players and other permanent league departures.
@@ -37,7 +38,7 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `LeagueFormatData` stores roster limits, regular/postseason length, playoff size, schedule strategy, and template season without hard-coding one league shape into career rules.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
-- `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, future-pick ownership, trade history, phase, and championship state.
+- `LeagueState` owns the calendar, division/conference standings, playoff seeds and rounds, news, waiver wire and priority context, future-pick ownership, trade history, phase, and championship state.
 - `GameStateData` and `PlayResult` describe a live match.
 - `PlayDefinitionData`, `PlaybookData`, `PlayCallData`, and `DefensiveCallData` define stable, serializable coaching intent separately from the outcome of a snap.
 
@@ -63,19 +64,20 @@ Every manual or automatic path uses the same Attribute Simulation v2 boundary. I
 - `GameSession` coordinates quick exhibitions.
 - `CareerSession` coordinates the managed club, weekly flow, user match, AI results, news, and phase advancement.
 - `TransactionService` prices offers and extensions, evaluates player expectations, performs transactions, and runs basic AI roster improvement.
+- `RosterTransactionService` owns game-day activation, IR placement and return, practice-squad contracts/promotions/releases/poaching, waiver claims and resolution, reserve-list initialization, and weekly AI management.
 - `OffseasonService` owns stage transitions, AI retention, contract rollover, replacement depth, development, cap growth, roster readiness, and new-season setup.
 - `RetirementService` owns deterministic career-exit decisions, retirement dead money, archival history, announcements, and free-agent population balance.
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
 - `FantasyDraftService` owns the league-wide launch pool, randomized snake order, manual and AI selections, positional-scarcity protection, salary-cap reserves, 53-player roster construction, and Week 1 finalization.
 - `TradeService` owns the trade window, future draft capital, package valuation, partner evaluation, counteroffers, projected roster/cap validation, dead-cap transfer rules, atomic execution, and history.
 - `StatisticsService` provides UI-ready league leaders, team rankings, derived rates, player game logs and club splits, completed-game lookup, and reusable sorting/filtering without mutating stored totals.
-- `RosterValidator` enforces cap, roster-size, required-position, duplicate-ID, and contract rules.
+- `RosterValidator` enforces cap, 53-man and practice-squad limits, veteran allowances, game-day size and positional coverage, required-position, duplicate-ID, and contract rules.
 
 Application sessions are the composition point between content, simulation, saves, and presentation. UI screens request actions from these sessions rather than calculating outcomes themselves.
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 11. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, rookie draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, playoff seeds, future draft-pick ownership, trade history, game books, season/career statistics, and hybrid Madden ratings. Version eleven adds an explicit career mode and optional resumable Fantasy Draft state; older careers migrate to standard-roster mode. Existing eight-team careers retain their legacy calendar and roster limits. Persistence is isolated so storage can later move behind platform services without changing career logic.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 12. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, rookie draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, playoff seeds, future draft-pick ownership, trade history, game books, season/career statistics, hybrid Madden ratings, and Fantasy Draft state. Version twelve adds explicit player roster states, team IR/practice-squad lists, configurable reserve limits, and pending waiver claims. Existing careers receive compatible defaults while eight-team saves retain their smaller legacy format.
 
 ### Data
 
@@ -95,10 +97,10 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ## Intended expansion path
 
-The multi-season loop, standings, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, player/team statistics, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The multi-season loop, standings, roster transactions, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, player/team statistics, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
-1. Injured reserve, practice squads, waivers, game-day activation, and deeper roster-cut logic.
-2. AI-initiated trade offers, trade-block discovery, staff, facilities, finances, objectives, and job security.
+1. AI-initiated trade offers, trade-block discovery, trade deadlines, and richer personnel planning around injuries and roster weaknesses.
+2. Staff, coaching schemes, facilities, finances, objectives, and job security.
 3. League/franchise records, awards, and richer modeled categories such as penalties and returns, extending the responsive Statistics Center.
 4. User defensive playcalling, audibles, timeouts, penalties, return attribution, special-teams decisions, and richer tactical interaction.
 

@@ -68,7 +68,7 @@ static func extend_player(
 	offer_multiplier: float = 1.0
 ) -> Dictionary:
 	var team := league.team_by_id(team_id)
-	var player := team.player_by_id(player_id) if team != null else null
+	var player := team.owned_player_by_id(player_id) if team != null else null
 	if team == null or player == null or player.contract == null:
 		return _failure("The selected player is not under contract with this club.")
 	if not player.contract.is_expiring_after(league.season_year):
@@ -141,12 +141,14 @@ static func sign_free_agent(
 		return _failure(validation_error)
 	league.free_agents.erase(player)
 	player.contract = contract
-	player.is_active = true
+	player.set_roster_status(PlayerData.STATUS_GAME_DAY_INACTIVE, league.current_week)
 	player.record_team(team.id)
 	if not team.add_player(player):
 		player.contract = null
+		player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 		league.free_agents.append(player)
 		return _failure("The roster could not accept this signing.")
+	team.configure_game_day_roster()
 	var details := "Signed %s to a %d-year, %s contract with %s guaranteed." % [
 		player.full_name,
 		contract.years_remaining,
@@ -158,29 +160,7 @@ static func sign_free_agent(
 
 
 static func release_player(league: LeagueState, team_id: String, player_id: String) -> Dictionary:
-	var team := league.team_by_id(team_id)
-	var player := team.player_by_id(player_id) if team != null else null
-	if team == null or player == null:
-		return _failure("The selected player is not on this roster.")
-	var validation_error := RosterValidator.release_error(team, player)
-	if not validation_error.is_empty():
-		return _failure(validation_error)
-	var released_contract := player.contract
-	var penalty := released_contract.release_penalty() if released_contract != null else 0
-	var salary_removed := released_contract.annual_salary if released_contract != null else 0
-	team.dead_cap += penalty
-	team.remove_player(player.id)
-	player.contract = null
-	player.is_active = true
-	league.free_agents.append(player)
-	league.free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
-	var details := "Released %s, clearing %s in salary and adding %s in dead cap." % [
-		player.full_name,
-		PlayerContract.money_label(salary_removed),
-		PlayerContract.money_label(penalty),
-	]
-	_record(league, "Release", team, player, details, penalty - salary_removed)
-	return {"ok": true, "message": details, "dead_cap": penalty}
+	return RosterTransactionService.waive_player(league, team_id, player_id)
 
 
 static func run_ai_roster_moves(league: LeagueState) -> int:

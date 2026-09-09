@@ -17,6 +17,7 @@ const POSITION_SPEED_DECLINE_AGE := {
 static func advance_stage(league: LeagueState) -> Dictionary:
 	match league.phase:
 		LeagueState.PHASE_SEASON_REVIEW, "Complete":
+			RosterTransactionService.prepare_offseason(league)
 			_open_new_league_finances(league)
 			var extensions := run_ai_re_signing(league)
 			league.phase = LeagueState.PHASE_RE_SIGNING
@@ -63,13 +64,13 @@ static func advance_stage(league: LeagueState) -> Dictionary:
 static func advance_contracts(league: LeagueState) -> int:
 	var expiration_count := 0
 	for team in league.teams:
-		for player in team.players.duplicate():
+		for player in team.all_contract_players():
 			if player.contract == null or player.contract.signed_year > league.season_year:
 				continue
 			if player.contract.is_expiring_after(league.season_year):
-				team.remove_player(player.id)
+				team.remove_owned_player(player.id)
 				player.contract = null
-				player.is_active = true
+				player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 				league.free_agents.append(player)
 				_record_expiration(league, team, player)
 				expiration_count += 1
@@ -86,7 +87,7 @@ static func develop_players(league: LeagueState) -> int:
 			return 0
 	var report_count := 0
 	for team in league.teams:
-		for player in team.players:
+		for player in team.all_contract_players():
 			league.development_reports.append(_develop_player(league, player, team.id, report_year))
 			report_count += 1
 	for player in league.free_agents:
@@ -103,7 +104,7 @@ static func run_ai_re_signing(league: LeagueState) -> int:
 		if team.id == league.user_team_id:
 			continue
 		var expiring: Array[PlayerData] = []
-		for player in team.players:
+		for player in team.all_contract_players():
 			if player.contract != null and player.contract.is_expiring_after(league.season_year):
 				expiring.append(player)
 		expiring.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
@@ -155,12 +156,15 @@ static func prepare_post_draft_ai_rosters(league: LeagueState) -> int:
 	for team in league.teams:
 		if team.id == league.user_team_id:
 			continue
+		move_count += _trim_ai_practice_squad(league, team)
 		var guard := 0
 		while (team.players.size() > team.roster_limit or team.cap_space() < 0) and guard < 80:
 			var candidate := _best_ai_release_candidate(team)
 			if candidate == null:
 				break
-			var result := TransactionService.release_player(league, team.id, candidate.id)
+			var result := RosterTransactionService.move_to_practice_squad(league, team.id, candidate.id)
+			if not bool(result.get("ok", false)):
+				result = TransactionService.release_player(league, team.id, candidate.id)
 			if not bool(result.get("ok", false)):
 				break
 			move_count += 1
@@ -168,6 +172,30 @@ static func prepare_post_draft_ai_rosters(league: LeagueState) -> int:
 	ensure_replacement_market(league)
 	move_count += run_ai_offseason_roster_building(league)
 	return move_count
+
+
+static func _trim_ai_practice_squad(league: LeagueState, team: TeamData) -> int:
+	var release_count := 0
+	var guard := 0
+	while guard < 40:
+		var veterans: Array[PlayerData] = []
+		for player in team.practice_squad:
+			if player.experience_years > 3:
+				veterans.append(player)
+		var over_total := team.practice_squad.size() - team.practice_squad_limit
+		var over_veterans := veterans.size() - team.practice_squad_veteran_limit
+		if over_total <= 0 and over_veterans <= 0:
+			break
+		var candidates := veterans if over_veterans > 0 else team.practice_squad.duplicate()
+		candidates.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall < b.overall)
+		if candidates.is_empty():
+			break
+		var result := RosterTransactionService.release_from_practice_squad(league, team.id, candidates.front().id)
+		if not bool(result.get("ok", false)):
+			break
+		release_count += 1
+		guard += 1
+	return release_count
 
 
 static func ensure_replacement_market(league: LeagueState) -> int:
@@ -183,6 +211,7 @@ static func ensure_replacement_market(league: LeagueState) -> int:
 				available += 1
 		while available < missing_slots + 1:
 			var replacement := _unique_replacement(league, position_name, additions)
+			replacement.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 			league.free_agents.append(replacement)
 			available += 1
 			additions += 1
@@ -196,7 +225,9 @@ static func ensure_replacement_market(league: LeagueState) -> int:
 	var position_index := 0
 	while affordable_count < total_deficit + league.teams.size():
 		var position_name := TeamData.ROSTER_POSITIONS[position_index % TeamData.ROSTER_POSITIONS.size()]
-		league.free_agents.append(_unique_replacement(league, position_name, additions))
+		var replacement := _unique_replacement(league, position_name, additions)
+		replacement.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
+		league.free_agents.append(replacement)
 		additions += 1
 		affordable_count += 1
 		position_index += 1
@@ -228,7 +259,7 @@ static func start_new_league_year(league: LeagueState) -> void:
 	league.standings.clear()
 	for team in league.teams:
 		team.dead_cap = 0
-		for player in team.players:
+		for player in team.all_contract_players():
 			player.advance_to_league_year(league.season_year, false)
 			player.energy = 100
 			player.injury_type = ""
@@ -237,6 +268,8 @@ static func start_new_league_year(league: LeagueState) -> void:
 		league.standings[team.id] = StandingData.new(team.id)
 	for player in league.free_agents:
 		player.advance_to_league_year(league.season_year, true)
+		player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
+	RosterTransactionService.prepare_new_season(league)
 	league.playoff_seeds.clear()
 	league.schedule = ScheduleGenerator.from_template(
 		league.schedule_template,
