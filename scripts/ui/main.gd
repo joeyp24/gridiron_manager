@@ -219,12 +219,13 @@ func _finish_fantasy_draft() -> void:
 func _show_roster() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / DEPTH CHART"
+	_section_label.text = "CAREER / ROSTER MANAGEMENT"
 	var screen := ROSTER_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.roster_changed.connect(_save_career)
 	screen.player_statistics_requested.connect(_show_statistics)
+	screen.player_profile_requested.connect(_show_players)
 	_mount(screen)
 
 

@@ -52,6 +52,7 @@ func _init() -> void:
 	_test_version_eight_statistics_save_migration()
 	_test_version_nine_hybrid_ratings_save_migration()
 	_test_version_ten_fantasy_draft_save_migration()
+	_test_version_eleven_roster_state_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -595,10 +596,12 @@ func _test_free_agent_signing_and_release() -> void:
 	var release_result := career.release_player(free_agent.id)
 	_check(bool(release_result.get("ok", false)), "A newly signed player should be releasable")
 	_check(team.players.size() == initial_roster_size, "A release should restore the prior roster size")
-	_check(career.league.free_agent_by_id(free_agent.id) != null, "A released player should return to free agency")
+	_check(career.league.waiver_entry_for_player(free_agent.id) != null, "An in-season release should place the player on waivers")
 	_check(team.dead_cap > 0, "A guaranteed contract release should create dead cap")
 	_check(team.payroll() < post_signing_payroll, "A release should lower current payroll despite dead cap")
 	_check(career.league.transactions.size() == 2, "A release should create a second transaction record")
+	RosterTransactionService.resolve_waivers(career.league, true)
+	_check(career.league.free_agent_by_id(free_agent.id) != null, "An unclaimed player should enter free agency after clearing waivers")
 	var kicker: PlayerData = team.players_at("K").front()
 	_check(not RosterValidator.release_error(team, kicker).is_empty(), "The last player at a required position should not be releasable")
 	team.roster_limit = team.players.size()
@@ -1209,6 +1212,43 @@ func _test_version_ten_fantasy_draft_save_migration() -> void:
 	if loaded != null:
 		_check(loaded.league.career_mode == LeagueState.CAREER_MODE_STANDARD, "Existing careers should migrate to standard-roster mode")
 		_check(loaded.league.fantasy_draft == null, "Migration must not invent fantasy-draft progress for an existing career")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_eleven_roster_state_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v11_roster_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("denver_summit", 110127, LeagueCatalog.SOURCE_FICTIONAL)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	league_data.erase("waiver_wire")
+	league_data.erase("waiver_sequence")
+	var format_data: Dictionary = league_data["league_format"]
+	for field_name in ["game_day_active_limit", "practice_squad_limit", "practice_squad_veteran_limit", "injured_reserve_minimum_weeks", "waiver_period_weeks"]:
+		format_data.erase(field_name)
+	for team_data: Dictionary in league_data["teams"]:
+		team_data.erase("injured_reserve")
+		team_data.erase("practice_squad")
+		for field_name in ["game_day_active_limit", "practice_squad_limit", "practice_squad_veteran_limit", "injured_reserve_minimum_weeks"]:
+			team_data.erase(field_name)
+		for player_data: Dictionary in team_data["players"]:
+			for field_name in ["roster_status", "status_changed_week", "eligible_return_week"]:
+				player_data.erase(field_name)
+	for player_data: Dictionary in league_data["free_agents"]:
+		for field_name in ["roster_status", "status_changed_week", "eligible_return_week"]:
+			player_data.erase(field_name)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 11, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-eleven career should migrate into the roster-state schema")
+	if loaded != null:
+		_check(loaded.league.waiver_wire.is_empty(), "Migration must initialize an empty waiver wire")
+		_check(loaded.user_team().injured_reserve.is_empty() and loaded.user_team().practice_squad.is_empty(), "Migration must initialize empty team reserve lists")
+		_check(loaded.user_team().game_day_active_limit == 45, "Legacy careers must receive the compatible game-day limit")
+		_check(loaded.user_team().players.front().roster_status in [PlayerData.STATUS_ACTIVE_ROSTER, PlayerData.STATUS_GAME_DAY_INACTIVE], "Migration must infer each rostered player's explicit status")
 	DirAccess.remove_absolute(absolute_path)
 
 

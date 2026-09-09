@@ -28,9 +28,15 @@ var passing_depth := 0.50
 var blitz_rate := 0.42
 var coverage_preference := "Balanced"
 var players: Array[PlayerData] = []
+var injured_reserve: Array[PlayerData] = []
+var practice_squad: Array[PlayerData] = []
 var depth_chart: Dictionary = {}
 var salary_cap := DEFAULT_SALARY_CAP
 var roster_limit := DEFAULT_ROSTER_LIMIT
+var game_day_active_limit := 48
+var practice_squad_limit := 16
+var practice_squad_veteran_limit := 6
+var injured_reserve_minimum_weeks := 4
 var dead_cap := 0
 
 
@@ -127,9 +133,39 @@ func player_by_id(player_id: String) -> PlayerData:
 	return null
 
 
+func injured_reserve_player_by_id(player_id: String) -> PlayerData:
+	for player in injured_reserve:
+		if player.id == player_id:
+			return player
+	return null
+
+
+func practice_squad_player_by_id(player_id: String) -> PlayerData:
+	for player in practice_squad:
+		if player.id == player_id:
+			return player
+	return null
+
+
+func owned_player_by_id(player_id: String) -> PlayerData:
+	var player := player_by_id(player_id)
+	if player != null:
+		return player
+	player = injured_reserve_player_by_id(player_id)
+	return player if player != null else practice_squad_player_by_id(player_id)
+
+
+func all_contract_players() -> Array[PlayerData]:
+	var result: Array[PlayerData] = []
+	result.append_array(players)
+	result.append_array(injured_reserve)
+	result.append_array(practice_squad)
+	return result
+
+
 func add_player(player: PlayerData, allowed_limit: int = -1) -> bool:
 	var limit := roster_limit if allowed_limit < 0 else allowed_limit
-	if player == null or player_by_id(player.id) != null or players.size() >= limit:
+	if player == null or owned_player_by_id(player.id) != null or players.size() >= limit:
 		return false
 	players.append(player)
 	var ids: Array = depth_chart.get(player.position, [])
@@ -155,9 +191,37 @@ func remove_player(player_id: String) -> PlayerData:
 	return player
 
 
+func remove_owned_player(player_id: String) -> PlayerData:
+	var player := remove_player(player_id)
+	if player != null:
+		return player
+	player = injured_reserve_player_by_id(player_id)
+	if player != null:
+		injured_reserve.erase(player)
+		return player
+	player = practice_squad_player_by_id(player_id)
+	if player != null:
+		practice_squad.erase(player)
+	return player
+
+
+func add_injured_reserve_player(player: PlayerData) -> bool:
+	if player == null or owned_player_by_id(player.id) != null:
+		return false
+	injured_reserve.append(player)
+	return true
+
+
+func add_practice_squad_player(player: PlayerData) -> bool:
+	if player == null or owned_player_by_id(player.id) != null or practice_squad.size() >= practice_squad_limit:
+		return false
+	practice_squad.append(player)
+	return true
+
+
 func payroll() -> int:
 	var total := dead_cap
-	for player in players:
+	for player in all_contract_players():
 		if player.contract != null:
 			total += player.contract.annual_salary
 	return total
@@ -169,6 +233,35 @@ func cap_space() -> int:
 
 func has_roster_space() -> bool:
 	return players.size() < roster_limit
+
+
+func configure_roster_rules(format: LeagueFormatData) -> void:
+	roster_limit = format.roster_size
+	game_day_active_limit = format.game_day_active_limit
+	practice_squad_limit = format.practice_squad_limit
+	practice_squad_veteran_limit = format.practice_squad_veteran_limit
+	injured_reserve_minimum_weeks = format.injured_reserve_minimum_weeks
+
+
+func configure_game_day_roster() -> void:
+	for player in players:
+		player.set_roster_status(PlayerData.STATUS_GAME_DAY_INACTIVE, player.status_changed_week)
+	var activated: Dictionary = {}
+	for position_name in ROSTER_POSITIONS:
+		var candidates := depth_players(position_name)
+		for candidate in candidates:
+			if candidate.injury_weeks <= 0:
+				candidate.set_roster_status(PlayerData.STATUS_ACTIVE_ROSTER, candidate.status_changed_week)
+				activated[candidate.id] = true
+				break
+	var available := players.duplicate()
+	available.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
+	for player: PlayerData in available:
+		if active_roster_count() >= game_day_active_limit:
+			break
+		if player.injury_weeks <= 0 and not activated.has(player.id):
+			player.set_roster_status(PlayerData.STATUS_ACTIVE_ROSTER, player.status_changed_week)
+			activated[player.id] = true
 
 
 func move_on_depth_chart(position_name: String, player_id: String, direction: int) -> bool:
@@ -218,8 +311,16 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 	clone.depth_chart = depth_chart.duplicate(true)
 	clone.salary_cap = salary_cap
 	clone.roster_limit = roster_limit
+	clone.game_day_active_limit = game_day_active_limit
+	clone.practice_squad_limit = practice_squad_limit
+	clone.practice_squad_veteran_limit = practice_squad_veteran_limit
+	clone.injured_reserve_minimum_weeks = injured_reserve_minimum_weeks
 	clone.dead_cap = dead_cap
 	clone.logo_url = logo_url
+	for player in injured_reserve:
+		clone.injured_reserve.append(PlayerData.from_dict(player.to_dict()))
+	for player in practice_squad:
+		clone.practice_squad.append(PlayerData.from_dict(player.to_dict()))
 	clone.set_strategy(strategy_dict())
 	clone.set_strategy(strategy)
 	return clone
@@ -259,6 +360,7 @@ func injured_players() -> Array[PlayerData]:
 	for player in players:
 		if player.injury_weeks > 0:
 			injured.append(player)
+	injured.append_array(injured_reserve)
 	return injured
 
 
@@ -266,6 +368,12 @@ func to_dict() -> Dictionary:
 	var serialized_players: Array[Dictionary] = []
 	for player in players:
 		serialized_players.append(player.to_dict())
+	var serialized_injured_reserve: Array[Dictionary] = []
+	for player in injured_reserve:
+		serialized_injured_reserve.append(player.to_dict())
+	var serialized_practice_squad: Array[Dictionary] = []
+	for player in practice_squad:
+		serialized_practice_squad.append(player.to_dict())
 	return {
 		"id": id,
 		"city": city,
@@ -281,9 +389,15 @@ func to_dict() -> Dictionary:
 		"special_teams_rating": special_teams_rating,
 		"strategy": strategy_dict(),
 		"players": serialized_players,
+		"injured_reserve": serialized_injured_reserve,
+		"practice_squad": serialized_practice_squad,
 		"depth_chart": depth_chart.duplicate(true),
 		"salary_cap": salary_cap,
 		"roster_limit": roster_limit,
+		"game_day_active_limit": game_day_active_limit,
+		"practice_squad_limit": practice_squad_limit,
+		"practice_squad_veteran_limit": practice_squad_veteran_limit,
+		"injured_reserve_minimum_weeks": injured_reserve_minimum_weeks,
 		"dead_cap": dead_cap,
 	}
 
@@ -310,8 +424,16 @@ static func from_dict(data: Dictionary) -> TeamData:
 	team.depth_chart = data.get("depth_chart", team.depth_chart).duplicate(true)
 	team.salary_cap = int(data.get("salary_cap", DEFAULT_SALARY_CAP))
 	team.roster_limit = int(data.get("roster_limit", DEFAULT_ROSTER_LIMIT))
+	team.game_day_active_limit = int(data.get("game_day_active_limit", team.roster_limit))
+	team.practice_squad_limit = int(data.get("practice_squad_limit", 16 if team.roster_limit >= DEFAULT_ROSTER_LIMIT else 8))
+	team.practice_squad_veteran_limit = int(data.get("practice_squad_veteran_limit", 6 if team.roster_limit >= DEFAULT_ROSTER_LIMIT else 4))
+	team.injured_reserve_minimum_weeks = int(data.get("injured_reserve_minimum_weeks", 4))
 	team.dead_cap = int(data.get("dead_cap", 0))
 	team.logo_url = str(data.get("logo_url", ""))
+	for player_data in data.get("injured_reserve", []):
+		team.injured_reserve.append(PlayerData.from_dict(player_data))
+	for player_data in data.get("practice_squad", []):
+		team.practice_squad.append(PlayerData.from_dict(player_data))
 	return team
 
 

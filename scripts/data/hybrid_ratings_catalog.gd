@@ -18,7 +18,7 @@ static func hydrate_league(league: LeagueState) -> void:
 		if team.logo_url.is_empty():
 			needs_source_data = true
 			break
-		for player in team.players:
+		for player in team.all_contract_players():
 			if _is_source_player_missing_ratings(player):
 				needs_source_data = true
 				break
@@ -35,7 +35,7 @@ static func hydrate_league(league: LeagueState) -> void:
 	for team in league.teams:
 		if team.logo_url.is_empty():
 			team.logo_url = str(_team_logos.get(team.id, ""))
-		for player in team.players:
+		for player in team.all_contract_players():
 			_hydrate_player(player)
 	for player in league.free_agents:
 		_hydrate_player(player)

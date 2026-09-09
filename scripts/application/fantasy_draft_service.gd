@@ -43,6 +43,8 @@ static func initialize(league: LeagueState) -> FantasyDraftStateData:
 			return a.overall > b.overall
 		return a.id < b.id
 	)
+	for player in player_pool:
+		player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 	league.free_agents = player_pool
 	league.career_mode = LeagueState.CAREER_MODE_FANTASY_DRAFT
 	league.phase = LeagueState.PHASE_FANTASY_DRAFT
@@ -194,7 +196,7 @@ static func _make_selection(league: LeagueState, pick: FantasyDraftPickData, pla
 	league.free_agents.erase(player)
 	if player.contract == null:
 		player.contract = PlayerContract.initial_contract(player, league.season_year, team.players_at(player.position).size())
-	player.is_active = true
+	player.set_roster_status(PlayerData.STATUS_ACTIVE_ROSTER, league.current_week)
 	player.record_team(team.id)
 	if not team.add_player(player):
 		league.free_agents.append(player)
@@ -318,10 +320,11 @@ static func _finalize(league: LeagueState) -> void:
 		return
 	for player in league.free_agents:
 		player.contract = null
-		player.is_active = true
+		player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 	for team in league.teams:
 		team.initialize_depth_chart()
 		team.recalculate_ratings_from_roster()
+		team.configure_game_day_roster()
 	draft.status = FantasyDraftStateData.STATUS_COMPLETE
 	league.phase = LeagueState.PHASE_REGULAR_SEASON
 	league.news.push_front("The fantasy draft is complete. All clubs carry new 53-player rosters into Week 1.")

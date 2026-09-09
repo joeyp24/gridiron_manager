@@ -135,7 +135,7 @@ func _build_contracts_card() -> PanelContainer:
 	var list := UIFactory.vbox(6)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	roster_scroll.add_child(list)
-	var ordered := _team.players.duplicate()
+	var ordered := _team.all_contract_players()
 	ordered.sort_custom(func(a: PlayerData, b: PlayerData):
 		return a.contract.annual_salary > b.contract.annual_salary
 	)
@@ -153,14 +153,14 @@ func _contract_row(player: PlayerData) -> PanelContainer:
 	identity.custom_minimum_size = Vector2(170, 0)
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity.add_child(UIFactory.label(player.full_name, "BodyLabel"))
-	identity.add_child(UIFactory.label("Age %d · OVR %d" % [player.age, player.overall], "CaptionLabel"))
+	identity.add_child(UIFactory.label("Age %d · OVR %d · %s" % [player.age, player.overall, player.roster_status], "CaptionLabel"))
 	row.add_child(identity)
 	row.add_child(_small_metric("ROLE", player.contract.role))
 	row.add_child(_small_metric("CAP HIT", PlayerContract.money_label(player.contract.annual_salary)))
 	row.add_child(_small_metric("TERM / EXP", "%d YR · %d" % [player.contract.years_remaining, player.contract.expiration_year()]))
 	var release := UIFactory.button("RELEASE", "GhostButton")
 	release.custom_minimum_size = Vector2(86, 40)
-	release.disabled = not RosterValidator.release_error(_team, player).is_empty() or _career.active_simulator != null
+	release.disabled = _team.player_by_id(player.id) == null or not RosterValidator.release_error(_team, player).is_empty() or _career.active_simulator != null
 	release.pressed.connect(_release_player.bind(player.id))
 	row.add_child(release)
 	return panel
@@ -168,13 +168,15 @@ func _contract_row(player: PlayerData) -> PanelContainer:
 
 func _build_compliance_card() -> PanelContainer:
 	var errors := RosterValidator.validate_team(_team)
+	if not _career.league.is_offseason():
+		errors.append_array(RosterValidator.validate_game_day_roster(_team))
 	var card := UIFactory.card("AccentPanel" if errors.is_empty() else "RaisedCardPanel")
 	var column := UIFactory.vbox(8)
 	card.add_child(column)
 	column.add_child(UIFactory.label("ROSTER COMPLIANCE", "SectionTitleLabel"))
 	if errors.is_empty():
 		column.add_child(UIFactory.label("LEGAL FOR MATCHDAY", "EyebrowLabel"))
-		column.add_child(UIFactory.wrapped_label("The club is below the cap, within roster limits, and carries every required position group.", "MutedLabel"))
+		column.add_child(UIFactory.wrapped_label("The club is below the cap, within roster limits, carries every required position group, and has a legal game-day list.", "MutedLabel"))
 	else:
 		column.add_child(UIFactory.label("ACTION REQUIRED", "EyebrowLabel"))
 		for error in errors:

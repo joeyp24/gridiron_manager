@@ -39,6 +39,8 @@ var playoff_seeds: Dictionary = {}
 var standings: Dictionary = {}
 var news: Array[String] = []
 var free_agents: Array[PlayerData] = []
+var waiver_wire: Array[WaiverEntryData] = []
+var waiver_sequence := 0
 var transactions: Array[TransactionData] = []
 var season_history: Array[SeasonHistoryData] = []
 var development_reports: Array[DevelopmentReportData] = []
@@ -100,17 +102,35 @@ func free_agent_by_id(player_id: String) -> PlayerData:
 	return null
 
 
+func waiver_entry_by_id(entry_id: String) -> WaiverEntryData:
+	for entry in waiver_wire:
+		if entry.id == entry_id:
+			return entry
+	return null
+
+
+func waiver_entry_for_player(player_id: String) -> WaiverEntryData:
+	for entry in waiver_wire:
+		if entry.player != null and entry.player.id == player_id:
+			return entry
+	return null
+
+
 func player_by_id(player_id: String) -> PlayerData:
 	for team in teams:
-		var player := team.player_by_id(player_id)
+		var player := team.owned_player_by_id(player_id)
 		if player != null:
 			return player
-	return free_agent_by_id(player_id)
+	var free_agent := free_agent_by_id(player_id)
+	if free_agent != null:
+		return free_agent
+	var waiver_entry := waiver_entry_for_player(player_id)
+	return waiver_entry.player if waiver_entry != null else null
 
 
 func team_for_player(player_id: String) -> TeamData:
 	for team in teams:
-		if team.player_by_id(player_id) != null:
+		if team.owned_player_by_id(player_id) != null:
 			return team
 	return null
 
@@ -118,9 +138,12 @@ func team_for_player(player_id: String) -> TeamData:
 func all_players(include_free_agents: bool = true) -> Array[PlayerData]:
 	var result: Array[PlayerData] = []
 	for team in teams:
-		result.append_array(team.players)
+		result.append_array(team.all_contract_players())
 	if include_free_agents:
 		result.append_array(free_agents)
+		for entry in waiver_wire:
+			if entry.player != null:
+				result.append(entry.player)
 	return result
 
 
@@ -500,6 +523,9 @@ func to_dict() -> Dictionary:
 	var free_agent_data: Array[Dictionary] = []
 	for player in free_agents:
 		free_agent_data.append(player.to_dict())
+	var waiver_data: Array[Dictionary] = []
+	for entry in waiver_wire:
+		waiver_data.append(entry.to_dict())
 	var transaction_data: Array[Dictionary] = []
 	for transaction in transactions:
 		transaction_data.append(transaction.to_dict())
@@ -544,6 +570,8 @@ func to_dict() -> Dictionary:
 		"standings": standing_data,
 		"news": news.duplicate(),
 		"free_agents": free_agent_data,
+		"waiver_wire": waiver_data,
+		"waiver_sequence": waiver_sequence,
 		"transactions": transaction_data,
 		"season_history": history_data,
 		"development_reports": development_data,
@@ -595,6 +623,12 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.news.append(str(item))
 	for free_agent_data in data.get("free_agents", []):
 		league.free_agents.append(PlayerData.from_dict(free_agent_data))
+	for waiver_data in data.get("waiver_wire", []):
+		league.waiver_wire.append(WaiverEntryData.from_dict(waiver_data))
+	league.waiver_sequence = int(data.get("waiver_sequence", league.waiver_wire.size()))
+	for team in league.teams:
+		if team.active_roster_count() > team.game_day_active_limit:
+			team.configure_game_day_roster()
 	for transaction_data in data.get("transactions", []):
 		league.transactions.append(TransactionData.from_dict(transaction_data))
 	for history_data in data.get("season_history", []):

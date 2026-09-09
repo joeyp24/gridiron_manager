@@ -96,6 +96,11 @@ static func rookie_contract(draft_year: int, round_number: int, pick_in_round: i
 	return PlayerContract.new(salary, years, roundi(float(salary * years) * guarantee_rate), draft_year, "Rookie")
 
 
+static func practice_squad_contract(player: PlayerData, season_year: int) -> PlayerContract:
+	var salary := 300_000 if player.experience_years <= 2 else 425_000
+	return PlayerContract.new(salary, 1, salary, season_year, "Practice Squad")
+
+
 static func money_label(amount: int) -> String:
 	if absi(amount) >= 1_000_000:
 		return "$%.1fM" % (float(amount) / 1_000_000.0)
