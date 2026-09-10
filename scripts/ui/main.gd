@@ -20,6 +20,7 @@ var _exhibition_session := GameSession.new()
 var _career: CareerSession
 var _save_repository := SaveRepository.new()
 var _route_host: Control
+var _simulation_overlay: SimulationLoadingOverlay
 var _section_label: Label
 var _brand: VBoxContainer
 var _version_badge: PanelContainer
@@ -123,6 +124,9 @@ func _build_shell() -> void:
 	_route_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_route_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_margin.add_child(_route_host)
+
+	_simulation_overlay = SimulationLoadingOverlay.new()
+	add_child(_simulation_overlay)
 
 
 func _show_main_menu() -> void:
@@ -333,8 +337,15 @@ func _save_strategy(values: Dictionary) -> void:
 
 
 func _simulate_career_week() -> void:
-	_career.simulate_current_week()
-	_save_career()
+	var week_label := _career.current_week_label()
+	var task := _career.start_week_simulation()
+	if task == null:
+		return
+	await _run_week_simulation(
+		task,
+		"SIMULATING %s" % week_label,
+		"Resolving every matchup, roster decision, and league update."
+	)
 	_show_career_dashboard()
 
 
@@ -357,10 +368,31 @@ func _show_career_match() -> void:
 
 
 func _finish_career_game() -> void:
-	_career.complete_user_game()
-	_match_button.disabled = true
-	_save_career()
+	var week_label := _career.current_week_label()
+	var task := _career.start_postgame_simulation()
+	if task == null:
+		return
+	await _run_week_simulation(
+		task,
+		"FINALIZING %s" % week_label,
+		"Recording your result and completing the rest of the league schedule."
+	)
 	_show_career_dashboard()
+
+
+func _run_week_simulation(task: WeekSimulationTask, title: String, subtitle: String) -> void:
+	_match_button.disabled = true
+	_simulation_overlay.begin_operation(title, subtitle, _career.user_team())
+	while not task.is_complete():
+		_simulation_overlay.update_progress(task.progress_ratio() * 0.94, task.status_text, task.detail_text)
+		await get_tree().process_frame
+		_career.advance_week_simulation(task)
+	_simulation_overlay.update_progress(0.97, "SAVING CAREER", "Writing the completed week, statistics, and transactions to your career file.")
+	await get_tree().process_frame
+	_save_career()
+	_simulation_overlay.update_progress(1.0, "WEEK COMPLETE", "Your career is up to date and ready for the next decision.")
+	await get_tree().process_frame
+	_simulation_overlay.finish_operation()
 
 
 func _save_career() -> void:

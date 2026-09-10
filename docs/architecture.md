@@ -63,6 +63,7 @@ Every manual or automatic path uses the same Attribute Simulation v2 boundary. I
 
 - `GameSession` coordinates quick exhibitions.
 - `CareerSession` coordinates the managed club, weekly flow, user match, AI results, news, and phase advancement.
+- `WeekSimulationTask` exposes preparation, individual matchups, league operations, and calendar finalization as bounded progress units while preserving synchronous simulation wrappers.
 - `TransactionService` prices offers and extensions, evaluates player expectations, performs transactions, and runs basic AI roster improvement.
 - `RosterTransactionService` owns game-day activation, IR placement and return, practice-squad contracts/promotions/releases/poaching, waiver claims and resolution, reserve-list initialization, and weekly AI management.
 - `OffseasonService` owns stage transitions, AI retention, contract rollover, replacement depth, development, cap growth, roster readiness, and new-season setup.
@@ -93,7 +94,7 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ### Presentation
 
-`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. Career creation selects standard rosters or Fantasy Draft mode; active Fantasy Draft saves route back into the war room until finalization, while other career sections remain locked against incomplete rosters. The Match Center adds an optional responsive offensive call sheet without replacing its automatic snap, drive, or full-game controls. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
+`scripts/ui` contains the centralized theme, reusable controls, responsive route screens, and shell navigation. Screens render application/domain state and emit user intent. Career creation selects standard rosters or Fantasy Draft mode; active Fantasy Draft saves route back into the war room until finalization, while other career sections remain locked against incomplete rosters. The Match Center adds an optional responsive offensive call sheet without replacing its automatic snap, drive, or full-game controls. The Statistics Center uses the application query boundary for sortable leaders, team rankings, player dossiers, game logs, and game books. The shell-owned `SimulationLoadingOverlay` presents actual task progress and blocks navigation while staged league state is incomplete. Wide layouts use multiple columns; narrower layouts reflow into scrollable single-column views instead of relying on a fixed resolution.
 
 ## Intended expansion path
 

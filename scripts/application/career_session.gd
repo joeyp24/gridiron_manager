@@ -4,6 +4,7 @@ extends RefCounted
 var league: LeagueState
 var active_simulator: FootballSimulator
 var active_matchup: MatchupData
+var active_week_simulation: WeekSimulationTask
 
 
 func _init(state: LeagueState = null) -> void:
@@ -251,29 +252,110 @@ func begin_user_game() -> FootballSimulator:
 
 
 func complete_user_game() -> void:
-	if active_simulator == null or active_matchup == null or not active_simulator.state.is_final:
-		return
-	var completed_week := league.current_week
-	LeagueSimulator.process_played_matchup(league, active_matchup, active_simulator.state)
-	LeagueSimulator.simulate_remaining_week(league)
-	_add_week_news(completed_week)
-	_run_ai_front_offices()
-	league.advance_after_completed_week()
-	active_simulator = null
-	active_matchup = null
+	var task := start_postgame_simulation()
+	while task != null and not task.is_complete():
+		advance_week_simulation(task)
 
 
 func simulate_current_week() -> void:
+	var task := start_week_simulation()
+	while task != null and not task.is_complete():
+		advance_week_simulation(task)
+
+
+func start_week_simulation() -> WeekSimulationTask:
+	if active_week_simulation != null and not active_week_simulation.is_complete():
+		return active_week_simulation
 	if league.is_offseason() or active_simulator != null:
-		return
+		return null
 	if current_matchup() != null and not game_day_errors().is_empty():
-		return
-	var completed_week := league.current_week
-	LeagueSimulator.prepare_current_week(league)
-	LeagueSimulator.simulate_remaining_week(league)
-	_add_week_news(completed_week)
-	_run_ai_front_offices()
-	league.advance_after_completed_week()
+		return null
+	active_week_simulation = WeekSimulationTask.new(
+		WeekSimulationTask.MODE_FULL_WEEK,
+		league.current_week,
+		_unplayed_current_week_matchups()
+	)
+	return active_week_simulation
+
+
+func start_postgame_simulation() -> WeekSimulationTask:
+	if active_week_simulation != null and not active_week_simulation.is_complete():
+		return active_week_simulation
+	if active_simulator == null or active_matchup == null or not active_simulator.state.is_final:
+		return null
+	var remaining := _unplayed_current_week_matchups()
+	remaining.erase(active_matchup)
+	active_week_simulation = WeekSimulationTask.new(
+		WeekSimulationTask.MODE_POSTGAME,
+		league.current_week,
+		remaining
+	)
+	return active_week_simulation
+
+
+func advance_week_simulation(task: WeekSimulationTask) -> bool:
+	if task == null or task != active_week_simulation or task.is_complete():
+		return false
+	match task.stage:
+		WeekSimulationTask.STAGE_PREPARE:
+			LeagueSimulator.prepare_current_week(league)
+			if task.mode == WeekSimulationTask.MODE_POSTGAME:
+				LeagueSimulator.process_played_matchup(league, active_matchup, active_simulator.state)
+			task.completed_units += 1
+			if task.pending_matchups.is_empty():
+				_set_league_operations_stage(task)
+			else:
+				task.stage = WeekSimulationTask.STAGE_GAMES
+				_set_matchup_progress(task)
+		WeekSimulationTask.STAGE_GAMES:
+			var matchup := task.pending_matchups[task.next_matchup_index]
+			LeagueSimulator.simulate_matchup(league, matchup)
+			task.next_matchup_index += 1
+			task.completed_units += 1
+			if task.next_matchup_index >= task.pending_matchups.size():
+				_set_league_operations_stage(task)
+			else:
+				_set_matchup_progress(task)
+		WeekSimulationTask.STAGE_LEAGUE_OPERATIONS:
+			_add_week_news(task.completed_week)
+			_run_ai_front_offices()
+			task.completed_units += 1
+			task.stage = WeekSimulationTask.STAGE_FINALIZE
+			task.status_text = "UPDATING LEAGUE TABLES"
+			task.detail_text = "Finalizing standings, playoff position, records, and the league calendar."
+		WeekSimulationTask.STAGE_FINALIZE:
+			league.advance_after_completed_week()
+			if task.mode == WeekSimulationTask.MODE_POSTGAME:
+				active_simulator = null
+				active_matchup = null
+			task.completed_units = task.total_units
+			task.stage = WeekSimulationTask.STAGE_COMPLETE
+			task.status_text = "WEEK COMPLETE"
+			task.detail_text = "Every result and roster update has been finalized."
+			active_week_simulation = null
+	return true
+
+
+func _unplayed_current_week_matchups() -> Array[MatchupData]:
+	var matchups: Array[MatchupData] = []
+	for matchup in league.matchups_for_week(league.current_week):
+		if not matchup.played:
+			matchups.append(matchup)
+	return matchups
+
+
+func _set_matchup_progress(task: WeekSimulationTask) -> void:
+	var matchup := task.pending_matchups[task.next_matchup_index]
+	var away := league.team_by_id(matchup.away_team_id)
+	var home := league.team_by_id(matchup.home_team_id)
+	task.status_text = "SIMULATING %s @ %s" % [away.abbreviation, home.abbreviation]
+	task.detail_text = "League game %d of %d · processing plays, statistics, fatigue, and injuries." % [task.next_matchup_index + 1, task.pending_matchups.size()]
+
+
+func _set_league_operations_stage(task: WeekSimulationTask) -> void:
+	task.stage = WeekSimulationTask.STAGE_LEAGUE_OPERATIONS
+	task.status_text = "PROCESSING LEAGUE OPERATIONS"
+	task.detail_text = "Resolving injuries, AI roster decisions, practice squads, waivers, and weekly news."
 
 
 func current_week_label() -> String:
