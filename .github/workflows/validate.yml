@@ -56,3 +56,10 @@ jobs:
             --headless --path . \
             --log-file test-results/godot-simulation-loading-test.log \
             --script res://tests/run_simulation_loading_tests.gd
+
+      - name: Run 2D play-presentation checks
+        run: |
+          "./Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless --path . \
+            --log-file test-results/godot-play-presentation-test.log \
+            --script res://tests/run_play_presentation_tests.gd

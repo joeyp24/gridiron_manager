@@ -14,6 +14,15 @@ var _quarter_label: Label
 var _situation_label: Label
 var _possession_label: Label
 var _field: FieldVisual
+var _field_legend: Label
+var _presentation_enabled := true
+var _presentation_toggle: Button
+var _animation_status: Label
+var _animation_progress: ProgressBar
+var _pause_button: Button
+var _replay_button: Button
+var _skip_button: Button
+var _speed_menu: OptionButton
 var _last_play_title: Label
 var _last_play_description: Label
 var _feed_list: VBoxContainer
@@ -110,14 +119,17 @@ func _build_interface() -> void:
 	var field_column := UIFactory.vbox(8)
 	field_card.add_child(field_column)
 	var field_header := UIFactory.hbox(8)
-	field_header.add_child(UIFactory.label("FIELD POSITION", "SectionTitleLabel"))
+	field_header.add_child(UIFactory.label("2D PLAY VIEW", "SectionTitleLabel"))
 	field_header.add_child(UIFactory.spacer())
-	field_header.add_child(UIFactory.label("GOLD: LINE TO GAIN", "CaptionLabel"))
-	field_header.add_child(UIFactory.label("  BLUE: SCRIMMAGE", "CaptionLabel"))
+	_field_legend = UIFactory.label("GOLD: LINE TO GAIN  ·  BLUE: SCRIMMAGE  ·  CIRCLE: OFFENSE  ·  DIAMOND: DEFENSE", "CaptionLabel")
+	field_header.add_child(_field_legend)
 	field_column.add_child(field_header)
 	_field = FieldVisual.new()
 	_field.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_field.animation_finished.connect(_on_animation_finished)
+	_field.playback_changed.connect(_update_animation_controls)
 	field_column.add_child(_field)
+	_build_presentation_controls(field_column)
 
 	var last_play := UIFactory.card("AccentPanel")
 	match_column.add_child(last_play)
@@ -235,6 +247,49 @@ func _build_call_sheet(parent: VBoxContainer) -> void:
 	column.add_child(_call_sheet_status)
 
 
+func _build_presentation_controls(parent: VBoxContainer) -> void:
+	var controls := HFlowContainer.new()
+	controls.add_theme_constant_override("h_separation", 8)
+	controls.add_theme_constant_override("v_separation", 8)
+	parent.add_child(controls)
+	var status_block := UIFactory.vbox(1)
+	status_block.custom_minimum_size = Vector2(160, 0)
+	status_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_block.add_child(UIFactory.label("PLAY PRESENTATION", "EyebrowLabel"))
+	_animation_status = UIFactory.wrapped_label("Ready for the next snap.", "CaptionLabel")
+	status_block.add_child(_animation_status)
+	controls.add_child(status_block)
+
+	_presentation_toggle = UIFactory.button("2D VIEW · ON", "SecondaryButton")
+	_presentation_toggle.toggle_mode = true
+	_presentation_toggle.button_pressed = true
+	_presentation_toggle.toggled.connect(_toggle_presentation)
+	controls.add_child(_presentation_toggle)
+	_pause_button = UIFactory.button("PAUSE", "GhostButton")
+	_pause_button.pressed.connect(_toggle_animation_pause)
+	controls.add_child(_pause_button)
+	_replay_button = UIFactory.button("REPLAY", "GhostButton")
+	_replay_button.pressed.connect(_replay_animation)
+	controls.add_child(_replay_button)
+	_skip_button = UIFactory.button("SKIP", "GhostButton")
+	_skip_button.pressed.connect(_skip_animation)
+	controls.add_child(_skip_button)
+	_speed_menu = OptionButton.new()
+	_speed_menu.custom_minimum_size = Vector2(92, 44)
+	for speed in [0.5, 1.0, 1.5, 2.0]:
+		_speed_menu.add_item("%.1f×" % speed)
+		_speed_menu.set_item_metadata(_speed_menu.item_count - 1, speed)
+	_speed_menu.select(1)
+	_speed_menu.item_selected.connect(_select_animation_speed)
+	controls.add_child(_speed_menu)
+
+	_animation_progress = ProgressBar.new()
+	_animation_progress.show_percentage = false
+	_animation_progress.custom_minimum_size = Vector2(0, 6)
+	parent.add_child(_animation_progress)
+	_update_animation_controls()
+
+
 func _build_team_score(team: TeamData, align_right: bool) -> HBoxContainer:
 	var block := UIFactory.hbox(12)
 	block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -263,16 +318,20 @@ func _build_team_score(team: TeamData, align_right: bool) -> HBoxContainer:
 
 
 func _simulate_play() -> void:
-	_simulator.simulate_next_play()
-	_refresh()
+	if _field.is_animation_active():
+		return
+	var result := _simulator.simulate_next_play()
+	_present_play(result)
 
 
 func _simulate_drive() -> void:
+	_field.clear_animation()
 	_simulator.simulate_drive()
 	_refresh()
 
 
 func _finish_game() -> void:
+	_field.clear_animation()
 	_simulator.simulate_to_end()
 	_refresh()
 
@@ -283,6 +342,9 @@ func _select_play_category(category_name: String) -> void:
 
 
 func _call_play(play_id: String) -> void:
+	if _field.is_animation_active():
+		_call_sheet_status.text = "Finish or skip the current 2D replay before calling the next play."
+		return
 	if _simulator.state.is_final or _simulator.state.possession_team_id != _user_team.id:
 		_call_sheet_status.text = "Play calls are available when your offense has possession."
 		return
@@ -297,7 +359,103 @@ func _call_play(play_id: String) -> void:
 	if result == null:
 		_call_sheet_status.text = "The call could not be submitted in this situation."
 		return
+	_present_play(result)
+
+
+func _present_play(result: PlayResult) -> void:
 	_refresh()
+	if result == null or not _presentation_enabled:
+		return
+	var animation := PlayAnimationComposer.compose(result, _simulator.state)
+	if animation == null:
+		return
+	_field.play_animation(animation)
+	_set_action_controls()
+
+
+func _toggle_presentation(enabled: bool) -> void:
+	_presentation_enabled = enabled
+	_presentation_toggle.text = "2D VIEW · ON" if enabled else "2D VIEW · OFF"
+	_presentation_toggle.theme_type_variation = "SecondaryButton" if enabled else "GhostButton"
+	if not enabled:
+		_field.clear_animation()
+		_animation_status.text = "2D playback disabled. Simulation controls remain available."
+	_set_action_controls()
+
+
+func _toggle_animation_pause() -> void:
+	_field.toggle_pause()
+
+
+func _replay_animation() -> void:
+	if not _presentation_enabled:
+		return
+	_field.replay()
+	_set_action_controls()
+
+
+func _skip_animation() -> void:
+	_field.skip_animation()
+
+
+func _select_animation_speed(index: int) -> void:
+	if index < 0:
+		return
+	_field.set_playback_speed(float(_speed_menu.get_item_metadata(index)))
+
+
+func _on_animation_finished(_animation: PlayAnimationData) -> void:
+	_refresh()
+
+
+func _update_animation_controls() -> void:
+	if _field == null or _animation_status == null:
+		return
+	var active := _field.is_animation_active()
+	var has_replay := _field.animation_data != null
+	_pause_button.disabled = not active
+	_pause_button.text = "RESUME" if _field.is_paused() else "PAUSE"
+	_skip_button.disabled = not active
+	_replay_button.disabled = not has_replay or active or not _presentation_enabled
+	_speed_menu.disabled = not _presentation_enabled
+	_animation_progress.value = _field.playback_progress() * 100.0
+	if not _presentation_enabled:
+		_animation_status.text = "2D playback disabled. Simulation controls remain available."
+	elif active:
+		var progress := _field.playback_progress()
+		if _field.is_paused():
+			_animation_status.text = "Replay paused · %.1f× speed" % _field.playback_speed()
+		elif progress < 0.14:
+			_animation_status.text = "Pre-snap alignment · %s" % _field.animation_data.call_name
+		elif progress < 0.72:
+			_animation_status.text = "Play developing · %.1f× speed" % _field.playback_speed()
+		else:
+			_animation_status.text = "Result · %s" % _field.animation_data.outcome_label
+	elif has_replay:
+		_animation_status.text = "Replay complete · %s" % _field.animation_data.outcome_label
+	else:
+		_animation_status.text = "Ready for the next snap."
+	_set_action_controls()
+
+
+func _set_action_controls() -> void:
+	if _field == null or _next_button == null:
+		return
+	var state := _simulator.state
+	var animation_active := _field.is_animation_active()
+	var controls_enabled := not state.is_final and not animation_active
+	_next_button.disabled = not controls_enabled
+	_drive_button.disabled = not controls_enabled
+	_finish_button.disabled = not controls_enabled
+	var user_on_offense := not state.is_final and state.possession_team_id == _user_team.id
+	if _tempo_menu != null:
+		_tempo_menu.disabled = not user_on_offense or animation_active
+	for category_button in _play_category_buttons.values():
+		category_button.disabled = not user_on_offense or animation_active
+	if _play_grid != null:
+		for child in _play_grid.get_children():
+			if child is Button:
+				child.disabled = not user_on_offense or animation_active
 
 
 func _refresh() -> void:
@@ -317,11 +475,7 @@ func _refresh() -> void:
 	_rebuild_feed()
 	_rebuild_metrics()
 	_rebuild_call_sheet()
-
-	var controls_enabled := not state.is_final
-	_next_button.disabled = not controls_enabled
-	_drive_button.disabled = not controls_enabled
-	_finish_button.disabled = not controls_enabled
+	_set_action_controls()
 	_rematch_button.visible = state.is_final and not _career_mode
 	_return_button.visible = state.is_final and _career_mode
 	_final_label.text = "FINAL" if state.is_final else "GAME IN PROGRESS"
@@ -336,6 +490,8 @@ func _apply_responsive_layout() -> void:
 		_body_grid.columns = 2 if size.x >= 980 else 1
 	if _play_grid != null:
 		_play_grid.columns = 3 if size.x >= 1350 else (2 if size.x >= 720 else 1)
+	if _field_legend != null:
+		_field_legend.visible = size.x >= 760
 
 
 func _rebuild_call_sheet() -> void:
