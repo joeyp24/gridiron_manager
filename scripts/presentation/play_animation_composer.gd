@@ -21,6 +21,8 @@ static func compose(result: PlayResult, state: GameStateData) -> PlayAnimationDa
 	animation.description = result.description
 	animation.play_type = result.play_type
 	animation.call_name = result.call_name
+	animation.defensive_call_name = result.defensive_call_name
+	animation.defensive_shell = result.defensive_call_shell
 	animation.offense_team_id = offense.id
 	animation.defense_team_id = defense.id
 	animation.offense_abbreviation = offense.abbreviation
@@ -40,9 +42,10 @@ static func compose(result: PlayResult, state: GameStateData) -> PlayAnimationDa
 	animation.outcome_position = Vector2(outcome_x, outcome_y)
 
 	var offense_players := _participants(offense, result.offensive_participant_ids, result.special_teams_participant_ids, result.call_personnel, true)
-	var defense_players := _participants(defense, result.defensive_participant_ids, [], "Base", false)
+	var defense_players := _participants(defense, result.defensive_participant_ids, [], result.defensive_call_personnel, false)
 	var offense_starts := _formation_positions(offense_players, animation.line_of_scrimmage, animation.direction, result.call_formation, true)
-	var defense_starts := _formation_positions(defense_players, animation.line_of_scrimmage, animation.direction, result.defensive_call_name, false)
+	var defensive_formation := "%s|%s" % [result.defensive_call_personnel, result.defensive_call_front]
+	var defense_starts := _formation_positions(defense_players, animation.line_of_scrimmage, animation.direction, defensive_formation, false)
 
 	for index in range(offense_players.size()):
 		var player := offense_players[index]
@@ -52,6 +55,7 @@ static func compose(result: PlayResult, state: GameStateData) -> PlayAnimationDa
 	for index in range(defense_players.size()):
 		var player := defense_players[index]
 		var track := _new_track(player, defense, false, defense_starts[player.id], _is_featured(player.id, result))
+		track.assignment_role = _defensive_assignment(player, result)
 		_compose_defense_track(track, player, index, result, animation)
 		animation.actor_tracks.append(track)
 
@@ -133,23 +137,26 @@ static func _offensive_offset(position_name: String, ordinal: int, formation: St
 	return Vector2(-1.0 - float(ordinal), 0.18 + float(ordinal % 7) * 0.10)
 
 
-static func _defensive_offset(position_name: String, ordinal: int, _formation: String) -> Vector2:
+static func _defensive_offset(position_name: String, ordinal: int, formation: String) -> Vector2:
+	var goal_line := formation.begins_with("Goal Line")
+	var prevent := formation.begins_with("Prevent")
+	var bear := formation.ends_with("|Bear")
 	match position_name:
 		"EDGE":
 			var edge_lanes: Array[float] = [0.30, 0.70, 0.22]
-			return Vector2(1.2, edge_lanes[ordinal % edge_lanes.size()])
+			return Vector2(0.7 if goal_line else 1.2, edge_lanes[ordinal % edge_lanes.size()])
 		"DT":
 			var tackle_lanes: Array[float] = [0.43, 0.57, 0.50]
-			return Vector2(1.0, tackle_lanes[ordinal % tackle_lanes.size()])
+			return Vector2(0.6 if goal_line or bear else 1.0, tackle_lanes[ordinal % tackle_lanes.size()])
 		"LB":
 			var linebacker_lanes: Array[float] = [0.34, 0.50, 0.66, 0.24]
-			return Vector2(4.0, linebacker_lanes[ordinal % linebacker_lanes.size()])
+			return Vector2(2.0 if goal_line or bear else (6.0 if prevent else 4.0), linebacker_lanes[ordinal % linebacker_lanes.size()])
 		"CB":
 			var corner_lanes: Array[float] = [0.11, 0.89, 0.24, 0.76]
-			return Vector2(3.0, corner_lanes[ordinal % corner_lanes.size()])
+			return Vector2(1.8 if goal_line else (8.0 if prevent else 3.0), corner_lanes[ordinal % corner_lanes.size()])
 		"S":
 			var safety_lanes: Array[float] = [0.36, 0.64, 0.50]
-			return Vector2(9.0, safety_lanes[ordinal % safety_lanes.size()])
+			return Vector2(3.5 if goal_line else (16.0 if prevent else 9.0), safety_lanes[ordinal % safety_lanes.size()])
 	return Vector2(3.0 + float(ordinal), 0.18 + float(ordinal % 7) * 0.10)
 
 
@@ -236,9 +243,19 @@ static func _compose_defense_track(track: PlayActorTrack, player: PlayerData, in
 		track.add_keyframe(0.52, start.lerp(outcome, 0.45))
 		track.add_keyframe(1.0, outcome)
 		return
-	if result.play_type == "pass" and player.position in ["CB", "S", "LB"]:
-		var coverage_depth := _target_depth(result) * (0.78 if player.position == "CB" else 0.58)
-		var coverage_y := _route_lane(start.y, result, index, false)
+	if result.play_type in ["pass", "sack"] and track.assignment_role in ["RUSH", "BLITZ"]:
+		var pressure_end := Vector2(animation.line_of_scrimmage - direction * 3.5, lerpf(start.y, 0.50, 0.35))
+		track.add_keyframe(0.45, Vector2(animation.line_of_scrimmage + direction * 0.2, lerpf(start.y, 0.50, 0.18)))
+		track.add_keyframe(1.0, pressure_end)
+		return
+	if result.play_type in ["pass", "sack"] and track.assignment_role == "SPY":
+		var spy_depth := Vector2(animation.line_of_scrimmage + direction * 2.0, 0.50)
+		track.add_keyframe(0.50, spy_depth)
+		track.add_keyframe(1.0, spy_depth.lerp(outcome, 0.35))
+		return
+	if result.play_type in ["pass", "sack"] and player.position in ["CB", "S", "LB"]:
+		var coverage_depth := _coverage_depth(player.position, result)
+		var coverage_y := _coverage_lane(start.y, result, index)
 		var coverage_end := Vector2(clampf(animation.line_of_scrimmage + direction * coverage_depth, 0.0, 100.0), coverage_y)
 		track.add_keyframe(0.52, start.lerp(coverage_end, 0.52))
 		track.add_keyframe(1.0, coverage_end)
@@ -251,6 +268,42 @@ static func _compose_defense_track(track: PlayActorTrack, player: PlayerData, in
 	var pursuit: Vector2 = start.lerp(outcome, 0.78)
 	track.add_keyframe(0.58, start.lerp(pursuit, 0.45))
 	track.add_keyframe(1.0, pursuit)
+
+
+static func _defensive_assignment(player: PlayerData, result: PlayResult) -> String:
+	if player.id == str(result.matchup_context.get("spy_player_id", "")):
+		return "SPY"
+	var rush_ids: Array = result.matchup_context.get("rush_participant_ids", [])
+	if rush_ids.has(player.id):
+		return "BLITZ" if player.position in ["LB", "CB", "S"] else "RUSH"
+	if result.defensive_call_coverage == "Man":
+		return "MAN"
+	return "ZONE"
+
+
+static func _coverage_depth(position_name: String, result: PlayResult) -> float:
+	var target_depth := _target_depth(result)
+	var shell := result.defensive_call_shell
+	if shell in ["Quarters", "Cover 6"]:
+		if position_name in ["CB", "S"]:
+			return maxf(target_depth * 0.88, 12.0)
+		return maxf(target_depth * 0.38, 4.5)
+	if shell in ["Cover 2", "Tampa 2"]:
+		if position_name == "S":
+			return maxf(target_depth * 0.86, 11.0)
+		if shell == "Tampa 2" and position_name == "LB":
+			return maxf(target_depth * 0.62, 8.0)
+		return maxf(target_depth * 0.42, 4.0)
+	if shell == "Cover 3":
+		return maxf(target_depth * (0.78 if position_name in ["CB", "S"] else 0.40), 4.0)
+	return target_depth * (0.82 if position_name == "CB" else 0.56)
+
+
+static func _coverage_lane(start_y: float, result: PlayResult, index: int) -> float:
+	if result.defensive_call_coverage == "Man":
+		return _route_lane(start_y, result, index, false)
+	var zone_lanes: Array[float] = [0.12, 0.30, 0.50, 0.70, 0.88]
+	return zone_lanes[index % zone_lanes.size()]
 
 
 static func _compose_ball_track(animation: PlayAnimationData, result: PlayResult) -> void:

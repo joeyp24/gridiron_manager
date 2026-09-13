@@ -6,6 +6,8 @@ var title := ""
 var description := ""
 var play_type := ""
 var call_name := ""
+var defensive_call_name := ""
+var defensive_shell := ""
 var offense_team_id := ""
 var defense_team_id := ""
 var offense_abbreviation := ""
@@ -68,8 +70,8 @@ func defense_track_count() -> int:
 
 
 func signature() -> String:
-	var values: Array[String] = [str(sequence), play_type, outcome_label]
+	var values: Array[String] = [str(sequence), play_type, outcome_label, defensive_call_name, defensive_shell]
 	for track in actor_tracks:
-		values.append("%s:%s" % [track.player_id, track.keyframe_positions])
+		values.append("%s:%s:%s" % [track.player_id, track.assignment_role, track.keyframe_positions])
 	values.append("ball:" + str(ball_keyframe_positions))
 	return "|".join(values)

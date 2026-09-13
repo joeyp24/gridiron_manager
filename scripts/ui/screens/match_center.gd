@@ -35,14 +35,17 @@ var _return_button: Button
 var _final_label: Label
 var _body_grid: GridContainer
 var _call_sheet_card: PanelContainer
+var _call_sheet_title: Label
 var _call_sheet_context: Label
 var _call_sheet_status: Label
 var _play_grid: GridContainer
+var _tempo_group: VBoxContainer
 var _tempo_menu: OptionButton
 var _play_category_buttons: Dictionary = {}
 var _recommendation_buttons: Array[Button] = []
 var _displayed_play_ids: Array[String] = []
 var _selected_play_category := "RECOMMENDED"
+var _call_sheet_mode := ""
 
 
 func setup(simulator: FootballSimulator, user_team: TeamData, career_mode: bool = false) -> void:
@@ -121,7 +124,7 @@ func _build_interface() -> void:
 	var field_header := UIFactory.hbox(8)
 	field_header.add_child(UIFactory.label("2D PLAY VIEW", "SectionTitleLabel"))
 	field_header.add_child(UIFactory.spacer())
-	_field_legend = UIFactory.label("GOLD: LINE TO GAIN  ·  BLUE: SCRIMMAGE  ·  CIRCLE: OFFENSE  ·  DIAMOND: DEFENSE", "CaptionLabel")
+	_field_legend = UIFactory.label("GOLD: GAIN / SPY  ·  BLUE: SCRIMMAGE / COVERAGE  ·  RED: PRESSURE", "CaptionLabel")
 	field_header.add_child(_field_legend)
 	field_column.add_child(field_header)
 	_field = FieldVisual.new()
@@ -211,26 +214,27 @@ func _build_call_sheet(parent: VBoxContainer) -> void:
 	identity.custom_minimum_size.x = 260
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity.add_child(UIFactory.label("COACH MODE", "EyebrowLabel"))
-	identity.add_child(UIFactory.label("Offensive Call Sheet", "SectionTitleLabel"))
+	_call_sheet_title = UIFactory.label("Offensive Call Sheet", "SectionTitleLabel")
+	identity.add_child(_call_sheet_title)
 	_call_sheet_context = UIFactory.wrapped_label("Choose a concept or use the simulation controls below.", "CaptionLabel")
 	_call_sheet_context.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	identity.add_child(_call_sheet_context)
 	header.add_child(identity)
-	var tempo_group := UIFactory.vbox(3)
-	tempo_group.add_child(UIFactory.label("TEMPO", "EyebrowLabel"))
+	_tempo_group = UIFactory.vbox(3)
+	_tempo_group.add_child(UIFactory.label("TEMPO", "EyebrowLabel"))
 	_tempo_menu = OptionButton.new()
 	_tempo_menu.custom_minimum_size = Vector2(150, 40)
 	for tempo_name in PlayCallData.TEMPOS:
 		_tempo_menu.add_item(tempo_name)
 		_tempo_menu.set_item_metadata(_tempo_menu.item_count - 1, tempo_name)
-	tempo_group.add_child(_tempo_menu)
-	header.add_child(tempo_group)
+	_tempo_group.add_child(_tempo_menu)
+	header.add_child(_tempo_group)
 	column.add_child(header)
 
 	var category_flow := HFlowContainer.new()
 	category_flow.add_theme_constant_override("h_separation", 8)
 	category_flow.add_theme_constant_override("v_separation", 8)
-	for category_name in ["RECOMMENDED", "RUN", "PASS", "SPECIAL / CLOCK"]:
+	for category_name in ["RECOMMENDED", "RUN", "PASS", "SPECIAL / CLOCK", "BASE", "NICKEL", "DIME", "GOAL LINE", "PREVENT"]:
 		var category_button := UIFactory.button(category_name, "SecondaryButton" if category_name == _selected_play_category else "GhostButton")
 		category_button.pressed.connect(_select_play_category.bind(category_name))
 		category_flow.add_child(category_button)
@@ -362,6 +366,25 @@ func _call_play(play_id: String) -> void:
 	_present_play(result)
 
 
+func _call_defense(call_id: String) -> void:
+	if _field.is_animation_active():
+		_call_sheet_status.text = "Finish or skip the current 2D replay before calling the next play."
+		return
+	var state := _simulator.state
+	if state.is_final or state.defense().id != _user_team.id:
+		_call_sheet_status.text = "Defensive calls are available when the opponent has possession."
+		return
+	var error := _simulator.defensive_call_validation_error(call_id)
+	if not error.is_empty():
+		_call_sheet_status.text = error
+		return
+	var result := _simulator.simulate_called_defense(call_id)
+	if result == null:
+		_call_sheet_status.text = "The defensive call could not be submitted in this situation."
+		return
+	_present_play(result)
+
+
 func _present_play(result: PlayResult) -> void:
 	_refresh()
 	if result == null or not _presentation_enabled:
@@ -448,14 +471,15 @@ func _set_action_controls() -> void:
 	_drive_button.disabled = not controls_enabled
 	_finish_button.disabled = not controls_enabled
 	var user_on_offense := not state.is_final and state.possession_team_id == _user_team.id
+	var user_on_defense := not state.is_final and state.defense().id == _user_team.id
 	if _tempo_menu != null:
 		_tempo_menu.disabled = not user_on_offense or animation_active
 	for category_button in _play_category_buttons.values():
-		category_button.disabled = not user_on_offense or animation_active
+		category_button.disabled = (not user_on_offense and not user_on_defense) or animation_active
 	if _play_grid != null:
 		for child in _play_grid.get_children():
 			if child is Button:
-				child.disabled = not user_on_offense or animation_active
+				child.disabled = (not user_on_offense and not user_on_defense) or animation_active
 
 
 func _refresh() -> void:
@@ -504,21 +528,30 @@ func _rebuild_call_sheet() -> void:
 		child.queue_free()
 	var state := _simulator.state
 	var user_on_offense := not state.is_final and state.possession_team_id == _user_team.id
+	var user_on_defense := not state.is_final and state.defense().id == _user_team.id
+	var new_mode := "OFFENSE" if user_on_offense else "DEFENSE"
+	if new_mode != _call_sheet_mode:
+		_call_sheet_mode = new_mode
+		_selected_play_category = "RECOMMENDED"
+	_call_sheet_title.text = "Offensive Call Sheet" if user_on_offense else "Defensive Call Sheet"
+	_tempo_group.visible = user_on_offense
 	_tempo_menu.disabled = not user_on_offense
 	for category_name in _play_category_buttons:
 		var button: Button = _play_category_buttons[category_name]
-		button.disabled = not user_on_offense
+		var offense_category: bool = str(category_name) in ["RUN", "PASS", "SPECIAL / CLOCK"]
+		var defense_category: bool = str(category_name) in ["BASE", "NICKEL", "DIME", "GOAL LINE", "PREVENT"]
+		button.visible = category_name == "RECOMMENDED" or (user_on_offense and offense_category) or (user_on_defense and defense_category)
+		button.disabled = state.is_final
 		button.theme_type_variation = "SecondaryButton" if category_name == _selected_play_category else "GhostButton"
 	if state.is_final:
 		_call_sheet_context.text = "The final whistle has ended coach mode."
 		_call_sheet_status.text = "Review the completed game or use the return controls below."
 		return
-	if not user_on_offense:
-		_call_sheet_context.text = "%s has possession." % state.offense().display_name()
-		_call_sheet_status.text = "Your defensive coordinator is calling this series. Use Next Play or Simulate Drive to advance."
+	_call_sheet_context.text = "%s · %s · %s ball" % [state.down_and_distance_label(), state.field_position_label(), state.offense().abbreviation]
+	if user_on_defense:
+		_rebuild_defensive_calls(state)
 		return
 
-	_call_sheet_context.text = "%s · %s · %s ball" % [state.down_and_distance_label(), state.field_position_label(), state.offense().abbreviation]
 	var plays: Array[PlayDefinitionData] = []
 	if _selected_play_category == "RECOMMENDED":
 		plays = _simulator.recommended_play_calls(3)
@@ -546,6 +579,41 @@ func _rebuild_call_sheet() -> void:
 		button.pressed.connect(_call_play.bind(play.id))
 		_play_grid.add_child(button)
 		_displayed_play_ids.append(play.id)
+		if _selected_play_category == "RECOMMENDED":
+			_recommendation_buttons.append(button)
+	_apply_responsive_layout()
+
+
+func _rebuild_defensive_calls(state: GameStateData) -> void:
+	var calls: Array[DefensiveCallData] = []
+	if _selected_play_category == "RECOMMENDED":
+		calls = _simulator.recommended_defensive_calls(3)
+	else:
+		var category_name := _selected_play_category.capitalize()
+		for call in _simulator.available_defensive_calls():
+			if call.category == category_name:
+				calls.append(call)
+	_call_sheet_status.text = "Your call sets the personnel, front, coverage shell, and rush plan. The opposing offense is called by its AI coordinator."
+	if calls.is_empty():
+		_call_sheet_status.text = "No calls in this section are available with the current game-day personnel."
+		return
+	for call in calls:
+		var detail := "%s FRONT · %s · RUSH %d" % [call.front.to_upper(), call.shell.to_upper(), call.rusher_count]
+		if _selected_play_category == "RECOMMENDED":
+			detail = "%s · %s" % [PlayCallerService.defensive_recommendation_reason(state, call).to_upper(), detail]
+		var button := UIFactory.button(
+			"%s\n%s PERSONNEL · %s\n%s · %s RISK" % [
+				call.display_name.to_upper(), call.personnel.to_upper(), call.coverage.to_upper(), detail, call.risk.to_upper()
+			],
+			"TeamCardButton"
+		)
+		button.custom_minimum_size = Vector2(210, 94 if _selected_play_category == "RECOMMENDED" else 82)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.tooltip_text = call.description
+		button.pressed.connect(_call_defense.bind(call.id))
+		_play_grid.add_child(button)
+		_displayed_play_ids.append(call.id)
 		if _selected_play_category == "RECOMMENDED":
 			_recommendation_buttons.append(button)
 	_apply_responsive_layout()
@@ -590,7 +658,15 @@ func _play_feed_row(play: PlayResult) -> PanelContainer:
 	meta.add_child(UIFactory.label(play.title.to_upper(), "EyebrowLabel"))
 	column.add_child(meta)
 	if not play.call_name.is_empty():
-		column.add_child(UIFactory.label("%s · %s personnel · %s vs %s" % [play.call_name, play.call_personnel, play.call_tempo, play.defensive_call_name], "CaptionLabel"))
+		var offense_marker := " · USER" if play.call_was_user_selected else ""
+		var defense_marker := " · USER" if play.defensive_call_was_user_selected else ""
+		column.add_child(UIFactory.wrapped_label(
+			"%s%s · %s personnel · %s  vs  %s%s · %s · %s" % [
+				play.call_name, offense_marker, play.call_personnel, play.call_tempo,
+				play.defensive_call_name, defense_marker, play.defensive_call_personnel, play.defensive_call_shell,
+			],
+			"CaptionLabel"
+		))
 	column.add_child(UIFactory.wrapped_label(play.description, "MutedLabel"))
 	return panel
 

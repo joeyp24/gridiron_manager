@@ -5,6 +5,7 @@ var state: GameStateData
 var seed: int
 var require_winner: bool
 var playbook: PlaybookData
+var defensive_playbook: DefensivePlaybookData
 
 var _rng := RandomNumberGenerator.new()
 var _offensive_starters: Dictionary = {}
@@ -18,11 +19,13 @@ func _init(
 	away: TeamData,
 	game_seed: int,
 	game_requires_winner: bool = false,
-	selected_playbook: PlaybookData = null
+	selected_playbook: PlaybookData = null,
+	selected_defensive_playbook: DefensivePlaybookData = null
 ) -> void:
 	seed = game_seed
 	require_winner = game_requires_winner
 	playbook = selected_playbook if selected_playbook != null else PlaybookCatalog.pro_style_offense()
+	defensive_playbook = selected_defensive_playbook if selected_defensive_playbook != null else PlaybookCatalog.multiple_defense()
 	_rng.seed = game_seed
 	state = GameStateData.new(home, away)
 	for team in [home, away]:
@@ -53,11 +56,39 @@ func call_validation_error(play_id: String) -> String:
 	return PlayCallerService.validation_error(state, playbook.play_by_id(play_id))
 
 
+func available_defensive_calls() -> Array[DefensiveCallData]:
+	return PlayCallerService.available_defensive_calls(state, defensive_playbook)
+
+
+func recommended_defensive_calls(limit: int = 3) -> Array[DefensiveCallData]:
+	return PlayCallerService.defensive_recommendations(state, defensive_playbook, limit)
+
+
+func defensive_call_by_id(call_id: String) -> DefensiveCallData:
+	return defensive_playbook.call_by_id(call_id)
+
+
+func defensive_call_validation_error(call_id: String) -> String:
+	return PlayCallerService.defensive_validation_error(state, defensive_playbook.call_by_id(call_id))
+
+
 func simulate_called_play(play_id: String, tempo: String = PlayCallData.TEMPO_NORMAL) -> PlayResult:
 	return simulate_next_play(PlayCallData.new(play_id, tempo, true))
 
 
-func simulate_next_play(submitted_call: PlayCallData = null) -> PlayResult:
+func simulate_called_defense(call_id: String) -> PlayResult:
+	var selected := defensive_playbook.call_by_id(call_id)
+	if selected == null:
+		return null
+	var submitted := DefensiveCallData.from_dict(selected.to_dict())
+	submitted.user_selected = true
+	return simulate_next_play(null, submitted)
+
+
+func simulate_next_play(
+	submitted_call: PlayCallData = null,
+	submitted_defensive_call: DefensiveCallData = null
+) -> PlayResult:
 	if state.is_final:
 		return null
 	var call := submitted_call
@@ -66,7 +97,11 @@ func simulate_next_play(submitted_call: PlayCallData = null) -> PlayResult:
 	var play := playbook.play_by_id(call.play_id)
 	if not PlayCallerService.validation_error(state, play).is_empty():
 		return null
-	var defensive_call := PlayCallerService.automatic_defensive_call(state, _rng)
+	var defensive_call := submitted_defensive_call
+	if defensive_call == null:
+		defensive_call = PlayCallerService.automatic_defensive_call(state, _rng, defensive_playbook)
+	elif not PlayCallerService.defensive_validation_error(state, defensive_call).is_empty():
+		return null
 	var result := _new_result()
 	_populate_call_context(result, call, play, defensive_call)
 	var modifiers := PlayCallerService.matchup_modifiers(play, defensive_call, state.play_history)
@@ -153,6 +188,9 @@ func _resolve_run(
 		"model": "attribute_simulation_v2",
 		"offensive_personnel": play.personnel,
 		"defensive_personnel": defensive_call.personnel,
+		"defensive_front": defensive_call.front,
+		"coverage_shell": defensive_call.shell,
+		"defensive_tags": defensive_call.tags.duplicate(),
 		"expected_yards": expected_yards,
 		"fumble_chance": fumble_chance,
 		"runner_id": runner.id,
@@ -210,7 +248,7 @@ func _resolve_pass(
 	var defense_lineup := _cached_defensive_lineup(defense, defensive_call.personnel)
 	var quarterback := _select_lineup_player(offense_lineup, ["QB"], offense.player_at("QB"))
 	var receiver := _select_target_from_lineup(offense_lineup, play.target_positions, offense)
-	var rushers := PersonnelPackageService.rushers(defense_lineup)
+	var rushers := PersonnelPackageService.pass_rushers(defense_lineup, defensive_call.rusher_count)
 	var edge := _select_rusher(rushers, defense.player_at("EDGE"))
 	var corner := _select_lineup_player(defense_lineup, ["CB", "S", "LB"], defense.player_at("CB"))
 	var tackler := _select_lineup_player(defense_lineup, ["CB", "S", "LB"], corner)
@@ -220,10 +258,20 @@ func _resolve_pass(
 			if player != receiver and player.position in ["TE", "RB"]:
 				protectors.append(player)
 	var matchup := AttributeMatchupService.pass_matchup(play, defensive_call, protectors, rushers, quarterback, receiver, corner)
+	var spy_player_id := ""
+	if defensive_call.has_tag("spy"):
+		for player in defense_lineup:
+			if player.position in ["LB", "S"] and not rushers.has(player):
+				spy_player_id = player.id
+				break
 	_populate_scrimmage_participants(result, offense, defense, [quarterback, receiver], [edge, corner, tackler], offense_lineup, defense_lineup)
 	result.passer_id = quarterback.id
 	result.target_id = receiver.id
-	var pressure_edge := float(matchup["pressure_edge"]) + (defense.blitz_rate - 0.42) * 8.0
+	var pressure_edge := (
+		float(matchup["pressure_edge"])
+		+ float(defensive_call.rusher_count - 4) * 2.4
+		+ (defense.blitz_rate - 0.42) * 4.0
+	)
 	var sack_chance := clampf(
 		SimulationTuning.value("pass", "base_sack_chance", 0.052)
 		+ pressure_edge * SimulationTuning.value("pass", "pressure_sack_coefficient", 0.0028)
@@ -242,6 +290,11 @@ func _resolve_pass(
 		"receiver_id": receiver.id,
 		"coverage_defender_id": corner.id if corner != null else "",
 		"primary_rusher_id": edge.id if edge != null else "",
+		"rush_participant_ids": PersonnelPackageService.ids(rushers),
+		"spy_player_id": spy_player_id,
+		"defensive_front": defensive_call.front,
+		"coverage_shell": defensive_call.shell,
+		"defensive_tags": defensive_call.tags.duplicate(),
 	}, true)
 
 	result.play_type = "pass"
@@ -348,9 +401,22 @@ func _resolve_pass(
 		+ (float(matchup["yac"]) - float(matchup["tackle"])) * SimulationTuning.value("pass", "yac_rating_coefficient", 0.055)
 	)
 	var yards_after_catch := roundi(_rng.randfn(expected_yac, SimulationTuning.value("pass", "yac_variance", 3.8)))
+	var explosive_chance := clampf(
+		0.055
+		+ (0.08 if play.has_tag("deep") else 0.0)
+		+ float(modifiers.get("explosive", 0.0))
+		+ float(matchup["separation_edge"]) * 0.0015,
+		0.005,
+		0.28
+	)
+	var explosive_triggered := _rng.randf() < explosive_chance
+	if explosive_triggered:
+		yards_after_catch += _rng.randi_range(8, 18)
 	var yards := clampi(air_yards + yards_after_catch, -2, 58 if play.has_tag("deep") else 42)
 	result.matchup_context["air_yards"] = air_yards
 	result.matchup_context["yards_after_catch"] = yards_after_catch
+	result.matchup_context["explosive_chance"] = explosive_chance
+	result.matchup_context["explosive_play"] = explosive_triggered or yards >= 20
 	result.yards = yards
 	result.completed_pass = true
 	if tackler != null:
@@ -622,6 +688,12 @@ func _populate_call_context(
 	result.call_was_user_selected = call.user_selected
 	result.defensive_call_id = defensive_call.id
 	result.defensive_call_name = defensive_call.display_name
+	result.defensive_call_category = defensive_call.category
+	result.defensive_call_personnel = defensive_call.personnel
+	result.defensive_call_coverage = defensive_call.coverage
+	result.defensive_call_front = defensive_call.front
+	result.defensive_call_shell = defensive_call.shell
+	result.defensive_call_was_user_selected = defensive_call.user_selected
 
 
 func _populate_scrimmage_participants(

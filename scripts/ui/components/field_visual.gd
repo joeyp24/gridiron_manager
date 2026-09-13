@@ -138,6 +138,7 @@ func _draw() -> void:
 
 	var progress := playback_progress()
 	_draw_route_traces(playing_field, yard_bounds, progress)
+	_draw_defensive_assignments(playing_field, yard_bounds, progress)
 	for track in animation_data.actor_tracks:
 		if not track.is_offense:
 			_draw_actor(track, playing_field, yard_bounds, progress)
@@ -254,6 +255,28 @@ func _draw_route_traces(field: Rect2, yard_bounds: Vector2, progress: float) -> 
 		if points.size() >= 2:
 			var route_color := Color(track.primary_color.lightened(0.28), 0.44 if track.is_featured else 0.22)
 			draw_polyline(points, route_color, 1.6 if track.is_featured else 1.0, true)
+
+
+func _draw_defensive_assignments(field: Rect2, yard_bounds: Vector2, progress: float) -> void:
+	if animation_data == null or progress > 0.72:
+		return
+	for track in animation_data.actor_tracks:
+		if track.is_offense or track.assignment_role.is_empty():
+			continue
+		var points := PackedVector2Array()
+		for field_position in track.keyframe_positions:
+			points.append(_field_to_screen(field_position, field, yard_bounds))
+		if points.size() < 2:
+			continue
+		var color := Color("58c9ff")
+		var width := 1.0
+		if track.assignment_role in ["RUSH", "BLITZ"]:
+			color = GridironTheme.DANGER
+			width = 2.0 if track.assignment_role == "BLITZ" else 1.5
+		elif track.assignment_role == "SPY":
+			color = GridironTheme.WARM
+			width = 1.8
+		draw_polyline(points, Color(color, 0.56 if track.assignment_role in ["BLITZ", "SPY"] else 0.28), width, true)
 
 
 func _draw_actor(track: PlayActorTrack, field: Rect2, yard_bounds: Vector2, progress: float) -> void:

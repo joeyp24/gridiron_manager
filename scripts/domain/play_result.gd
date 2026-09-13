@@ -18,6 +18,12 @@ var call_tempo: String
 var call_was_user_selected: bool
 var defensive_call_id: String
 var defensive_call_name: String
+var defensive_call_category: String
+var defensive_call_personnel: String
+var defensive_call_coverage: String
+var defensive_call_front: String
+var defensive_call_shell: String
+var defensive_call_was_user_selected: bool
 var title: String
 var description: String
 var play_type: String
@@ -80,6 +86,12 @@ func _init() -> void:
 	call_was_user_selected = false
 	defensive_call_id = ""
 	defensive_call_name = ""
+	defensive_call_category = ""
+	defensive_call_personnel = ""
+	defensive_call_coverage = ""
+	defensive_call_front = ""
+	defensive_call_shell = ""
+	defensive_call_was_user_selected = false
 	title = ""
 	description = ""
 	play_type = ""
