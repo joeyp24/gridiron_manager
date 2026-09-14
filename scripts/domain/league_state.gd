@@ -51,6 +51,7 @@ var fantasy_draft: FantasyDraftStateData
 var draft_history: Array[DraftStateData] = []
 var future_draft_picks: Array[DraftPickData] = []
 var trade_history: Array[TradeProposalData] = []
+var weekly_game_plans: Dictionary = {}
 var statistics := LeagueStatisticsData.new()
 
 
@@ -547,6 +548,11 @@ func to_dict() -> Dictionary:
 	var trade_data: Array[Dictionary] = []
 	for trade in trade_history:
 		trade_data.append(trade.to_dict())
+	var game_plan_data: Dictionary = {}
+	for plan_key_value in weekly_game_plans:
+		var plan: WeeklyGamePlanData = weekly_game_plans[plan_key_value]
+		if plan != null:
+			game_plan_data[str(plan_key_value)] = plan.to_dict()
 	return {
 		"season_year": season_year,
 		"current_week": current_week,
@@ -582,6 +588,7 @@ func to_dict() -> Dictionary:
 		"draft_history": draft_history_data,
 		"future_draft_picks": future_pick_data,
 		"trade_history": trade_data,
+		"weekly_game_plans": game_plan_data,
 		"statistics": statistics.to_dict(),
 	}
 
@@ -650,6 +657,10 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.future_draft_picks.append(DraftPickData.from_dict(pick_data))
 	for trade_data in data.get("trade_history", []):
 		league.trade_history.append(TradeProposalData.from_dict(trade_data))
+	for plan_key_value in Dictionary(data.get("weekly_game_plans", {})):
+		league.weekly_game_plans[str(plan_key_value)] = WeeklyGamePlanData.from_dict(
+			Dictionary(data["weekly_game_plans"][plan_key_value])
+		)
 	league.statistics = LeagueStatisticsData.from_dict(Dictionary(data.get("statistics", {})))
 	if league.phase == "Complete":
 		league._archive_current_season()

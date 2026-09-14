@@ -20,7 +20,8 @@ func _init(
 	game_seed: int,
 	game_requires_winner: bool = false,
 	selected_playbook: PlaybookData = null,
-	selected_defensive_playbook: DefensivePlaybookData = null
+	selected_defensive_playbook: DefensivePlaybookData = null,
+	selected_game_plans: Dictionary = {}
 ) -> void:
 	seed = game_seed
 	require_winner = game_requires_winner
@@ -28,6 +29,7 @@ func _init(
 	defensive_playbook = selected_defensive_playbook if selected_defensive_playbook != null else PlaybookCatalog.multiple_defense()
 	_rng.seed = game_seed
 	state = GameStateData.new(home, away)
+	state.game_plans = selected_game_plans.duplicate()
 	for team in [home, away]:
 		for personnel in PersonnelPackageService.OFFENSIVE_PACKAGES:
 			_offensive_lineups[_lineup_cache_key(team.id, str(personnel))] = PersonnelPackageService.offensive_lineup(team, str(personnel))
@@ -104,7 +106,7 @@ func simulate_next_play(
 		return null
 	var result := _new_result()
 	_populate_call_context(result, call, play, defensive_call)
-	var modifiers := PlayCallerService.matchup_modifiers(play, defensive_call, state.play_history)
+	var modifiers := PlayCallerService.matchup_modifiers(play, defensive_call, state.play_history, state)
 	match play.play_type:
 		"run":
 			_resolve_run(result, call, play, defensive_call, modifiers)
@@ -121,6 +123,7 @@ func simulate_next_play(
 		_:
 			return null
 
+	_append_game_plan_context(result)
 	GameStatAccumulator.record_play(state, result)
 	state.play_count += 1
 	result.sequence = state.play_count
@@ -685,6 +688,7 @@ func _populate_call_context(
 	result.call_personnel = play.personnel
 	result.call_concept = play.concept
 	result.call_tempo = call.tempo
+	result.call_tags = play.tags.duplicate()
 	result.call_was_user_selected = call.user_selected
 	result.defensive_call_id = defensive_call.id
 	result.defensive_call_name = defensive_call.display_name
@@ -693,7 +697,20 @@ func _populate_call_context(
 	result.defensive_call_coverage = defensive_call.coverage
 	result.defensive_call_front = defensive_call.front
 	result.defensive_call_shell = defensive_call.shell
+	result.defensive_call_rusher_count = defensive_call.rusher_count
+	result.defensive_call_tags = defensive_call.tags.duplicate()
 	result.defensive_call_was_user_selected = defensive_call.user_selected
+
+
+func _append_game_plan_context(result: PlayResult) -> void:
+	var offensive_plan := state.game_plan_for(result.offense_id)
+	var defensive_plan := state.game_plan_for(result.defense_id)
+	result.matchup_context["game_plan"] = {
+		"offensive_focus": offensive_plan.offensive_focus if offensive_plan != null else "",
+		"offensive_points": offensive_plan.offensive_points if offensive_plan != null else 0,
+		"defensive_focus": defensive_plan.defensive_focus if defensive_plan != null else "",
+		"defensive_points": defensive_plan.defensive_points if defensive_plan != null else 0,
+	}
 
 
 func _populate_scrimmage_participants(

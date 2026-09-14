@@ -5,6 +5,7 @@ signal play_requested
 signal simulate_requested
 signal roster_requested
 signal strategy_requested
+signal game_plan_requested
 signal front_office_requested
 signal free_agency_requested
 signal trade_center_requested
@@ -68,6 +69,11 @@ func _build_interface() -> void:
 	var strategy := UIFactory.button("STRATEGY", "SecondaryButton")
 	strategy.pressed.connect(func(): strategy_requested.emit())
 	actions.add_child(strategy)
+	if not _career.league.is_offseason():
+		var game_plan := UIFactory.button("WEEKLY GAME PLAN", "SecondaryButton")
+		game_plan.disabled = _career.current_matchup() == null
+		game_plan.pressed.connect(func(): game_plan_requested.emit())
+		actions.add_child(game_plan)
 	var office := UIFactory.button("FRONT OFFICE", "SecondaryButton")
 	office.pressed.connect(func(): front_office_requested.emit())
 	actions.add_child(office)
@@ -161,6 +167,9 @@ func _build_next_game_card() -> PanelContainer:
 	copy.add_child(UIFactory.label("NEXT MATCHUP · %s" % home_marker, "EyebrowLabel"))
 	copy.add_child(UIFactory.label("vs %s" % opponent.display_name(), "SectionTitleLabel"))
 	copy.add_child(UIFactory.label("%s · Opponent OVR %d" % [_career.current_week_label(), opponent.overall_rating()], "MutedLabel"))
+	var plan := _career.current_game_plan()
+	if plan != null:
+		copy.add_child(UIFactory.label("PLAN · %s / %s" % [plan.offense_label(), plan.defense_label()], "CaptionLabel"))
 	row.add_child(copy)
 	row.add_child(UIFactory.badge(opponent.abbreviation, opponent.primary_color))
 	var comparison := UIFactory.vbox(1)

@@ -15,6 +15,7 @@ var call_formation: String
 var call_personnel: String
 var call_concept: String
 var call_tempo: String
+var call_tags: Array[String] = []
 var call_was_user_selected: bool
 var defensive_call_id: String
 var defensive_call_name: String
@@ -23,6 +24,8 @@ var defensive_call_personnel: String
 var defensive_call_coverage: String
 var defensive_call_front: String
 var defensive_call_shell: String
+var defensive_call_rusher_count: int
+var defensive_call_tags: Array[String] = []
 var defensive_call_was_user_selected: bool
 var title: String
 var description: String
@@ -83,6 +86,7 @@ func _init() -> void:
 	call_personnel = ""
 	call_concept = ""
 	call_tempo = PlayCallData.TEMPO_NORMAL
+	call_tags = []
 	call_was_user_selected = false
 	defensive_call_id = ""
 	defensive_call_name = ""
@@ -91,6 +95,8 @@ func _init() -> void:
 	defensive_call_coverage = ""
 	defensive_call_front = ""
 	defensive_call_shell = ""
+	defensive_call_rusher_count = 4
+	defensive_call_tags = []
 	defensive_call_was_user_selected = false
 	title = ""
 	description = ""

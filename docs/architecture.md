@@ -34,7 +34,8 @@ Dependencies point inward. Domain models never import UI scripts or scenes, and 
 - `FantasyDraftStateData` and `FantasyDraftPickData` store the new-career draft order, 53-round snake pick clock, completed selections, and exact resume point independently of the annual rookie draft.
 - `TradeProposalData` stores immutable completed-deal packages, values, asset labels, clubs, timing, and summary history.
 - `StatLineData` is the sparse, extensible stat-value boundary shared by player game, season, career, and team records.
-- `GameBookData` stores an immutable completed-game snapshot; `SeasonStatisticsData` and `LeagueStatisticsData` own idempotent season and career aggregation.
+- `GameBookData` stores an immutable completed-game snapshot and compact offensive/defensive call ledger; `SeasonStatisticsData` and `LeagueStatisticsData` own idempotent season and career aggregation.
+- `WeeklyGamePlanData` stores one club's matchup-specific priorities, six-point preparation allocation, film sample, and scouting confidence. `OpponentScoutingReportData` is a calculated briefing over recent game books and current personnel rather than mutable career state.
 - `LeagueFormatData` stores roster limits, regular/postseason length, playoff size, schedule strategy, and template season without hard-coding one league shape into career rules.
 - `MatchupData` describes a scheduled or completed game.
 - `StandingData` tracks regular-season records and tiebreak metrics.
@@ -71,6 +72,7 @@ Every manual or automatic path uses the same Attribute Simulation v2 boundary. I
 - `DraftService` owns class creation, scouting actions, pick order, user and AI selections, rookie signings, draft completion, and recap grades.
 - `FantasyDraftService` owns the league-wide launch pool, randomized snake order, manual and AI selections, positional-scarcity protection, salary-cap reserves, 53-player roster construction, and Week 1 finalization.
 - `TradeService` owns the trade window, future draft capital, package valuation, partner evaluation, counteroffers, projected roster/cap validation, dead-cap transfer rules, atomic execution, and history.
+- `GamePlanningService` converts completed call ledgers into opponent tendencies, creates deterministic AI plans, validates the user's weekly preparation budget, and supplies narrow call-selection and snap-resolution modifiers.
 - `StatisticsService` provides UI-ready league leaders, team rankings, derived rates, player game logs and club splits, completed-game lookup, and reusable sorting/filtering without mutating stored totals.
 - `RosterValidator` enforces cap, 53-man and practice-squad limits, veteran allowances, game-day size and positional coverage, required-position, duplicate-ID, and contract rules.
 
@@ -78,7 +80,7 @@ Application sessions are the composition point between content, simulation, save
 
 ### Persistence
 
-`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 12. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, rookie draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, playoff seeds, future draft-pick ownership, trade history, game books, season/career statistics, hybrid Madden ratings, and Fantasy Draft state. Version twelve adds explicit player roster states, team IR/practice-squad lists, configurable reserve limits, and pending waiver claims. Existing careers receive compatible defaults while eight-team saves retain their smaller legacy format.
+`SaveRepository` writes a versioned JSON envelope around serialized career state. The current schema is version 13. Earlier migrations add contracts and free agency, fixed expirations and potential, history and development reports, rookie draft state, enriched player/career metadata, retirement archives, source provenance, league format, future-season schedule templates, playoff seeds, future draft-pick ownership, trade history, game books, season/career statistics, hybrid Madden ratings, Fantasy Draft state, and explicit roster/reserve state. Version thirteen adds the persistent matchup-keyed weekly game-plan collection. Existing careers receive compatible defaults while eight-team saves retain their smaller legacy format.
 
 ### Data
 
@@ -98,11 +100,11 @@ Static definitions and mutable career state remain separate. Loading a source al
 
 ## Intended expansion path
 
-The multi-season loop, standings, roster transactions, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, scouting, drafting, multi-asset trades, future-pick ownership, player/team statistics, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
+The multi-season loop, standings, roster transactions, depth-chart, health, tactics, contracts, cap, free-agency, development, player generation, retirement, draft scouting, weekly opponent scouting and preparation, drafting, multi-asset trades, future-pick ownership, player/team statistics, history, AI transaction, and persistence foundations are now implemented. The next milestones should build outward in this order:
 
 1. AI-initiated trade offers, trade-block discovery, trade deadlines, and richer personnel planning around injuries and roster weaknesses.
 2. Staff, coaching schemes, facilities, finances, objectives, and job security.
 3. League/franchise records, awards, and richer modeled categories such as penalties and returns, extending the responsive Statistics Center.
-4. User defensive playcalling, audibles, timeouts, penalties, return attribution, special-teams decisions, and richer tactical interaction.
+4. Audibles, timeouts, penalties, return attribution, special-teams decisions, and richer tactical interaction.
 
 Each milestone should add checks at the lowest applicable layer. League simulations must remain runnable headlessly so balancing can use thousands of seasons instead of manual playthroughs.

@@ -18,6 +18,7 @@ var is_final := false
 var stats: Dictionary = {}
 var player_stats: Dictionary = {}
 var play_history: Array[PlayResult] = []
+var game_plans: Dictionary = {}
 
 
 func _init(home: TeamData = null, away: TeamData = null) -> void:
@@ -44,6 +45,10 @@ func team_by_id(team_id: String) -> TeamData:
 	if away_team != null and away_team.id == team_id:
 		return away_team
 	return null
+
+
+func game_plan_for(team_id: String) -> WeeklyGamePlanData:
+	return game_plans.get(team_id)
 
 
 func score_for(team_id: String) -> int:

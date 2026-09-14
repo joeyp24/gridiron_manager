@@ -39,6 +39,7 @@ static func create_season(user_team_id: String, seed: int, source_id: String = L
 
 
 static func prepare_current_week(league: LeagueState) -> void:
+	GamePlanningService.ensure_weekly_plans(league)
 	if league.prepared_week == league.current_week:
 		return
 	for team in league.teams:
@@ -51,7 +52,8 @@ static func simulate_matchup(league: LeagueState, matchup: MatchupData) -> GameS
 	var home := league.team_by_id(matchup.home_team_id)
 	var away := league.team_by_id(matchup.away_team_id)
 	var game_seed := _matchup_seed(league, matchup)
-	var simulator := FootballSimulator.new(home, away, game_seed, matchup.phase != "Regular Season")
+	var plans := _game_plans_for_matchup(league, matchup)
+	var simulator := FootballSimulator.new(home, away, game_seed, matchup.phase != "Regular Season", null, null, plans)
 	simulator.simulate_to_end()
 	league.record_game(matchup, simulator.state)
 	_process_postgame(home, game_seed + 17)
@@ -109,3 +111,12 @@ static func _process_postgame(team: TeamData, seed: int) -> void:
 
 static func _matchup_seed(league: LeagueState, matchup: MatchupData) -> int:
 	return league.season_seed + matchup.week * 1009 + matchup.id.hash()
+
+
+static func _game_plans_for_matchup(league: LeagueState, matchup: MatchupData) -> Dictionary:
+	var plans: Dictionary = {}
+	for team_id in [matchup.away_team_id, matchup.home_team_id]:
+		var plan := GamePlanningService.plan_for_matchup(league, matchup, team_id, true)
+		if plan != null:
+			plans[team_id] = plan
+	return plans
