@@ -1,9 +1,6 @@
 class_name PlayCallerService
 extends RefCounted
 
-static var _defensive_call_cache: Array[DefensiveCallData] = []
-
-
 static func available_plays(state: GameStateData, playbook: PlaybookData) -> Array[PlayDefinitionData]:
 	var available: Array[PlayDefinitionData] = []
 	if state == null or playbook == null or state.is_final:
@@ -105,29 +102,99 @@ static func automatic_call(state: GameStateData, playbook: PlaybookData, rng: Ra
 	return PlayCallData.new(chosen.id, _automatic_tempo(state), false)
 
 
-static func automatic_defensive_call(state: GameStateData, rng: RandomNumberGenerator) -> DefensiveCallData:
-	var calls: Array[DefensiveCallData] = _defensive_calls()
+static func available_defensive_calls(
+	state: GameStateData,
+	playbook: DefensivePlaybookData
+) -> Array[DefensiveCallData]:
+	var available: Array[DefensiveCallData] = []
+	if state == null or playbook == null or state.is_final:
+		return available
+	for call in playbook.calls:
+		if defensive_validation_error(state, call).is_empty():
+			available.append(call)
+	return available
+
+
+static func defensive_validation_error(state: GameStateData, call: DefensiveCallData) -> String:
+	if state == null or state.is_final:
+		return "The game is complete."
+	if call == null:
+		return "That call is not in the active defensive playbook."
+	var defense := state.defense()
+	if defense == null:
+		return "No defense is available."
+	if PersonnelPackageService.defensive_lineup(defense, call.personnel).size() < 11:
+		return "The defense cannot field eleven available players for %s personnel." % call.personnel
+	return ""
+
+
+static func defensive_recommendations(
+	state: GameStateData,
+	playbook: DefensivePlaybookData,
+	limit: int = 3
+) -> Array[DefensiveCallData]:
+	var ranked := available_defensive_calls(state, playbook)
+	ranked.sort_custom(func(a: DefensiveCallData, b: DefensiveCallData):
+		var first := _defensive_recommendation_score(state, a)
+		var second := _defensive_recommendation_score(state, b)
+		if not is_equal_approx(first, second):
+			return first > second
+		return a.id < b.id
+	)
+	if ranked.size() > limit:
+		ranked.resize(limit)
+	return ranked
+
+
+static func defensive_recommendation_reason(state: GameStateData, call: DefensiveCallData) -> String:
+	if state == null or call == null:
+		return "Coordinator selection"
+	if state.field_position >= 90 and call.has_tag("goal_line"):
+		return "Protect the goal line"
+	if state.yards_to_first <= 2 and call.has_tag("run_commit"):
+		return "Attack short yardage"
+	if _defense_is_protecting_late_lead(state) and call.has_tag("prevent"):
+		return "Keep the offense in bounds"
+	if state.yards_to_first >= 8 and call.has_tag("pass_commit"):
+		return "Defend the sticks"
+	if call.has_tag("spy"):
+		return "Contain quarterback movement"
+	if call.has_tag("blitz") or call.has_tag("simulated_pressure"):
+		return "Create immediate pressure"
+	if call.has_tag("robber"):
+		return "Challenge inside routes"
+	return "Balanced down-and-distance call"
+
+
+static func automatic_defensive_call(
+	state: GameStateData,
+	rng: RandomNumberGenerator,
+	playbook: DefensivePlaybookData = null
+) -> DefensiveCallData:
+	var selected_playbook := playbook if playbook != null else PlaybookCatalog.multiple_defense()
+	if state == null or selected_playbook == null or state.is_final:
+		return DefensiveCallData.new("emergency_base", "Emergency Base")
+	var calls := selected_playbook.calls
+	if calls.is_empty():
+		return DefensiveCallData.new("emergency_base", "Emergency Base")
 	var chosen: DefensiveCallData = calls.front()
 	var chosen_score: float = -INF
 	for call in calls:
-		var score := 50.0 + rng.randf_range(-12.0, 12.0)
-		if state.yards_to_first <= 2:
-			score += 24.0 if call.id in ["run_commit", "goal_line"] else 0.0
-		if state.yards_to_first >= 7:
-			score += 20.0 if call.id in ["nickel_cover_2", "zone_blitz", "dime_prevent"] else 0.0
-		if state.field_position >= 90:
-			score += 28.0 if call.id == "goal_line" else 0.0
-		if state.quarter >= 4 and state.clock_seconds <= 120 and state.score_for(state.defense().id) > state.score_for(state.offense().id):
-			score += 45.0 if call.id == "dime_prevent" else 0.0
-		if state.defense().coverage_preference == "Zone" and call.coverage == "Zone":
-			score += 9.0
-		elif state.defense().coverage_preference == "Man" and call.coverage == "Man":
-			score += 9.0
-		if state.defense().blitz_rate >= 0.55 and call.id in ["man_pressure", "zone_blitz"]:
-			score += 12.0
+		var score := _defensive_recommendation_score(state, call) + rng.randf_range(-12.0, 12.0)
 		if score > chosen_score:
 			chosen = call
 			chosen_score = score
+	if not defensive_validation_error(state, chosen).is_empty():
+		var available := available_defensive_calls(state, selected_playbook)
+		if available.is_empty():
+			return DefensiveCallData.new("emergency_base", "Emergency Base")
+		chosen = available.front()
+		chosen_score = -INF
+		for call in available:
+			var score := _defensive_recommendation_score(state, call) + rng.randf_range(-12.0, 12.0)
+			if score > chosen_score:
+				chosen = call
+				chosen_score = score
 	return chosen
 
 
@@ -143,38 +210,43 @@ static func matchup_modifiers(
 		"sack": play.sack_modifier,
 		"interception": play.interception_modifier,
 		"fumble": play.fumble_modifier,
+		"explosive": defense.explosive_modifier,
 	}
 	if play.play_type == "run":
 		modifiers["yardage"] = float(modifiers["yardage"]) + defense.run_yards_modifier
+		modifiers["fumble"] = float(modifiers["fumble"]) + defense.fumble_modifier
 		if play.has_tag("power") and defense.personnel in ["Nickel", "Dime"]:
 			modifiers["yardage"] = float(modifiers["yardage"]) + 0.8
-		if play.has_tag("outside") and defense.id == "run_commit":
+		if play.has_tag("outside") and defense.has_tag("run_commit"):
 			modifiers["yardage"] = float(modifiers["yardage"]) - 0.4
+		if play.runner_position == "QB" and defense.has_tag("spy"):
+			modifiers["yardage"] = float(modifiers["yardage"]) - 1.4
+			modifiers["fumble"] = float(modifiers["fumble"]) + 0.002
 	elif play.play_type == "pass":
 		modifiers["yardage"] = float(modifiers["yardage"]) + defense.pass_yards_modifier
 		modifiers["completion"] = float(modifiers["completion"]) + defense.completion_modifier
 		modifiers["sack"] = float(modifiers["sack"]) + defense.sack_modifier
 		modifiers["interception"] = float(modifiers["interception"]) + defense.interception_modifier
-		if play.has_tag("blitz_beater") and defense.id in ["man_pressure", "zone_blitz"]:
+		if play.has_tag("blitz_beater") and defense.has_tag("blitz"):
 			modifiers["yardage"] = float(modifiers["yardage"]) + 2.5
 			modifiers["completion"] = float(modifiers["completion"]) + 0.07
 			modifiers["sack"] = float(modifiers["sack"]) - 0.02
-		if play.has_tag("quick") and defense.id in ["man_pressure", "zone_blitz"]:
+		if play.has_tag("quick") and defense.has_tag("blitz"):
 			modifiers["completion"] = float(modifiers["completion"]) + 0.04
 			modifiers["sack"] = float(modifiers["sack"]) - 0.015
-		if play.has_tag("play_action") and defense.id == "run_commit":
+		if play.has_tag("play_action") and defense.has_tag("run_commit"):
 			modifiers["yardage"] = float(modifiers["yardage"]) + 2.0
 			modifiers["completion"] = float(modifiers["completion"]) + 0.06
-		if play.has_tag("play_action") and defense.id in ["man_pressure", "zone_blitz"]:
+		if play.has_tag("play_action") and defense.has_tag("blitz"):
 			modifiers["sack"] = float(modifiers["sack"]) + 0.015
-		if play.has_tag("deep") and defense.id == "dime_prevent":
-			modifiers["yardage"] = float(modifiers["yardage"]) - 4.0
-			modifiers["completion"] = float(modifiers["completion"]) - 0.06
+		if play.has_tag("deep") and defense.has_tag("prevent"):
+			modifiers["yardage"] = float(modifiers["yardage"]) - 3.0
+			modifiers["completion"] = float(modifiers["completion"]) - 0.05
 		if play.has_tag("zone_beater") and defense.coverage == "Zone":
 			modifiers["completion"] = float(modifiers["completion"]) + 0.025
 		if play.has_tag("man_beater") and defense.coverage == "Man":
 			modifiers["completion"] = float(modifiers["completion"]) + 0.025
-		if play.has_tag("max_protect") and defense.id in ["man_pressure", "zone_blitz"]:
+		if play.has_tag("max_protect") and defense.has_tag("blitz"):
 			modifiers["sack"] = float(modifiers["sack"]) - 0.018
 
 	var repeats := 0
@@ -185,6 +257,14 @@ static func matchup_modifiers(
 	if repeats > 0:
 		modifiers["yardage"] = float(modifiers["yardage"]) - float(repeats) * 0.45
 		modifiers["completion"] = float(modifiers["completion"]) - float(repeats) * 0.015
+	var defensive_repeats := 0
+	for index in range(first_index, history.size()):
+		if history[index].defensive_call_id == defense.id:
+			defensive_repeats += 1
+	if defensive_repeats > 0:
+		modifiers["yardage"] = float(modifiers["yardage"]) + float(defensive_repeats) * 0.30
+		if play.play_type == "pass":
+			modifiers["completion"] = float(modifiers["completion"]) + float(defensive_repeats) * 0.008
 	return modifiers
 
 
@@ -228,38 +308,70 @@ static func _recommendation_score(state: GameStateData, play: PlayDefinitionData
 	return score - float(repeats) * 12.0
 
 
-static func _defensive_calls() -> Array[DefensiveCallData]:
-	if _defensive_call_cache.is_empty():
-		_defensive_call_cache.append(_defense("base_cover_3", "Base Cover 3", "Base", "Zone", -0.1, 0.01, -0.5, 0.0, 0.002))
-		_defensive_call_cache.append(_defense("nickel_cover_2", "Nickel Cover 2", "Nickel", "Zone", 0.7, -0.02, -1.0, -0.004, 0.004))
-		_defensive_call_cache.append(_defense("man_pressure", "Man Pressure", "Nickel", "Man", 0.3, -0.025, 0.8, 0.022, 0.003))
-		_defensive_call_cache.append(_defense("zone_blitz", "Zone Blitz", "Base", "Zone", -0.5, 0.005, 0.5, 0.026, 0.005))
-		_defensive_call_cache.append(_defense("run_commit", "Run Commit", "Base", "Man", -1.7, 0.08, 3.0, -0.01, -0.005))
-		_defensive_call_cache.append(_defense("dime_prevent", "Dime Prevent", "Dime", "Zone", 1.8, 0.08, -3.0, -0.02, -0.002))
-		_defensive_call_cache.append(_defense("goal_line", "Goal-Line Front", "Goal Line", "Man", -2.3, -0.03, -1.0, 0.01, 0.002))
-	return _defensive_call_cache
+static func _defensive_recommendation_score(state: GameStateData, call: DefensiveCallData) -> float:
+	var score := 50.0
+	var distance := state.yards_to_first
+	var likely_run := clampf(state.offense().run_tendency, 0.20, 0.80)
+	if state.down == 3 and distance >= 7:
+		likely_run -= 0.22
+	elif distance <= 2:
+		likely_run += 0.18
+	var recent_runs := 0
+	var recent_passes := 0
+	var first_index := maxi(state.play_history.size() - 6, 0)
+	for index in range(first_index, state.play_history.size()):
+		var previous := state.play_history[index]
+		if previous.offense_id != state.offense().id:
+			continue
+		if previous.play_type == "run":
+			recent_runs += 1
+		elif previous.play_type in ["pass", "sack"]:
+			recent_passes += 1
+	if recent_runs + recent_passes > 0:
+		likely_run = clampf(lerpf(likely_run, float(recent_runs) / float(recent_runs + recent_passes), 0.38), 0.12, 0.88)
+	if call.has_tag("run_commit"):
+		score += (likely_run - 0.45) * 54.0
+		if distance <= 2:
+			score += 24.0
+	if call.has_tag("pass_commit"):
+		score += (0.55 - likely_run) * 38.0
+		if distance >= 7:
+			score += 18.0
+	if call.category == "Nickel" and distance >= 4:
+		score += 7.0
+	if call.category == "Dime" and distance >= 8:
+		score += 12.0
+	if call.has_tag("goal_line"):
+		score += 40.0 if state.field_position >= 90 else -34.0
+	if call.has_tag("prevent"):
+		score += 52.0 if _defense_is_protecting_late_lead(state) else -38.0
+	if state.defense().coverage_preference == call.coverage:
+		score += 9.0
+	if call.has_tag("blitz"):
+		score += (state.defense().blitz_rate - 0.42) * 30.0
+		if distance >= 10:
+			score += 6.0
+	if call.has_tag("simulated_pressure"):
+		score += 6.0
+	if call.has_tag("spy") and state.offense().player_at("QB") != null:
+		var quarterback := state.offense().player_at("QB")
+		var mobility := AttributeMatchupService.weighted_rating(quarterback, {
+			"speed": 0.35, "acceleration": 0.25, "agility": 0.20, "breakSack": 0.20,
+		})
+		score += (mobility - SimulationTuning.ratings_center()) * 0.55
+	var repeats := 0
+	for index in range(first_index, state.play_history.size()):
+		if state.play_history[index].defensive_call_id == call.id:
+			repeats += 1
+	return score - float(repeats) * 11.0
 
 
-static func _defense(
-	call_id: String,
-	call_name: String,
-	personnel: String,
-	coverage: String,
-	run_modifier: float,
-	completion_modifier: float,
-	pass_modifier: float,
-	sack_modifier: float,
-	interception_modifier: float
-) -> DefensiveCallData:
-	var call := DefensiveCallData.new(call_id, call_name)
-	call.personnel = personnel
-	call.coverage = coverage
-	call.run_yards_modifier = run_modifier
-	call.completion_modifier = completion_modifier
-	call.pass_yards_modifier = pass_modifier
-	call.sack_modifier = sack_modifier
-	call.interception_modifier = interception_modifier
-	return call
+static func _defense_is_protecting_late_lead(state: GameStateData) -> bool:
+	return (
+		state.quarter >= 4
+		and state.clock_seconds <= 150
+		and state.score_for(state.defense().id) > state.score_for(state.offense().id)
+	)
 
 
 static func _should_go_for_it(state: GameStateData, rng: RandomNumberGenerator) -> bool:

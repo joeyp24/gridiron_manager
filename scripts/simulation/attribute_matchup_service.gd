@@ -112,7 +112,7 @@ static func pass_matchup(
 	var rush := group_rating(rushers, {
 		"finesseMoves": 0.24, "powerMoves": 0.24, "blockShedding": 0.18,
 		"acceleration": 0.14, "strength": 0.10, "playRecognition": 0.10,
-	}) + float(rushers.size() - 6) * 0.5
+	}) + float(rushers.size() - 4) * 1.25
 	var accuracy_attribute := "throwAccuracyMid"
 	var route_attribute := "mediumRouteRunning"
 	if play != null and (play.has_tag("quick") or play.has_tag("screen")):

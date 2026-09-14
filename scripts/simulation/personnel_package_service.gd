@@ -14,6 +14,7 @@ const DEFENSIVE_PACKAGES := {
 	"Nickel": {"EDGE": 2, "DT": 2, "LB": 2, "CB": 3, "S": 2},
 	"Dime": {"EDGE": 2, "DT": 2, "LB": 1, "CB": 4, "S": 2},
 	"Goal Line": {"EDGE": 2, "DT": 3, "LB": 4, "CB": 1, "S": 1},
+	"Prevent": {"EDGE": 1, "DT": 1, "LB": 2, "CB": 4, "S": 3},
 }
 
 
@@ -98,6 +99,26 @@ static func pass_protectors(lineup_players: Array[PlayerData], quarterback: Play
 
 static func rushers(lineup_players: Array[PlayerData]) -> Array[PlayerData]:
 	return players_at(lineup_players, ["EDGE", "DT", "LB"])
+
+
+static func pass_rushers(lineup_players: Array[PlayerData], desired_count: int) -> Array[PlayerData]:
+	var candidates := rushers(lineup_players)
+	candidates.sort_custom(func(a: PlayerData, b: PlayerData):
+		var first := AttributeMatchupService.weighted_rating(a, {
+			"finesseMoves": 0.28, "powerMoves": 0.28, "blockShedding": 0.18,
+			"acceleration": 0.14, "strength": 0.12,
+		})
+		var second := AttributeMatchupService.weighted_rating(b, {
+			"finesseMoves": 0.28, "powerMoves": 0.28, "blockShedding": 0.18,
+			"acceleration": 0.14, "strength": 0.12,
+		})
+		if not is_equal_approx(first, second):
+			return first > second
+		return a.id < b.id
+	)
+	if candidates.size() > desired_count:
+		candidates.resize(desired_count)
+	return candidates
 
 
 static func ids(lineup_players: Array[PlayerData]) -> Array[String]:

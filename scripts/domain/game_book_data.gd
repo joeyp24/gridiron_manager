@@ -11,6 +11,7 @@ var away_score: int
 var home_score: int
 var team_stats: Dictionary = {}
 var player_stats: Dictionary = {}
+var play_calls: Array[Dictionary] = []
 
 
 static func from_game(matchup: MatchupData, game: GameStateData, year: int) -> GameBookData:
@@ -33,6 +34,26 @@ static func from_game(matchup: MatchupData, game: GameStateData, year: int) -> G
 		var player_line = game.player_stats[player_id]
 		if player_line is PlayerGameStatsData and player_line.stats.value("games_played") > 0:
 			book.player_stats[player_id] = PlayerGameStatsData.from_dict(player_line.to_dict())
+	for result in game.play_history:
+		book.play_calls.append({
+			"sequence": result.sequence,
+			"quarter": result.quarter,
+			"clock_seconds": result.clock_seconds,
+			"offense_id": result.offense_id,
+			"defense_id": result.defense_id,
+			"offensive_call_id": result.call_id,
+			"offensive_call_name": result.call_name,
+			"offensive_call_was_user_selected": result.call_was_user_selected,
+			"defensive_call_id": result.defensive_call_id,
+			"defensive_call_name": result.defensive_call_name,
+			"defensive_call_personnel": result.defensive_call_personnel,
+			"defensive_call_coverage": result.defensive_call_coverage,
+			"defensive_call_shell": result.defensive_call_shell,
+			"defensive_call_was_user_selected": result.defensive_call_was_user_selected,
+			"result": result.title,
+			"yards": result.yards,
+			"points": result.points,
+		})
 	return book
 
 
@@ -62,6 +83,7 @@ func to_dict() -> Dictionary:
 		"home_score": home_score,
 		"team_stats": serialized_teams,
 		"player_stats": serialized_players,
+		"play_calls": play_calls.duplicate(true),
 	}
 
 
@@ -79,4 +101,6 @@ static func from_dict(data: Dictionary) -> GameBookData:
 		book.team_stats[team_id] = StatLineData.from_dict(Dictionary(data["team_stats"][team_id]))
 	for player_id in Dictionary(data.get("player_stats", {})):
 		book.player_stats[player_id] = PlayerGameStatsData.from_dict(Dictionary(data["player_stats"][player_id]))
+	for call_data in Array(data.get("play_calls", [])):
+		book.play_calls.append(Dictionary(call_data).duplicate(true))
 	return book

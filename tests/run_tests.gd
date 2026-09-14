@@ -139,7 +139,7 @@ func _test_personnel_packages_and_attribute_matchups() -> void:
 		_check(lineup.size() == 11, "%s offensive personnel should field exactly eleven players" % personnel)
 		for position_name in expected:
 			_check(_position_count(lineup, str(position_name)) == int(expected[position_name]), "%s personnel should honor its %s count" % [personnel, position_name])
-	for personnel in ["Base", "Nickel", "Dime", "Goal Line"]:
+	for personnel in ["Base", "Nickel", "Dime", "Goal Line", "Prevent"]:
 		var lineup := PersonnelPackageService.defensive_lineup(defense, personnel)
 		var expected := PersonnelPackageService.defensive_counts(personnel)
 		_check(lineup.size() == 11, "%s defense should field exactly eleven players" % personnel)

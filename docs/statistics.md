@@ -32,6 +32,7 @@ Skill-position targets, carries, pass rushers, coverage players, and tacklers ar
 - Career totals remain separate from the mutable `PlayerData` ratings and roster object.
 - Player game lines are sparse: zero-value categories are omitted to keep long-career saves compact.
 - Team game lines retain a fully shaped box score for straightforward rendering and compatibility with the existing Match Center.
+- Each game book retains a compact snap-by-snap call ledger with both coordinators' call IDs and names, offensive personnel and tempo, defensive personnel and coverage shell, user-selection flags, and the resulting yards and points. This supports future tendency scouting without storing presentation timelines.
 
 Schema version nine migrates older careers with empty statistic collections. Previously completed scores and the legacy seven-field team summaries remain visible, but the migration does not invent individual production that the old simulator never recorded.
 

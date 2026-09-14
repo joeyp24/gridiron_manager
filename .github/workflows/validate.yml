@@ -63,3 +63,10 @@ jobs:
             --headless --path . \
             --log-file test-results/godot-play-presentation-test.log \
             --script res://tests/run_play_presentation_tests.gd
+
+      - name: Run defensive playcalling checks
+        run: |
+          "./Godot_v${GODOT_VERSION}-stable_linux.x86_64" \
+            --headless --path . \
+            --log-file test-results/godot-defensive-playcalling-test.log \
+            --script res://tests/run_defensive_playcalling_tests.gd

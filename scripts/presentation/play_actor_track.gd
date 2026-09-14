@@ -6,6 +6,7 @@ var team_id := ""
 var display_name := ""
 var icon_label := ""
 var position_name := ""
+var assignment_role := ""
 var is_offense := false
 var is_featured := false
 var primary_color := Color.WHITE
