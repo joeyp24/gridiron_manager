@@ -35,6 +35,8 @@ Gridiron Manager is an extensible American football management simulation built 
 - Persistent offensive and defensive strategy covering run balance, tempo, passing depth, fourth-down aggression, blitz frequency, and coverage preference
 - An 18-week, 17-game regular season followed by seven-team AFC and NFC playoff brackets and a championship
 - Weekly schedule, results, standings, club record, league leaders, injury report, and news feed
+- A responsive weekly game-planning room with opponent tendencies derived from recent call ledgers, key-player and injury briefings, ratings-based matchup edges, six-point preparation budgets, and saved offensive and defensive priorities
+- Deterministic AI game plans for every matchup, with preparation influencing call recommendations and modest snap-level execution bonuses in both played and fully simulated games
 - User-played matchups alongside deterministic AI-versus-AI simulation
 - A responsive full-screen simulation overlay with real matchup-by-matchup progress for weekly simulation and postgame league processing
 - Downs, distance, field position, possession, clock management, overtime, punts, field goals, touchdowns, and turnovers
@@ -46,7 +48,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
 - Live play-by-play, field visualization, and team box-score statistics
-- Versioned JSON career saves with automatic migrations through schema version twelve, persistent roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, statistics history, trade history, future-pick ownership, and data provenance
+- Versioned JSON career saves with automatic migrations through schema version thirteen, persistent weekly game plans, roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, statistics history, trade history, future-pick ownership, and data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -72,9 +74,10 @@ godot --headless --path . --script res://tests/run_ui_tests.gd
 godot --headless --path . --script res://tests/run_simulation_loading_tests.gd
 godot --headless --path . --script res://tests/run_play_presentation_tests.gd
 godot --headless --path . --script res://tests/run_defensive_playcalling_tests.gd
+godot --headless --path . --script res://tests/run_game_planning_tests.gd
 ```
 
-The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration; playcalling, 22-player animation composition, playback controls, and clock management; staged week and postgame progress; responsive loading behavior; player/team stat reconciliation; statistics filtering and sorting; 53-man and 48-player game-day legality; injured reserve, practice squads, waiver priority and claims, AI reserve management, and roster-state persistence; contracts and the salary cap; trades and future-pick ownership; Fantasy Draft completion and save/resume; development, retirement, scouting, and the rookie draft; free-agent population balance; the complete 2,035-player league; schedules and playoffs; multi-season advancement; responsive career screens; serialization; and save migration.
+The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration; playcalling, opponent scouting, weekly preparation, AI game plans, 22-player animation composition, playback controls, and clock management; staged week and postgame progress; responsive loading behavior; player/team stat reconciliation; statistics filtering and sorting; 53-man and 48-player game-day legality; injured reserve, practice squads, waiver priority and claims, AI reserve management, and roster-state persistence; contracts and the salary cap; trades and future-pick ownership; Fantasy Draft completion and save/resume; development, retirement, draft scouting, and the rookie draft; free-agent population balance; the complete 2,035-player league; schedules and playoffs; multi-season advancement; responsive career screens; serialization; and save migration.
 
 The committed nflverse snapshot is also validated in Python:
 
@@ -109,6 +112,8 @@ The simulation and career layers do not depend on scenes or controls. The Statis
 See [`docs/architecture.md`](docs/architecture.md) for dependency rules and extension points.
 See [`docs/statistics.md`](docs/statistics.md) for the game-book schema, aggregation lifecycle, reconciliation rules, and UI extension points.
 See [`docs/playcalling.md`](docs/playcalling.md) for the call-sheet data model, simulation flow, matchup modifiers, and extension path.
+
+See [`docs/game_planning.md`](docs/game_planning.md) for opponent-film analysis, preparation budgets, AI priorities, simulation effects, persistence, and UI behavior.
 See [`docs/simulation_v2.md`](docs/simulation_v2.md) for personnel packages, direct-attribute matchups, tuning, and calibration.
 See [`docs/fantasy_draft.md`](docs/fantasy_draft.md) for the career-mode flow, AI board, roster safeguards, persistence, and extension points.
 See [`docs/roster_management.md`](docs/roster_management.md) for roster states, transaction rules, weekly processing, cap behavior, AI decisions, and UI extension points.

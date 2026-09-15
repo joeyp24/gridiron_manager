@@ -7,6 +7,7 @@ const CAREER_SELECT_SCENE := preload("res://scenes/screens/career_select.tscn")
 const CAREER_DASHBOARD_SCENE := preload("res://scenes/screens/career_dashboard.tscn")
 const ROSTER_SCENE := preload("res://scenes/screens/roster_screen.tscn")
 const STRATEGY_SCENE := preload("res://scenes/screens/strategy_screen.tscn")
+const GAME_PLAN_SCENE := preload("res://scenes/screens/game_plan_screen.tscn")
 const FRONT_OFFICE_SCENE := preload("res://scenes/screens/front_office_screen.tscn")
 const FREE_AGENCY_SCENE := preload("res://scenes/screens/free_agency_screen.tscn")
 const OFFSEASON_SCENE := preload("res://scenes/screens/offseason_screen.tscn")
@@ -31,6 +32,7 @@ var _roster_button: Button
 var _statistics_button: Button
 var _players_button: Button
 var _strategy_button: Button
+var _game_plan_button: Button
 var _office_button: Button
 var _match_button: Button
 
@@ -102,6 +104,10 @@ func _build_shell() -> void:
 	_strategy_button.disabled = true
 	_strategy_button.pressed.connect(_show_strategy)
 	top_row.add_child(_strategy_button)
+	_game_plan_button = UIFactory.button("GAME PLAN", "GhostButton")
+	_game_plan_button.disabled = true
+	_game_plan_button.pressed.connect(_show_game_plan)
+	top_row.add_child(_game_plan_button)
 	_office_button = UIFactory.button("OFFICE", "GhostButton")
 	_office_button.disabled = true
 	_office_button.pressed.connect(_show_front_office)
@@ -179,6 +185,7 @@ func _show_career_dashboard() -> void:
 	if _career.league.is_fantasy_draft_active():
 		_show_fantasy_draft()
 		return
+	_game_plan_button.disabled = _career.league.is_offseason()
 	_section_label.text = "CAREER / HUB"
 	var screen := CAREER_DASHBOARD_SCENE.instantiate()
 	screen.setup(_career)
@@ -187,6 +194,7 @@ func _show_career_dashboard() -> void:
 	screen.simulate_requested.connect(_simulate_career_week)
 	screen.roster_requested.connect(_show_roster)
 	screen.strategy_requested.connect(_show_strategy)
+	screen.game_plan_requested.connect(_show_game_plan)
 	screen.front_office_requested.connect(_show_front_office)
 	screen.free_agency_requested.connect(_show_free_agency)
 	screen.trade_center_requested.connect(_show_trade_center)
@@ -263,6 +271,18 @@ func _show_strategy() -> void:
 	screen.setup(_career.user_team())
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.strategy_saved.connect(_save_strategy)
+	_mount(screen)
+
+
+func _show_game_plan() -> void:
+	if _career == null or _career.league.is_offseason():
+		return
+	_section_label.text = "CAREER / WEEKLY GAME PLAN"
+	var screen := GAME_PLAN_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.game_plan_saved.connect(_save_career)
+	screen.player_profile_requested.connect(_show_players)
 	_mount(screen)
 
 
@@ -452,6 +472,7 @@ func _enable_career_navigation() -> void:
 	_players_button.disabled = draft_active
 	_statistics_button.disabled = draft_active
 	_strategy_button.disabled = draft_active
+	_game_plan_button.disabled = draft_active or (_career != null and _career.league.is_offseason())
 	_office_button.disabled = draft_active
 	_match_button.disabled = true
 
@@ -479,6 +500,7 @@ func _apply_responsive_shell() -> void:
 	_section_label.visible = not compact
 	_version_badge.visible = size.x >= 880
 	_strategy_button.visible = size.x >= 900
+	_game_plan_button.visible = size.x >= 1180
 	_statistics_button.visible = size.x >= 760
 	_players_button.visible = size.x >= 1080
 	_match_button.visible = not compact or not _match_button.disabled

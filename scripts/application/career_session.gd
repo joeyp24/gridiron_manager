@@ -46,6 +46,32 @@ func next_opponent() -> TeamData:
 	return league.team_by_id(matchup.opponent_id(league.user_team_id)) if matchup != null else null
 
 
+func current_game_plan() -> WeeklyGamePlanData:
+	return GamePlanningService.current_user_plan(league)
+
+
+func current_opponent_report() -> OpponentScoutingReportData:
+	var opponent := next_opponent()
+	return GamePlanningService.build_report(league, opponent.id, league.user_team_id) if opponent != null else null
+
+
+func save_game_plan(
+	offensive_focus: String,
+	defensive_focus: String,
+	offensive_points: int,
+	defensive_points: int
+) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the weekly plan."}
+	return GamePlanningService.save_user_plan(
+		league,
+		offensive_focus,
+		defensive_focus,
+		offensive_points,
+		defensive_points
+	)
+
+
 func sign_free_agent(player_id: String, years: int, offer_multiplier: float) -> Dictionary:
 	if active_simulator != null:
 		return {"ok": false, "message": "Complete the active game before changing the roster."}
@@ -247,7 +273,12 @@ func begin_user_game() -> FootballSimulator:
 	var home := league.team_by_id(active_matchup.home_team_id)
 	var away := league.team_by_id(active_matchup.away_team_id)
 	var game_seed := league.season_seed + league.current_week * 1009 + active_matchup.id.hash()
-	active_simulator = FootballSimulator.new(home, away, game_seed, active_matchup.phase != "Regular Season")
+	var plans: Dictionary = {}
+	for team_id in [active_matchup.away_team_id, active_matchup.home_team_id]:
+		var plan := GamePlanningService.plan_for_matchup(league, active_matchup, team_id, true)
+		if plan != null:
+			plans[team_id] = plan
+	active_simulator = FootballSimulator.new(home, away, game_seed, active_matchup.phase != "Regular Season", null, null, plans)
 	return active_simulator
 
 

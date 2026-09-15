@@ -201,7 +201,8 @@ static func automatic_defensive_call(
 static func matchup_modifiers(
 	play: PlayDefinitionData,
 	defense: DefensiveCallData,
-	history: Array[PlayResult]
+	history: Array[PlayResult],
+	state: GameStateData = null
 ) -> Dictionary:
 	var modifiers := {
 		"yardage": play.yardage_modifier,
@@ -212,6 +213,14 @@ static func matchup_modifiers(
 		"fumble": play.fumble_modifier,
 		"explosive": defense.explosive_modifier,
 	}
+	if state != null:
+		var preparation := GamePlanningService.snap_modifiers(
+			play,
+			state.game_plan_for(state.offense().id),
+			state.game_plan_for(state.defense().id)
+		)
+		for modifier_name in preparation:
+			modifiers[modifier_name] = float(modifiers.get(modifier_name, 0.0)) + float(preparation[modifier_name])
 	if play.play_type == "run":
 		modifiers["yardage"] = float(modifiers["yardage"]) + defense.run_yards_modifier
 		modifiers["fumble"] = float(modifiers["fumble"]) + defense.fumble_modifier
@@ -270,6 +279,7 @@ static func matchup_modifiers(
 
 static func _recommendation_score(state: GameStateData, play: PlayDefinitionData) -> float:
 	var score := 50.0
+	score += GamePlanningService.offensive_recommendation_adjustment(play, state.game_plan_for(state.offense().id))
 	var distance := state.yards_to_first
 	if play.play_type == "run":
 		score += state.offense().run_tendency * 18.0
@@ -310,6 +320,7 @@ static func _recommendation_score(state: GameStateData, play: PlayDefinitionData
 
 static func _defensive_recommendation_score(state: GameStateData, call: DefensiveCallData) -> float:
 	var score := 50.0
+	score += GamePlanningService.defensive_recommendation_adjustment(call, state.game_plan_for(state.defense().id))
 	var distance := state.yards_to_first
 	var likely_run := clampf(state.offense().run_tendency, 0.20, 0.80)
 	if state.down == 3 and distance >= 7:
