@@ -315,6 +315,7 @@ static func execute_trade(
 		league.trade_history.pop_back()
 	_record_trade_transaction(league, proposer, responder, record, proposer.payroll() - proposer_old_payroll, true)
 	_record_trade_transaction(league, responder, proposer, record, responder.payroll() - responder_old_payroll, false)
+	league.reconcile_trade_market()
 	return {
 		"ok": true,
 		"executed": true,

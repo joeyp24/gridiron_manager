@@ -22,11 +22,15 @@ static func new_career(
 		RosterTransactionService.initialize_league(state)
 	if state != null and career_mode == LeagueState.CAREER_MODE_FANTASY_DRAFT:
 		FantasyDraftService.initialize(state)
+	if state != null:
+		TradeMarketService.initialize_market(state)
 	return CareerSession.new(state)
 
 
 static func from_dict(data: Dictionary) -> CareerSession:
-	return CareerSession.new(LeagueState.from_dict(data.get("league", {})))
+	var state := LeagueState.from_dict(data.get("league", {}))
+	TradeMarketService.initialize_market(state)
+	return CareerSession.new(state)
 
 
 func to_dict() -> Dictionary:
@@ -175,7 +179,7 @@ func submit_trade(
 ) -> Dictionary:
 	if active_simulator != null:
 		return {"ok": false, "executed": false, "status": "Invalid", "message": "Complete the active game before proposing a trade."}
-	return TradeService.submit_proposal(
+	var result := TradeService.submit_proposal(
 		league,
 		league.user_team_id,
 		partner_team_id,
@@ -184,14 +188,59 @@ func submit_trade(
 		user_pick_ids,
 		partner_pick_ids
 	)
+	if bool(result.get("executed", false)):
+		league.reconcile_trade_market()
+	return result
 
 
-func accept_trade_counter(counter: Dictionary) -> Dictionary:
+func accept_trade_counter(counter: Dictionary, source_offer_id: String = "") -> Dictionary:
 	if active_simulator != null:
 		return {"ok": false, "executed": false, "status": "Invalid", "message": "Complete the active game before accepting a trade."}
 	if str(counter.get("proposing_team_id", "")) != league.user_team_id:
 		return {"ok": false, "executed": false, "status": "Invalid", "message": "The counteroffer does not belong to this club."}
-	return TradeService.accept_counter(league, counter)
+	var result := TradeService.accept_counter(league, counter)
+	if bool(result.get("executed", false)):
+		league.reconcile_trade_market()
+		if not source_offer_id.is_empty():
+			TradeMarketService.mark_counter_offer_completed(league, source_offer_id)
+	return result
+
+
+func toggle_trade_block(player_id: String, listed: bool) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before changing the trade block."}
+	return TradeMarketService.toggle_user_trade_block(league, player_id, listed)
+
+
+func accept_incoming_trade_offer(offer_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before accepting a trade offer."}
+	return TradeMarketService.accept_incoming_offer(league, offer_id)
+
+
+func decline_incoming_trade_offer(offer_id: String) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before declining a trade offer."}
+	return TradeMarketService.decline_incoming_offer(league, offer_id)
+
+
+func counter_incoming_trade_offer(
+	offer_id: String,
+	user_player_ids: Array,
+	partner_player_ids: Array,
+	user_pick_ids: Array,
+	partner_pick_ids: Array
+) -> Dictionary:
+	if active_simulator != null:
+		return {"ok": false, "message": "Complete the active game before countering a trade offer."}
+	return TradeMarketService.submit_incoming_counter(
+		league,
+		offer_id,
+		user_player_ids,
+		partner_player_ids,
+		user_pick_ids,
+		partner_pick_ids
+	)
 
 
 func extend_player(player_id: String, years: int, offer_multiplier: float) -> Dictionary:
@@ -424,3 +473,4 @@ func _run_ai_front_offices() -> void:
 		RosterTransactionService.run_ai_roster_management(league)
 	if league.current_week <= league.league_format.regular_season_weeks:
 		TransactionService.run_ai_roster_moves(league)
+	TradeMarketService.process_week(league)

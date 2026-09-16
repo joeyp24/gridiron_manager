@@ -51,6 +51,10 @@ var fantasy_draft: FantasyDraftStateData
 var draft_history: Array[DraftStateData] = []
 var future_draft_picks: Array[DraftPickData] = []
 var trade_history: Array[TradeProposalData] = []
+var trade_blocks: Dictionary = {}
+var trade_offers: Array[TradeOfferData] = []
+var last_trade_market_week := 0
+var last_cpu_trade_week := 0
 var weekly_game_plans: Dictionary = {}
 var statistics := LeagueStatisticsData.new()
 
@@ -159,6 +163,68 @@ func record_transaction(transaction: TransactionData, headline: String) -> void:
 
 func recent_transactions(limit: int = 12) -> Array[TransactionData]:
 	return transactions.slice(0, mini(limit, transactions.size()))
+
+
+func trade_block_for(team_id: String) -> Array[String]:
+	var result: Array[String] = []
+	for player_id in Array(trade_blocks.get(team_id, [])):
+		result.append(str(player_id))
+	return result
+
+
+func set_trade_block(team_id: String, player_ids: Array) -> void:
+	var unique: Array[String] = []
+	for player_id_value in player_ids:
+		var player_id := str(player_id_value)
+		if not player_id.is_empty() and player_id not in unique:
+			unique.append(player_id)
+	trade_blocks[team_id] = unique
+
+
+func trade_offer_by_id(offer_id: String) -> TradeOfferData:
+	for offer in trade_offers:
+		if offer.id == offer_id:
+			return offer
+	return null
+
+
+func reconcile_trade_market() -> void:
+	for team_id_value in trade_blocks.keys():
+		var team_id := str(team_id_value)
+		var team := team_by_id(team_id)
+		if team == null:
+			trade_blocks.erase(team_id_value)
+			continue
+		var valid_ids: Array[String] = []
+		for player_id in trade_block_for(team_id):
+			if team.player_by_id(player_id) != null:
+				valid_ids.append(player_id)
+		set_trade_block(team_id, valid_ids)
+	for offer in trade_offers:
+		if not offer.is_pending():
+			continue
+		if not _team_owns_trade_assets(offer.proposing_team_id, offer.proposer_player_ids, offer.proposer_pick_ids):
+			offer.status = TradeOfferData.STATUS_EXPIRED
+		elif not _team_owns_trade_assets(offer.responding_team_id, offer.responder_player_ids, offer.responder_pick_ids):
+			offer.status = TradeOfferData.STATUS_EXPIRED
+
+
+func _team_owns_trade_assets(team_id: String, player_ids: Array[String], pick_ids: Array[String]) -> bool:
+	var team := team_by_id(team_id)
+	if team == null:
+		return false
+	for player_id in player_ids:
+		if team.player_by_id(player_id) == null:
+			return false
+	for pick_id in pick_ids:
+		var owns_pick := false
+		for pick in future_draft_picks:
+			if pick.id == pick_id and pick.owner_team_id == team_id and not pick.is_used():
+				owns_pick = true
+				break
+		if not owns_pick:
+			return false
+	return true
 
 
 func matchups_for_week(week_number: int) -> Array[MatchupData]:
@@ -548,6 +614,9 @@ func to_dict() -> Dictionary:
 	var trade_data: Array[Dictionary] = []
 	for trade in trade_history:
 		trade_data.append(trade.to_dict())
+	var trade_offer_data: Array[Dictionary] = []
+	for offer in trade_offers:
+		trade_offer_data.append(offer.to_dict())
 	var game_plan_data: Dictionary = {}
 	for plan_key_value in weekly_game_plans:
 		var plan: WeeklyGamePlanData = weekly_game_plans[plan_key_value]
@@ -588,6 +657,10 @@ func to_dict() -> Dictionary:
 		"draft_history": draft_history_data,
 		"future_draft_picks": future_pick_data,
 		"trade_history": trade_data,
+		"trade_blocks": trade_blocks.duplicate(true),
+		"trade_offers": trade_offer_data,
+		"last_trade_market_week": last_trade_market_week,
+		"last_cpu_trade_week": last_cpu_trade_week,
 		"weekly_game_plans": game_plan_data,
 		"statistics": statistics.to_dict(),
 	}
@@ -657,6 +730,12 @@ static func from_dict(data: Dictionary) -> LeagueState:
 		league.future_draft_picks.append(DraftPickData.from_dict(pick_data))
 	for trade_data in data.get("trade_history", []):
 		league.trade_history.append(TradeProposalData.from_dict(trade_data))
+	league.trade_blocks = Dictionary(data.get("trade_blocks", {})).duplicate(true)
+	for offer_data in data.get("trade_offers", []):
+		league.trade_offers.append(TradeOfferData.from_dict(offer_data))
+	league.last_trade_market_week = int(data.get("last_trade_market_week", 0))
+	league.last_cpu_trade_week = int(data.get("last_cpu_trade_week", 0))
+	league.reconcile_trade_market()
 	for plan_key_value in Dictionary(data.get("weekly_game_plans", {})):
 		league.weekly_game_plans[str(plan_key_value)] = WeeklyGamePlanData.from_dict(
 			Dictionary(data["weekly_game_plans"][plan_key_value])

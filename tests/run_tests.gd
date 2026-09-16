@@ -53,6 +53,7 @@ func _init() -> void:
 	_test_version_nine_hybrid_ratings_save_migration()
 	_test_version_ten_fantasy_draft_save_migration()
 	_test_version_eleven_roster_state_save_migration()
+	_test_version_thirteen_trade_market_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -860,9 +861,10 @@ func _test_draft_order_and_pick_ownership() -> void:
 	_check(draft.picks.size() == 56, "An eight-team, seven-round draft should contain 56 picks")
 	for round_index in range(7):
 		var final_pick: DraftPickData = draft.picks[round_index * career.league.teams.size() + career.league.teams.size() - 1]
-		_check(final_pick.owner_team_id == career.league.champion_team_id, "The reigning champion should pick last in round %d" % (round_index + 1))
+		_check(final_pick.original_team_id == career.league.champion_team_id, "The reigning champion's original selection should be last in round %d" % (round_index + 1))
 	for pick in draft.picks:
-		_check(pick.owner_team_id == pick.original_team_id, "Initial pick ownership should preserve both original and current owner IDs")
+		var reserved_pick := TradeService.future_pick_for(career.league, draft.draft_year, pick.round_number, pick.original_team_id)
+		_check(reserved_pick != null and pick.owner_team_id == reserved_pick.owner_team_id, "Draft-night ownership should honor every completed pre-draft trade")
 
 
 func _test_complete_seven_round_draft() -> void:
@@ -883,7 +885,11 @@ func _test_complete_seven_round_draft() -> void:
 	_check(career.league.free_agents.size() >= free_agents_before + undrafted_count, "Undrafted prospects should enter the free-agent market")
 	for team in career.league.teams:
 		var selections := draft.selections_for_team(team.id)
-		_check(selections.size() == 7, "%s should make one selection in every round" % team.abbreviation)
+		var owned_pick_count := 0
+		for draft_pick in draft.picks:
+			if draft_pick.owner_team_id == team.id:
+				owned_pick_count += 1
+		_check(selections.size() == owned_pick_count, "%s should make every selection it owns after league trades" % team.abbreviation)
 		for pick in selections:
 			var rookie := team.player_by_id(pick.selected_player_id)
 			_check(rookie != null and rookie.contract != null, "Every drafted prospect should join the selecting roster on a rookie contract")
@@ -1135,6 +1141,27 @@ func _test_version_seven_trade_save_migration() -> void:
 		var expected_picks := loaded.league.teams.size() * DraftService.ROUNDS * TradeService.FUTURE_PICK_YEARS
 		_check(loaded.league.future_draft_picks.size() == expected_picks, "Version-seven careers should receive three complete years of original draft-pick ownership")
 		_check(loaded.league.trade_history.is_empty(), "Version-seven careers should begin with an empty trade history")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_thirteen_trade_market_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v13_trade_market_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("austin_outlaws", 130141, LeagueCatalog.SOURCE_FICTIONAL)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	for field_name in ["trade_blocks", "trade_offers", "last_trade_market_week", "last_cpu_trade_week"]:
+		league_data.erase(field_name)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 13, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-thirteen career should migrate into the living trade-market schema")
+	if loaded != null:
+		_check(loaded.league.trade_blocks.size() == loaded.league.teams.size(), "Migrated careers should initialize one trade-block ledger per club")
+		_check(loaded.league.trade_offers.is_empty(), "Older careers should begin with no invented incoming trade offers")
 	DirAccess.remove_absolute(absolute_path)
 
 

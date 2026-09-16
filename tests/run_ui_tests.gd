@@ -76,14 +76,30 @@ func _run() -> void:
 	await process_frame
 	trade_screen.size = Vector2(540, 900)
 	trade_screen._apply_responsive_layout()
+	_check(trade_screen._market_grid.columns == 1 and trade_screen._market_watch_grid.columns == 1, "Trade-market panels should stack on a narrow display")
+	_check(trade_screen._market_grid.get_child_count() == 2, "The Trade Center should show the managed trade block beside incoming offers")
+	_check(trade_screen._market_watch_grid.get_child_count() > 0, "The Trade Center should expose AI-listed players from around the league")
 	_check(trade_screen._asset_grid.columns == 1, "Trade assets should stack into one column on a narrow display")
 	_check(trade_screen._partners.size() == 31, "The Trade Center should expose every other club as a negotiation partner")
 	_check(trade_screen._user_asset_buttons.size() >= 70 and trade_screen._partner_asset_buttons.size() >= 70, "The Trade Center should render full rosters and three years of draft capital")
+	var trade_market_changes := [0]
+	trade_screen.trade_changed.connect(func(): trade_market_changes[0] += 1)
+	_check(trade_screen._trade_block_select.item_count > 0, "The managed club should be able to choose an eligible player for its trade block")
+	trade_screen._add_trade_block_player()
+	await process_frame
+	_check(career.league.trade_block_for(career.league.user_team_id).size() == 1, "Adding a player through the Trade Center should update the persistent trade block")
+	_check(not TradeMarketService.pending_offers_for_user(career.league).is_empty(), "Adding a player through the Trade Center should automatically produce incoming AI offers")
+	_check(trade_market_changes[0] == 1, "A trade-block change should request an immediate career save")
+	var incoming_offer: TradeOfferData = TradeMarketService.pending_offers_for_user(career.league).front()
+	trade_screen._load_market_counter(incoming_offer.id)
+	await process_frame
+	_check(trade_screen._countering_offer_id == incoming_offer.id and trade_screen._partner.id == incoming_offer.proposing_team_id, "Countering an incoming offer should load its club and assets into the Deal Room")
 	var user_pick: DraftPickData = TradeService.picks_owned_by(career.league, career.user_team().id).front()
 	trade_screen._toggle_pick(true, true, user_pick.id)
 	_check(trade_screen._user_pick_ids.has(user_pick.id) and trade_screen._offer_host.get_child_count() > 0, "Selecting a trade asset should refresh the live deal evaluation")
 	trade_screen.size = Vector2(1440, 900)
 	trade_screen._apply_responsive_layout()
+	_check(trade_screen._market_grid.columns == 2 and trade_screen._market_watch_grid.columns == 3, "The live trade market should use its full professional layout on a wide display")
 	_check(trade_screen._asset_grid.columns == 3, "Trade assets and the deal room should use three columns on a wide display")
 	trade_screen._select_partner(1)
 	await process_frame
