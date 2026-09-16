@@ -118,7 +118,7 @@ func _test_league_persistence_and_migration() -> void:
 	var payload := {"save_version": 12, "career": {"league": league.to_dict()}}
 	payload["career"]["league"].erase("weekly_game_plans")
 	var migrated := repository._migrate(payload, 12)
-	_check(int(migrated.get("save_version", 0)) == 13 and migrated["career"]["league"].has("weekly_game_plans"), "Version-twelve saves should migrate to an empty weekly-plan collection")
+	_check(int(migrated.get("save_version", 0)) == SaveRepository.SAVE_VERSION and migrated["career"]["league"].has("weekly_game_plans"), "Version-twelve saves should migrate through the current schema with an empty weekly-plan collection")
 
 
 func _test_responsive_game_plan_screen() -> void:

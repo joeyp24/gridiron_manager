@@ -14,12 +14,16 @@ var _partner_player_ids: Array[String] = []
 var _user_pick_ids: Array[String] = []
 var _partner_pick_ids: Array[String] = []
 var _counter: Dictionary = {}
+var _countering_offer_id := ""
 var _message := ""
 var _message_is_error := false
 var _page: VBoxContainer
+var _market_grid: GridContainer
+var _market_watch_grid: GridContainer
 var _asset_grid: GridContainer
 var _offer_host: VBoxContainer
 var _partner_select: OptionButton
+var _trade_block_select: OptionButton
 var _header_subtitle: Label
 var _back_button: Button
 var _user_asset_buttons: Array[BaseButton] = []
@@ -62,6 +66,7 @@ func _rebuild() -> void:
 	_user_asset_buttons.clear()
 	_partner_asset_buttons.clear()
 	_build_header()
+	_build_market_dashboard()
 	_build_partner_selector()
 	if not _message.is_empty():
 		var message_card := UIFactory.card("RaisedCardPanel" if _message_is_error else "AccentPanel")
@@ -87,7 +92,7 @@ func _build_header() -> void:
 	header.add_child(UIFactory.badge(_team.abbreviation, _team.primary_color))
 	var copy := UIFactory.vbox(1)
 	copy.add_child(UIFactory.label("TRADE CENTER", "PageTitleLabel"))
-	_header_subtitle = UIFactory.label("Build multi-asset offers with contract, cap, roster, and draft-capital context.", "MutedLabel")
+	_header_subtitle = UIFactory.label("Manage the trade block, review incoming offers, and negotiate across the league.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
 	header.add_child(UIFactory.spacer())
@@ -99,6 +104,239 @@ func _build_header() -> void:
 	_back_button.pressed.connect(func(): back_requested.emit())
 	header.add_child(_back_button)
 	_page.add_child(header)
+
+
+func _build_market_dashboard() -> void:
+	var section_header := UIFactory.hbox(10)
+	var copy := UIFactory.vbox(1)
+	copy.add_child(UIFactory.label("LIVE TRADE MARKET", "SectionTitleLabel"))
+	copy.add_child(UIFactory.label("Team needs, competitive direction, and roster value drive every offer.", "CaptionLabel"))
+	section_header.add_child(copy)
+	section_header.add_child(UIFactory.spacer())
+	section_header.add_child(UIFactory.badge("%d ACTIVE OFFER%s" % [
+		TradeMarketService.pending_offers_for_user(_career.league).size(),
+		"" if TradeMarketService.pending_offers_for_user(_career.league).size() == 1 else "S",
+	], GridironTheme.WARM))
+	_page.add_child(section_header)
+
+	_market_grid = GridContainer.new()
+	_market_grid.columns = 2
+	_market_grid.add_theme_constant_override("h_separation", 14)
+	_market_grid.add_theme_constant_override("v_separation", 14)
+	_market_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_page.add_child(_market_grid)
+	_market_grid.add_child(_build_trade_block_card())
+	_market_grid.add_child(_build_incoming_offers_card())
+	_page.add_child(_build_market_watch_card())
+
+
+func _build_trade_block_card() -> PanelContainer:
+	var card := UIFactory.card("RaisedCardPanel")
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(420, 0)
+	var column := UIFactory.vbox(9)
+	card.add_child(column)
+	var heading := UIFactory.hbox(8)
+	var title_copy := UIFactory.vbox(1)
+	title_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_copy.add_child(UIFactory.label("YOUR TRADE BLOCK", "SectionTitleLabel"))
+	title_copy.add_child(UIFactory.label("Listed players are evaluated by every AI front office now and after each week.", "CaptionLabel"))
+	heading.add_child(title_copy)
+	var block := _career.league.trade_block_for(_team.id)
+	heading.add_child(UIFactory.badge("%d / %d" % [block.size(), TradeMarketService.MAX_USER_BLOCK_PLAYERS], _team.primary_color))
+	column.add_child(heading)
+	column.add_child(UIFactory.divider())
+	var add_row := UIFactory.hbox(8)
+	_trade_block_select = OptionButton.new()
+	_trade_block_select.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_trade_block_select.custom_minimum_size = Vector2(280, 42)
+	var available := _team.players.duplicate()
+	available.sort_custom(func(a: PlayerData, b: PlayerData):
+		if a.overall != b.overall:
+			return a.overall > b.overall
+		return a.full_name < b.full_name
+	)
+	for player: PlayerData in available:
+		if player.id in block or player.contract == null:
+			continue
+		_trade_block_select.add_item("%s · %s · %d OVR" % [player.position, player.full_name, player.overall])
+		_trade_block_select.set_item_metadata(_trade_block_select.item_count - 1, player.id)
+	add_row.add_child(_trade_block_select)
+	var add_button := UIFactory.button("ADD TO BLOCK", "PrimaryButton")
+	add_button.disabled = _trade_block_select.item_count == 0 or not TradeService.trades_open(_career.league) or _career.active_simulator != null
+	add_button.pressed.connect(_add_trade_block_player)
+	add_row.add_child(add_button)
+	column.add_child(add_row)
+	if block.is_empty():
+		var empty := UIFactory.card("InsetPanel")
+		empty.add_child(UIFactory.wrapped_label("No players are listed. Add a player to invite offers without committing to a trade.", "MutedLabel"))
+		column.add_child(empty)
+	else:
+		for player_id in block:
+			var player := _team.player_by_id(player_id)
+			if player != null:
+				column.add_child(_trade_block_player_row(player))
+	var needs := TradeMarketService.team_needs(_career.league, _team, 3)
+	var footer := HFlowContainer.new()
+	footer.add_theme_constant_override("h_separation", 7)
+	footer.add_theme_constant_override("v_separation", 7)
+	footer.add_child(UIFactory.badge(TradeMarketService.team_direction(_career.league, _team).to_upper(), GridironTheme.ACCENT))
+	for need in needs:
+		footer.add_child(UIFactory.badge("NEED %s" % str(need.get("position", "")), GridironTheme.WARM))
+	column.add_child(footer)
+	return card
+
+
+func _trade_block_player_row(player: PlayerData) -> PanelContainer:
+	var panel := UIFactory.card("InsetPanel")
+	var row := UIFactory.hbox(8)
+	panel.add_child(row)
+	row.add_child(UIFactory.badge(player.position, _team.primary_color))
+	var identity := UIFactory.vbox(0)
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.add_child(UIFactory.label(player.full_name, "BodyLabel"))
+	identity.add_child(UIFactory.label("%d OVR · AGE %d · VALUE %d" % [player.overall, player.age, TradeService.player_trade_value(player)], "CaptionLabel"))
+	row.add_child(identity)
+	var remove := UIFactory.button("REMOVE", "GhostButton")
+	remove.disabled = _career.active_simulator != null
+	remove.pressed.connect(_remove_trade_block_player.bind(player.id))
+	row.add_child(remove)
+	return panel
+
+
+func _build_incoming_offers_card() -> PanelContainer:
+	var card := UIFactory.card("RaisedCardPanel")
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.custom_minimum_size = Vector2(420, 0)
+	var column := UIFactory.vbox(9)
+	card.add_child(column)
+	var heading := UIFactory.hbox(8)
+	var title_copy := UIFactory.vbox(1)
+	title_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_copy.add_child(UIFactory.label("INCOMING OFFERS", "SectionTitleLabel"))
+	title_copy.add_child(UIFactory.label("Accept, decline, or load any proposal into the Deal Room as a counter.", "CaptionLabel"))
+	heading.add_child(title_copy)
+	column.add_child(heading)
+	column.add_child(UIFactory.divider())
+	var offers := TradeMarketService.pending_offers_for_user(_career.league)
+	if offers.is_empty():
+		var empty := UIFactory.card("InsetPanel")
+		var empty_copy := UIFactory.vbox(3)
+		empty.add_child(empty_copy)
+		empty_copy.add_child(UIFactory.label("NO ACTIVE OFFERS", "EyebrowLabel"))
+		empty_copy.add_child(UIFactory.wrapped_label("Place a player on the trade block to alert interested teams. New proposals can also arrive when a week is completed.", "MutedLabel"))
+		column.add_child(empty)
+	else:
+		for offer in offers:
+			column.add_child(_incoming_offer_card(offer))
+	var recent := TradeMarketService.recent_offers_for_user(_career.league, 8)
+	var resolved_count := 0
+	for offer in recent:
+		if not offer.is_pending():
+			resolved_count += 1
+	if resolved_count > 0:
+		column.add_child(UIFactory.label("%d RECENT RESOLVED OFFER%s SAVED IN MARKET HISTORY" % [resolved_count, "" if resolved_count == 1 else "S"], "CaptionLabel"))
+	return card
+
+
+func _incoming_offer_card(offer: TradeOfferData) -> PanelContainer:
+	var proposer := _career.league.team_by_id(offer.proposing_team_id)
+	var panel := UIFactory.card("AccentPanel")
+	var column := UIFactory.vbox(6)
+	panel.add_child(column)
+	var heading := UIFactory.hbox(7)
+	heading.add_child(UIFactory.badge(proposer.abbreviation, proposer.primary_color))
+	var heading_copy := UIFactory.vbox(0)
+	heading_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading_copy.add_child(UIFactory.label(proposer.display_name(), "BodyLabel"))
+	heading_copy.add_child(UIFactory.label("EXPIRES AFTER WEEK %d" % offer.expires_week, "CaptionLabel"))
+	heading.add_child(heading_copy)
+	heading.add_child(UIFactory.badge(TradeMarketService.team_direction(_career.league, proposer).to_upper(), GridironTheme.WARM))
+	column.add_child(heading)
+	column.add_child(_offer_package_panel("YOU RECEIVE", offer.proposer_asset_labels, offer.proposer_value, proposer.primary_color))
+	column.add_child(_offer_package_panel("YOU SEND", offer.responder_asset_labels, offer.responder_value, _team.primary_color))
+	var actions := UIFactory.hbox(7)
+	var accept := UIFactory.button("ACCEPT", "PrimaryButton")
+	accept.disabled = _career.active_simulator != null
+	accept.pressed.connect(_accept_market_offer.bind(offer.id))
+	actions.add_child(accept)
+	var counter := UIFactory.button("COUNTER", "SecondaryButton")
+	counter.disabled = _career.active_simulator != null
+	counter.pressed.connect(_load_market_counter.bind(offer.id))
+	actions.add_child(counter)
+	var decline := UIFactory.button("DECLINE", "GhostButton")
+	decline.disabled = _career.active_simulator != null
+	decline.pressed.connect(_decline_market_offer.bind(offer.id))
+	actions.add_child(decline)
+	column.add_child(actions)
+	return panel
+
+
+func _offer_package_panel(title: String, labels: Array[String], value: int, color: Color) -> PanelContainer:
+	var panel := UIFactory.card("InsetPanel")
+	var column := UIFactory.vbox(2)
+	panel.add_child(column)
+	var header := UIFactory.hbox(6)
+	header.add_child(UIFactory.label(title, "EyebrowLabel"))
+	header.add_child(UIFactory.spacer())
+	var value_label := UIFactory.label("%d VALUE" % value, "CaptionLabel")
+	value_label.modulate = color
+	header.add_child(value_label)
+	column.add_child(header)
+	for label_text in labels:
+		column.add_child(UIFactory.wrapped_label(label_text, "BodyLabel"))
+	return panel
+
+
+func _build_market_watch_card() -> PanelContainer:
+	var card := UIFactory.card()
+	var column := UIFactory.vbox(8)
+	card.add_child(column)
+	var heading := UIFactory.hbox(8)
+	var copy := UIFactory.vbox(1)
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_child(UIFactory.label("LEAGUE MARKET WATCH", "SectionTitleLabel"))
+	copy.add_child(UIFactory.label("AI clubs protect their core, shop surplus talent, and buy according to roster needs.", "CaptionLabel"))
+	heading.add_child(copy)
+	column.add_child(heading)
+	_market_watch_grid = GridContainer.new()
+	_market_watch_grid.columns = 3
+	_market_watch_grid.add_theme_constant_override("h_separation", 8)
+	_market_watch_grid.add_theme_constant_override("v_separation", 8)
+	_market_watch_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(_market_watch_grid)
+	var entries: Array[Dictionary] = []
+	for team in _partners:
+		for player_id in _career.league.trade_block_for(team.id):
+			var player := team.player_by_id(player_id)
+			if player != null:
+				entries.append({"team": team, "player": player, "value": TradeService.player_trade_value(player, _team)})
+	entries.sort_custom(func(a: Dictionary, b: Dictionary): return int(a.get("value", 0)) > int(b.get("value", 0)))
+	for entry in entries.slice(0, mini(entries.size(), 6)):
+		_market_watch_grid.add_child(_market_watch_entry(entry))
+	if entries.is_empty():
+		_market_watch_grid.add_child(UIFactory.wrapped_label("No AI-listed players are available in the current trade window.", "MutedLabel"))
+	return card
+
+
+func _market_watch_entry(entry: Dictionary) -> PanelContainer:
+	var team: TeamData = entry.get("team")
+	var player: PlayerData = entry.get("player")
+	var panel := UIFactory.card("InsetPanel")
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var column := UIFactory.vbox(3)
+	panel.add_child(column)
+	var header := UIFactory.hbox(6)
+	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
+	header.add_child(UIFactory.label(TradeMarketService.team_direction(_career.league, team).to_upper(), "CaptionLabel"))
+	column.add_child(header)
+	column.add_child(UIFactory.label(player.full_name, "BodyLabel"))
+	var needs := TradeMarketService.team_needs(_career.league, team, 2)
+	var need_labels: Array[String] = []
+	for need in needs:
+		need_labels.append(str(need.get("position", "")))
+	column.add_child(UIFactory.label("%s · %d OVR · NEEDS %s" % [player.position, player.overall, "/".join(need_labels)], "CaptionLabel"))
+	return panel
 
 
 func _build_partner_selector() -> void:
@@ -119,6 +357,7 @@ func _build_partner_selector() -> void:
 	_partner_select.item_selected.connect(_select_partner)
 	row.add_child(_partner_select)
 	if _partner != null:
+		row.add_child(UIFactory.badge(TradeMarketService.team_direction(_career.league, _partner).to_upper(), GridironTheme.WARM))
 		row.add_child(_small_metric("PARTNER CAP", PlayerContract.money_label(_partner.cap_space())))
 		row.add_child(_small_metric("PARTNER OVR", str(_partner.overall_rating())))
 	_page.add_child(card)
@@ -373,7 +612,71 @@ func _select_partner(index: int) -> void:
 	_user_pick_ids.clear()
 	_partner_pick_ids.clear()
 	_counter.clear()
+	_countering_offer_id = ""
 	_message = ""
+	_rebuild()
+
+
+func _add_trade_block_player() -> void:
+	if _trade_block_select == null or _trade_block_select.selected < 0:
+		return
+	var player_id := str(_trade_block_select.get_item_metadata(_trade_block_select.selected))
+	var result := _career.toggle_trade_block(player_id, true)
+	_message = str(result.get("message", "Trade block updated."))
+	_message_is_error = not bool(result.get("ok", false))
+	if bool(result.get("ok", false)):
+		trade_changed.emit()
+	_rebuild()
+
+
+func _remove_trade_block_player(player_id: String) -> void:
+	var result := _career.toggle_trade_block(player_id, false)
+	_message = str(result.get("message", "Trade block updated."))
+	_message_is_error = not bool(result.get("ok", false))
+	if bool(result.get("ok", false)):
+		trade_changed.emit()
+	_rebuild()
+
+
+func _accept_market_offer(offer_id: String) -> void:
+	var result := _career.accept_incoming_trade_offer(offer_id)
+	_message = str(result.get("message", "Trade offer processed."))
+	_message_is_error = not bool(result.get("ok", false))
+	if bool(result.get("executed", false)):
+		_clear_offer()
+		trade_changed.emit()
+	_rebuild()
+
+
+func _decline_market_offer(offer_id: String) -> void:
+	var result := _career.decline_incoming_trade_offer(offer_id)
+	_message = str(result.get("message", "Trade offer processed."))
+	_message_is_error = not bool(result.get("ok", false))
+	if bool(result.get("ok", false)):
+		trade_changed.emit()
+	_rebuild()
+
+
+func _load_market_counter(offer_id: String) -> void:
+	var offer := _career.league.trade_offer_by_id(offer_id)
+	if offer == null or not offer.is_pending():
+		_message = "That offer is no longer available."
+		_message_is_error = true
+		_rebuild()
+		return
+	for index in range(_partners.size()):
+		if _partners[index].id == offer.proposing_team_id:
+			_partner_index = index
+			_partner = _partners[index]
+			break
+	_user_player_ids = offer.responder_player_ids.duplicate()
+	_partner_player_ids = offer.proposer_player_ids.duplicate()
+	_user_pick_ids = offer.responder_pick_ids.duplicate()
+	_partner_pick_ids = offer.proposer_pick_ids.duplicate()
+	_counter.clear()
+	_countering_offer_id = offer.id
+	_message = "Offer terms loaded into the Deal Room. Adjust the package, then submit your counter."
+	_message_is_error = false
 	_rebuild()
 
 
@@ -398,18 +701,36 @@ func _toggle_pick(pressed: bool, user_side: bool, pick_id: String) -> void:
 
 
 func _submit_trade() -> void:
-	var result := _career.submit_trade(_partner.id, _user_player_ids, _partner_player_ids, _user_pick_ids, _partner_pick_ids)
+	var was_countering := not _countering_offer_id.is_empty()
+	var result: Dictionary
+	if was_countering:
+		result = _career.counter_incoming_trade_offer(
+			_countering_offer_id,
+			_user_player_ids,
+			_partner_player_ids,
+			_user_pick_ids,
+			_partner_pick_ids
+		)
+	else:
+		result = _career.submit_trade(
+			_partner.id,
+			_user_player_ids,
+			_partner_player_ids,
+			_user_pick_ids,
+			_partner_pick_ids
+		)
 	_message = str(result.get("message", "Trade proposal processed."))
 	_message_is_error = not bool(result.get("ok", false))
 	_counter = Dictionary(result.get("counter", {})).duplicate(true)
+	if bool(result.get("executed", false)) or (bool(result.get("ok", false)) and was_countering):
+		trade_changed.emit()
 	if bool(result.get("executed", false)):
 		_clear_offer()
-		trade_changed.emit()
 	_rebuild()
 
 
 func _accept_counter() -> void:
-	var result := _career.accept_trade_counter(_counter)
+	var result := _career.accept_trade_counter(_counter, _countering_offer_id)
 	_message = str(result.get("message", "Counteroffer processed."))
 	_message_is_error = not bool(result.get("ok", false))
 	if bool(result.get("executed", false)):
@@ -426,6 +747,7 @@ func _clear_offer() -> void:
 	_user_pick_ids.clear()
 	_partner_pick_ids.clear()
 	_counter.clear()
+	_countering_offer_id = ""
 
 
 func _counter_asset_labels(proposer_side: bool) -> Array[String]:
@@ -445,6 +767,10 @@ func _counter_asset_labels(proposer_side: bool) -> Array[String]:
 
 
 func _apply_responsive_layout() -> void:
+	if _market_grid != null:
+		_market_grid.columns = 2 if size.x >= 980 else 1
+	if _market_watch_grid != null:
+		_market_watch_grid.columns = 3 if size.x >= 1280 else (2 if size.x >= 760 else 1)
 	if _asset_grid != null:
 		_asset_grid.columns = 3 if size.x >= 1180 else 1
 	if _header_subtitle != null:
