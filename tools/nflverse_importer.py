@@ -374,7 +374,8 @@ def _contract(candidate: dict[str, Any], contracts: dict[str, dict[str, str]], s
     if source:
         signed_year = _integer(source.get("year_signed"), season)
         total_years = max(_integer(source.get("years"), 1), 1)
-        expiration = max(signed_year + total_years - 1, season)
+        expiration = signed_year + total_years - 1
+    if source and expiration >= season:
         years_remaining = max(expiration - season + 1, 1)
         annual = int(_clamp(_number(source.get("apy"), 0.0), 795_000, 60_000_000))
         total_guaranteed = max(_integer(source.get("guaranteed"), 0), 0)
@@ -386,18 +387,39 @@ def _contract(candidate: dict[str, Any], contracts: dict[str, dict[str, str]], s
             "signed_year": signed_year,
             "role": role,
             "expires_after_year": expiration,
+            "total_contract_value": max(_integer(source.get("value"), annual * total_years), annual * total_years),
+            "total_guaranteed": total_guaranteed,
+            "yearly_cap_hits": {str(year): annual for year in range(season, expiration + 1)},
+            "yearly_cash": {str(year): annual for year in range(season, expiration + 1)},
+            "yearly_release_penalties": {},
+            "yearly_trade_penalties": {},
+            "contract_type": "Historical estimate",
+            "source_label": "nflverse historical contracts",
+            "source_url": str(source.get("player_page", "")),
+            "source_snapshot": "",
         }
     premium = max(overall - 60, 0)
     salary = round((850_000 + premium * premium * 12_000) / 100_000) * 100_000
     years = 4 if candidate["age"] <= 24 else 3 if candidate["age"] <= 28 else 2 if candidate["age"] <= 31 else 1
     guarantee_rate = 0.52 if role == "Franchise" else 0.38 if role == "Starter" else 0.22
+    guaranteed = round(salary * years * guarantee_rate)
     return {
         "annual_salary": salary,
         "years_remaining": years,
-        "guaranteed_money": round(salary * years * guarantee_rate),
+        "guaranteed_money": guaranteed,
         "signed_year": season,
         "role": role,
         "expires_after_year": season + years - 1,
+        "total_contract_value": salary * years,
+        "total_guaranteed": guaranteed,
+        "yearly_cap_hits": {str(year): salary for year in range(season, season + years)},
+        "yearly_cash": {str(year): salary for year in range(season, season + years)},
+        "yearly_release_penalties": {},
+        "yearly_trade_penalties": {},
+        "contract_type": "Generated estimate",
+        "source_label": "Gridiron estimate",
+        "source_url": "",
+        "source_snapshot": "",
     }
 
 
@@ -457,19 +479,6 @@ def _select_team_roster(team_candidates: list[dict[str, Any]]) -> tuple[list[tup
             selected.append((candidate, position, depth_index))
     unused = [candidate for candidate in team_candidates if candidate["id"] not in used]
     return selected, unused
-
-
-def _scale_payroll(players: list[dict[str, Any]], target: int = 266_000_000) -> None:
-    payroll = sum(player["contract"]["annual_salary"] for player in players if player["contract"])
-    if payroll <= target:
-        return
-    scale = target / payroll
-    for player in players:
-        contract = player["contract"]
-        if not contract:
-            continue
-        contract["annual_salary"] = max(795_000, round(contract["annual_salary"] * scale / 50_000) * 50_000)
-        contract["guaranteed_money"] = round(contract["guaranteed_money"] * scale / 50_000) * 50_000
 
 
 def _team_tactics(selected: list[tuple[dict[str, Any], str, int]]) -> dict[str, Any]:
@@ -580,9 +589,10 @@ def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_
         selected_player_ids.update(candidate["id"] for candidate, _position, _depth_index in selected)
         team_id = f"nfl_{abbreviation.lower()}"
         roster = [_player(candidate, position, team_id, contracts, season, depth_index) for candidate, position, depth_index in selected]
-        _scale_payroll(roster)
         offense, defense, special = _team_ratings(roster)
         city, nickname = CURRENT_TEAM_NAMES[abbreviation]
+        payroll = sum(player["contract"]["annual_salary"] for player in roster if player.get("contract"))
+        adjusted_cap = max(301_200_000, payroll + 7_000_000 if payroll > 301_200_000 else payroll)
         output_teams.append({
             "id": team_id,
             "city": city,
@@ -597,7 +607,10 @@ def build_pack(paths: dict[str, Path], season: int, stat_years: list[int], team_
             "special_teams_rating": special,
             "strategy": _team_tactics(selected),
             "players": roster,
-            "salary_cap": 280_000_000,
+            "salary_cap": adjusted_cap,
+            "base_salary_cap": 301_200_000,
+            "salary_cap_adjustment": adjusted_cap - 301_200_000,
+            "salary_cap_year": season,
             "roster_limit": 53,
             "dead_cap": 0,
         })
@@ -700,7 +713,11 @@ def validate_pack(pack: dict[str, Any]) -> None:
         for position, expected in ROSTER_COUNTS.items():
             if counts[position] < 1:
                 raise ValueError(f"{team.get('abbreviation')} has no {position} players")
-        payroll = sum(player["contract"]["annual_salary"] for player in players if player.get("contract"))
+        cap_year = str(team.get("salary_cap_year", 2026))
+        payroll = sum(
+            int(player["contract"].get("yearly_cap_hits", {}).get(cap_year, player["contract"]["annual_salary"]))
+            for player in players if player.get("contract")
+        )
         if payroll > int(team.get("salary_cap", 0)):
             raise ValueError(f"{team.get('abbreviation')} exceeds its salary cap")
     free_agents = pack.get("free_agents", [])

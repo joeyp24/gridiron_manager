@@ -259,10 +259,11 @@ func _build_contract_card(player: PlayerData, team: TeamData) -> PanelContainer:
 	metrics.add_theme_constant_override("h_separation", 22)
 	metrics.add_theme_constant_override("v_separation", 10)
 	if player.contract != null:
-		metrics.add_child(_header_metric("ANNUAL", PlayerContract.money_label(player.contract.annual_salary)))
+		metrics.add_child(_header_metric("APY", PlayerContract.money_label(player.contract.annual_salary)))
+		metrics.add_child(_header_metric("CAP HIT", PlayerContract.money_label(player.contract.current_cap_hit())))
 		metrics.add_child(_header_metric("REMAINING", "%d YEAR%s" % [player.contract.years_remaining, "" if player.contract.years_remaining == 1 else "S"]))
 		metrics.add_child(_header_metric("TOTAL VALUE", PlayerContract.money_label(player.contract.total_value())))
-		metrics.add_child(_header_metric("GUARANTEED", PlayerContract.money_label(player.contract.guaranteed_money)))
+		metrics.add_child(_header_metric("GUARANTEED", PlayerContract.money_label(player.contract.total_guaranteed)))
 		metrics.add_child(_header_metric("ROLE", player.contract.role.to_upper()))
 	else:
 		var estimate := TransactionService.market_offer(_career.league, _career.user_team(), player, 2, 1.0)

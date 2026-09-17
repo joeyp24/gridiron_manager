@@ -75,7 +75,7 @@ static func advance_contracts(league: LeagueState) -> int:
 				_record_expiration(league, team, player)
 				expiration_count += 1
 			else:
-				player.contract.years_remaining = maxi(1, player.contract.expiration_year() - league.season_year)
+				player.contract.advance_to_year(league.season_year + 1)
 	league.free_agents.sort_custom(func(a: PlayerData, b: PlayerData): return a.overall > b.overall)
 	return expiration_count
 
@@ -115,7 +115,8 @@ static func run_ai_re_signing(league: LeagueState) -> int:
 				continue
 			var years := 1 if player.age >= 33 else (2 if player.age >= 30 else (3 if player.age >= 26 else 4))
 			var proposed := TransactionService.extension_offer(league, team, player, years, 1.05)
-			var projected_payroll := team.payroll() - player.contract.annual_salary + proposed.annual_salary
+			var cap_year := league.contract_start_year()
+			var projected_payroll := team.payroll_for_year(cap_year) - player.contract.cap_hit_for_year(cap_year) + proposed.cap_hit_for_year(cap_year)
 			if projected_payroll > team.salary_cap - 15_000_000:
 				continue
 			var result := TransactionService.extend_player(league, team.id, player.id, years, 1.05)
@@ -350,11 +351,11 @@ static func _best_affordable_candidate(
 		if not position_name.is_empty() and player.position != position_name:
 			continue
 		var offer := TransactionService.market_offer(league, team, player, 1 if player.age >= 31 else 2, 1.10)
-		if offer.annual_salary > team.cap_space():
+		if offer.current_cap_hit() > team.cap_space_for_year(offer.current_year()):
 			continue
-		if best == null or (prefer_affordable and offer.annual_salary < best_salary) or (not prefer_affordable and player.overall > best.overall):
+		if best == null or (prefer_affordable and offer.current_cap_hit() < best_salary) or (not prefer_affordable and player.overall > best.overall):
 			best = player
-			best_salary = offer.annual_salary
+			best_salary = offer.current_cap_hit()
 	return best
 
 
@@ -366,8 +367,8 @@ static func _best_ai_release_candidate(team: TeamData) -> PlayerData:
 			continue
 		if team.players_at(player.position).size() <= 1:
 			continue
-		var salary := player.contract.annual_salary if player.contract != null else 0
-		var penalty := player.contract.release_penalty() if player.contract != null else 0
+		var salary := player.contract.cap_hit_for_year(team.salary_cap_year) if player.contract != null else 0
+		var penalty := player.contract.release_penalty(team.salary_cap_year) if player.contract != null else 0
 		var savings := maxi(salary - penalty, 0)
 		var score := float(100 - player.overall) + float(savings) / 1_000_000.0 * 1.8
 		if player.age >= 31:
@@ -412,7 +413,10 @@ static func _record_expiration(league: LeagueState, team: TeamData, player: Play
 
 static func _open_new_league_finances(league: LeagueState) -> void:
 	for team in league.teams:
-		team.salary_cap = roundi(float(team.salary_cap) * 1.07 / 100_000.0) * 100_000
+		team.base_salary_cap = roundi(float(team.base_salary_cap) * 1.07 / 100_000.0) * 100_000
+		team.salary_cap_adjustment = 0
+		team.salary_cap = team.base_salary_cap
+		team.salary_cap_year = league.season_year + 1
 		team.dead_cap = 0
 
 

@@ -26,6 +26,7 @@ func _init() -> void:
 	_test_weekly_health_progression()
 	_test_active_career_game_is_resumable()
 	_test_initial_contracts_and_cap_rules()
+	_test_year_aware_contract_accounting()
 	_test_unified_player_generator()
 	_test_free_agent_signing_and_release()
 	_test_ai_roster_management()
@@ -54,6 +55,7 @@ func _init() -> void:
 	_test_version_ten_fantasy_draft_save_migration()
 	_test_version_eleven_roster_state_save_migration()
 	_test_version_thirteen_trade_market_save_migration()
+	_test_version_fourteen_contract_save_migration()
 
 	if _failures.is_empty():
 		print("PASS: %d assertions across simulation and domain checks." % _assertions)
@@ -556,6 +558,37 @@ func _test_initial_contracts_and_cap_rules() -> void:
 			_check(player.contract.annual_salary > 0, "%s should have a positive salary" % player.full_name)
 
 
+func _test_year_aware_contract_accounting() -> void:
+	var contract := PlayerContract.generated_contract(10_000_000, 4, 20_000_000, 2026, "Starter", "Free Agent")
+	_check(contract.annual_salary == 10_000_000, "Generated contracts should retain APY independently from cap charges")
+	_check(contract.total_value() == 40_000_000, "Generated contract totals should reconcile with APY and term")
+	_check(contract.current_cap_hit() < contract.cap_hit_for_year(2029), "Generated contracts should use a progressive multi-year cap schedule")
+	var scheduled_total := 0
+	for year in range(2026, 2030):
+		scheduled_total += contract.cap_hit_for_year(year)
+	_check(scheduled_total == contract.total_value(), "Generated cap schedules should reconcile to total contract value")
+	var team: TeamData = SampleLeague.create_teams().front()
+	var player: PlayerData = team.players.front()
+	var payroll_before: int = team.payroll()
+	var old_cap_hit: int = player.contract.current_cap_hit()
+	player.contract = contract
+	_check(team.payroll() == payroll_before - old_cap_hit + contract.current_cap_hit(), "Team payroll should use current-year cap hits rather than APY")
+	contract.advance_to_year(2027)
+	_check(contract.current_year() == 2027 and contract.years_remaining == 3, "Contract rollover should activate the next scheduled cap year")
+	var round_trip := PlayerContract.from_dict(JSON.parse_string(JSON.stringify(contract.to_dict())))
+	_check(round_trip.current_cap_hit() == contract.current_cap_hit(), "Contract schedules should survive serialization")
+	var bundle := LeagueCatalog.create_bundle(LeagueCatalog.SOURCE_NFLVERSE_FULL)
+	var chase: PlayerData
+	for source_team: TeamData in bundle.get("teams", []):
+		for source_player in source_team.players:
+			if source_player.full_name == "Ja'Marr Chase":
+				chase = source_player
+				break
+	_check(chase != null and chase.contract.annual_salary == 40_250_000, "The current database should carry Ja'Marr Chase's $40.25M APY")
+	if chase != null:
+		_check(chase.contract.current_cap_hit() == 26_171_176 and chase.contract.expiration_year() == 2029, "Chase's cap schedule should use the sourced 2026 charge and 2029 expiration")
+
+
 func _test_unified_player_generator() -> void:
 	var first := PlayerGenerator.generate_replacement("QB", 2028, 7, 88117)
 	var second := PlayerGenerator.generate_replacement("QB", 2028, 7, 88117)
@@ -599,7 +632,7 @@ func _test_free_agent_signing_and_release() -> void:
 	_check(team.players.size() == initial_roster_size, "A release should restore the prior roster size")
 	_check(career.league.waiver_entry_for_player(free_agent.id) != null, "An in-season release should place the player on waivers")
 	_check(team.dead_cap > 0, "A guaranteed contract release should create dead cap")
-	_check(team.payroll() < post_signing_payroll, "A release should lower current payroll despite dead cap")
+	_check(team.payroll() == post_signing_payroll - offer.current_cap_hit() + int(release_result.get("dead_cap", 0)), "A release should replace the player's cap hit with the scheduled dead-cap penalty")
 	_check(career.league.transactions.size() == 2, "A release should create a second transaction record")
 	RosterTransactionService.resolve_waivers(career.league, true)
 	_check(career.league.free_agent_by_id(free_agent.id) != null, "An unclaimed player should enter free agency after clearing waivers")
@@ -1162,6 +1195,36 @@ func _test_version_thirteen_trade_market_save_migration() -> void:
 	if loaded != null:
 		_check(loaded.league.trade_blocks.size() == loaded.league.teams.size(), "Migrated careers should initialize one trade-block ledger per club")
 		_check(loaded.league.trade_offers.is_empty(), "Older careers should begin with no invented incoming trade offers")
+	DirAccess.remove_absolute(absolute_path)
+
+
+func _test_version_fourteen_contract_save_migration() -> void:
+	var path := "user://gridiron_manager/career_v14_contract_test.json"
+	var absolute_path := ProjectSettings.globalize_path(path)
+	DirAccess.make_dir_recursive_absolute(absolute_path.get_base_dir())
+	var career := CareerSession.new_career("austin_outlaws", 140151, LeagueCatalog.SOURCE_FICTIONAL)
+	var career_data := career.to_dict()
+	var league_data: Dictionary = career_data["league"]
+	var team_data: Dictionary = league_data["teams"][0]
+	team_data.erase("salary_cap_year")
+	team_data.erase("base_salary_cap")
+	team_data.erase("salary_cap_adjustment")
+	var contract_data: Dictionary = team_data["players"][0]["contract"]
+	for field_name in ["total_contract_value", "total_guaranteed", "yearly_cap_hits", "yearly_cash", "yearly_release_penalties", "yearly_trade_penalties", "contract_type", "source_label", "source_url", "source_snapshot"]:
+		contract_data.erase(field_name)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify({"save_version": 14, "career": career_data}))
+	file.close()
+	var repository := SaveRepository.new(path)
+	var loaded := repository.load_career()
+	_check(loaded != null, "A version-fourteen career should migrate into year-aware contract accounting")
+	if loaded != null:
+		var loaded_team: TeamData = loaded.league.teams.front()
+		var loaded_contract: PlayerContract = loaded_team.players.front().contract
+		_check(loaded_team.salary_cap_year == loaded.league.season_year, "Migrated teams should track their active salary-cap year")
+		_check(loaded_team.base_salary_cap >= TeamData.DEFAULT_SALARY_CAP, "Migrated teams should receive the current base salary cap")
+		_check(loaded_contract.yearly_cap_hits.has(str(loaded.league.season_year)), "Migrated flat contracts should receive a current-year cap schedule")
+		_check(loaded_contract.source_label == PlayerContract.SOURCE_LEGACY, "Migrated contracts should identify legacy estimates")
 	DirAccess.remove_absolute(absolute_path)
 
 

@@ -4,7 +4,7 @@ extends RefCounted
 const OFFENSIVE_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"]
 const DEFENSIVE_POSITIONS: Array[String] = ["EDGE", "DT", "LB", "CB", "S"]
 const ROSTER_POSITIONS: Array[String] = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P", "LS"]
-const DEFAULT_SALARY_CAP := 280_000_000
+const DEFAULT_SALARY_CAP := 301_200_000
 const MIN_ROSTER_SIZE := 35
 const DEFAULT_ROSTER_LIMIT := 53
 const OFFSEASON_ROSTER_LIMIT := 90
@@ -32,6 +32,9 @@ var injured_reserve: Array[PlayerData] = []
 var practice_squad: Array[PlayerData] = []
 var depth_chart: Dictionary = {}
 var salary_cap := DEFAULT_SALARY_CAP
+var base_salary_cap := DEFAULT_SALARY_CAP
+var salary_cap_adjustment := 0
+var salary_cap_year := 2026
 var roster_limit := DEFAULT_ROSTER_LIMIT
 var game_day_active_limit := 48
 var practice_squad_limit := 16
@@ -220,15 +223,23 @@ func add_practice_squad_player(player: PlayerData) -> bool:
 
 
 func payroll() -> int:
+	return payroll_for_year(salary_cap_year)
+
+
+func payroll_for_year(season_year: int) -> int:
 	var total := dead_cap
 	for player in all_contract_players():
 		if player.contract != null:
-			total += player.contract.annual_salary
+			total += player.contract.cap_hit_for_year(season_year)
 	return total
 
 
 func cap_space() -> int:
 	return salary_cap - payroll()
+
+
+func cap_space_for_year(season_year: int) -> int:
+	return salary_cap - payroll_for_year(season_year)
 
 
 func has_roster_space() -> bool:
@@ -310,6 +321,9 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 	clone.division = division
 	clone.depth_chart = depth_chart.duplicate(true)
 	clone.salary_cap = salary_cap
+	clone.base_salary_cap = base_salary_cap
+	clone.salary_cap_adjustment = salary_cap_adjustment
+	clone.salary_cap_year = salary_cap_year
 	clone.roster_limit = roster_limit
 	clone.game_day_active_limit = game_day_active_limit
 	clone.practice_squad_limit = practice_squad_limit
@@ -393,6 +407,9 @@ func to_dict() -> Dictionary:
 		"practice_squad": serialized_practice_squad,
 		"depth_chart": depth_chart.duplicate(true),
 		"salary_cap": salary_cap,
+		"base_salary_cap": base_salary_cap,
+		"salary_cap_adjustment": salary_cap_adjustment,
+		"salary_cap_year": salary_cap_year,
 		"roster_limit": roster_limit,
 		"game_day_active_limit": game_day_active_limit,
 		"practice_squad_limit": practice_squad_limit,
@@ -423,6 +440,9 @@ static func from_dict(data: Dictionary) -> TeamData:
 	team.division = str(data.get("division", ""))
 	team.depth_chart = data.get("depth_chart", team.depth_chart).duplicate(true)
 	team.salary_cap = int(data.get("salary_cap", DEFAULT_SALARY_CAP))
+	team.base_salary_cap = int(data.get("base_salary_cap", mini(team.salary_cap, DEFAULT_SALARY_CAP)))
+	team.salary_cap_adjustment = int(data.get("salary_cap_adjustment", team.salary_cap - team.base_salary_cap))
+	team.salary_cap_year = int(data.get("salary_cap_year", 2026))
 	team.roster_limit = int(data.get("roster_limit", DEFAULT_ROSTER_LIMIT))
 	team.game_day_active_limit = int(data.get("game_day_active_limit", team.roster_limit))
 	team.practice_squad_limit = int(data.get("practice_squad_limit", 16 if team.roster_limit >= DEFAULT_ROSTER_LIMIT else 8))

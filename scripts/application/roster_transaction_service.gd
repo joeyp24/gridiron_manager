@@ -88,15 +88,16 @@ static func sign_to_practice_squad(league: LeagueState, team_id: String, player_
 	if not validation_error.is_empty():
 		return _failure(validation_error)
 	var contract := PlayerContract.practice_squad_contract(player, league.contract_start_year())
-	if contract.annual_salary > team.cap_space():
-		return _failure("The practice-squad contract needs %s more cap space." % PlayerContract.money_label(contract.annual_salary - team.cap_space()))
+	var cap_hit := contract.current_cap_hit()
+	if cap_hit > team.cap_space_for_year(contract.current_year()):
+		return _failure("The practice-squad contract needs %s more cap space." % PlayerContract.money_label(cap_hit - team.cap_space_for_year(contract.current_year())))
 	league.free_agents.erase(player)
 	player.contract = contract
 	player.record_team(team.id)
 	player.set_roster_status(PlayerData.STATUS_PRACTICE_SQUAD, league.current_week)
 	team.practice_squad.append(player)
 	var details := "Signed %s to the practice squad on a %s contract." % [player.full_name, PlayerContract.money_label(contract.annual_salary)]
-	_record(league, "Practice Squad Signing", team, player, details, contract.annual_salary)
+	_record(league, "Practice Squad Signing", team, player, details, cap_hit)
 	return {"ok": true, "message": details, "player": player}
 
 
@@ -109,9 +110,9 @@ static func move_to_practice_squad(league: LeagueState, team_id: String, player_
 		return _failure("The selected player is not on the offseason roster.")
 	var existing_contract := player.contract
 	var practice_contract := PlayerContract.practice_squad_contract(player, league.contract_start_year())
-	var current_salary := existing_contract.annual_salary if existing_contract != null else 0
-	var penalty := existing_contract.release_penalty() if existing_contract != null else 0
-	var additional_cap_cost := practice_contract.annual_salary + penalty - current_salary
+	var current_salary := existing_contract.cap_hit_for_year(team.salary_cap_year) if existing_contract != null else 0
+	var penalty := existing_contract.release_penalty(team.salary_cap_year) if existing_contract != null else 0
+	var additional_cap_cost := practice_contract.cap_hit_for_year(team.salary_cap_year) + penalty - current_salary
 	if additional_cap_cost > team.cap_space():
 		return _failure("The practice-squad assignment needs %s more cap space after dead money." % PlayerContract.money_label(additional_cap_cost - team.cap_space()))
 	team.remove_player(player.id)
@@ -138,17 +139,18 @@ static func promote_from_practice_squad(league: LeagueState, team_id: String, pl
 	var allowed_limit := league.league_format.offseason_roster_limit if league.is_offseason() else team.roster_limit
 	if team.players.size() >= allowed_limit:
 		return _failure("The offseason roster is already at its %d-player limit." % allowed_limit)
-	var old_salary := player.contract.annual_salary if player.contract != null else 0
+	var old_salary := player.contract.cap_hit_for_year(team.salary_cap_year) if player.contract != null else 0
 	var contract := PlayerContract.initial_contract(player, league.contract_start_year(), team.players_at(player.position).size())
-	if contract.annual_salary - old_salary > team.cap_space():
-		return _failure("The promotion needs %s more cap space." % PlayerContract.money_label(contract.annual_salary - old_salary - team.cap_space()))
+	var new_cap_hit := contract.cap_hit_for_year(team.salary_cap_year)
+	if new_cap_hit - old_salary > team.cap_space():
+		return _failure("The promotion needs %s more cap space." % PlayerContract.money_label(new_cap_hit - old_salary - team.cap_space()))
 	team.practice_squad.erase(player)
 	player.contract = contract
 	player.set_roster_status(PlayerData.STATUS_GAME_DAY_INACTIVE, league.current_week)
 	team.add_player(player, allowed_limit)
 	team.configure_game_day_roster()
 	var details := "Promoted %s from the practice squad to the active roster." % player.full_name
-	_record(league, "Practice Squad Promotion", team, player, details, contract.annual_salary - old_salary)
+	_record(league, "Practice Squad Promotion", team, player, details, new_cap_hit - old_salary)
 	return {"ok": true, "message": details, "player": player}
 
 
@@ -157,7 +159,7 @@ static func release_from_practice_squad(league: LeagueState, team_id: String, pl
 	var player := team.practice_squad_player_by_id(player_id) if team != null else null
 	if team == null or player == null:
 		return _failure("The selected player is not on this practice squad.")
-	var salary := player.contract.annual_salary if player.contract != null else 0
+	var salary := player.contract.cap_hit_for_year(team.salary_cap_year) if player.contract != null else 0
 	team.practice_squad.erase(player)
 	player.contract = null
 	player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
@@ -176,10 +178,11 @@ static func poach_practice_squad_player(league: LeagueState, team_id: String, pl
 		return _failure("The selected player is not available from another practice squad.")
 	if not destination.has_roster_space():
 		return _failure("A practice-squad signing must join the %d-player roster; create a spot first." % destination.roster_limit)
-	var old_salary := player.contract.annual_salary if player.contract != null else 0
+	var old_salary := player.contract.cap_hit_for_year(source.salary_cap_year) if player.contract != null else 0
 	var contract := PlayerContract.initial_contract(player, league.contract_start_year(), destination.players_at(player.position).size())
-	if contract.annual_salary > destination.cap_space():
-		return _failure("The signing needs %s more cap space." % PlayerContract.money_label(contract.annual_salary - destination.cap_space()))
+	var new_cap_hit := contract.cap_hit_for_year(destination.salary_cap_year)
+	if new_cap_hit > destination.cap_space():
+		return _failure("The signing needs %s more cap space." % PlayerContract.money_label(new_cap_hit - destination.cap_space()))
 	source.practice_squad.erase(player)
 	player.contract = contract
 	player.record_team(destination.id)
@@ -187,7 +190,7 @@ static func poach_practice_squad_player(league: LeagueState, team_id: String, pl
 	destination.add_player(player)
 	destination.configure_game_day_roster()
 	var details := "Signed %s from %s's practice squad to the active roster." % [player.full_name, source.display_name()]
-	_record(league, "Practice Squad Signing", destination, player, details, contract.annual_salary - old_salary)
+	_record(league, "Practice Squad Signing", destination, player, details, new_cap_hit - old_salary)
 	return {"ok": true, "message": details, "player": player, "former_team": source}
 
 
@@ -202,8 +205,8 @@ static func waive_player(league: LeagueState, team_id: String, player_id: String
 	if league.is_offseason():
 		return _release_directly(league, team, player)
 	var contract := player.contract
-	var salary_removed := contract.annual_salary if contract != null else 0
-	var penalty := contract.release_penalty() if contract != null else 0
+	var salary_removed := contract.cap_hit_for_year(team.salary_cap_year) if contract != null else 0
+	var penalty := contract.release_penalty(team.salary_cap_year) if contract != null else 0
 	team.dead_cap += penalty
 	team.remove_player(player.id)
 	player.set_roster_status(PlayerData.STATUS_WAIVERS, league.current_week)
@@ -249,7 +252,7 @@ static func waiver_claim_error(league: LeagueState, team: TeamData, entry: Waive
 		return "A club cannot reclaim the player it just waived."
 	if not team.has_roster_space():
 		return "Create a spot on the %d-player roster before submitting a claim." % team.roster_limit
-	var salary := entry.player.contract.annual_salary if entry.player.contract != null else 0
+	var salary := entry.player.contract.cap_hit_for_year(team.salary_cap_year) if entry.player.contract != null else 0
 	if salary > team.cap_space():
 		return "The claimed contract needs %s more cap space." % PlayerContract.money_label(salary - team.cap_space())
 	return ""
@@ -277,7 +280,7 @@ static func resolve_waivers(league: LeagueState, force: bool = false) -> Diction
 			winner.add_player(player)
 			winner.configure_game_day_roster()
 			var details := "%s claimed %s on waivers from %s." % [winner.display_name(), player.full_name, _team_label(league, entry.waived_by_team_id)]
-			_record(league, "Waiver Claim", winner, player, details, player.contract.annual_salary)
+			_record(league, "Waiver Claim", winner, player, details, player.contract.cap_hit_for_year(winner.salary_cap_year))
 			awarded += 1
 		else:
 			var player: PlayerData = entry.player
@@ -386,7 +389,7 @@ static func prepare_new_season(league: LeagueState) -> void:
 static func waiver_claim_error_for_resolution(team: TeamData, entry: WaiverEntryData) -> String:
 	if not team.has_roster_space():
 		return "Roster full"
-	var salary := entry.player.contract.annual_salary if entry.player.contract != null else 0
+	var salary := entry.player.contract.cap_hit_for_year(team.salary_cap_year) if entry.player.contract != null else 0
 	return "Insufficient cap" if salary > team.cap_space() else ""
 
 
@@ -426,7 +429,7 @@ static func _best_practice_squad_candidate(league: LeagueState, team: TeamData) 
 		if not RosterValidator.practice_squad_error(team, player).is_empty():
 			continue
 		var contract := PlayerContract.practice_squad_contract(player, league.contract_start_year())
-		if contract.annual_salary > team.cap_space():
+		if contract.cap_hit_for_year(team.salary_cap_year) > team.cap_space():
 			continue
 		var score := player.overall + (8 if team.players_at(player.position).size() <= 1 else 0) - maxi(player.age - 25, 0)
 		if best == null or score > best_score:
@@ -437,8 +440,8 @@ static func _best_practice_squad_candidate(league: LeagueState, team: TeamData) 
 
 static func _release_directly(league: LeagueState, team: TeamData, player: PlayerData) -> Dictionary:
 	var contract := player.contract
-	var salary_removed := contract.annual_salary if contract != null else 0
-	var penalty := contract.release_penalty() if contract != null else 0
+	var salary_removed := contract.cap_hit_for_year(team.salary_cap_year) if contract != null else 0
+	var penalty := contract.release_penalty(team.salary_cap_year) if contract != null else 0
 	team.dead_cap += penalty
 	team.remove_player(player.id)
 	player.contract = null

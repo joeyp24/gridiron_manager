@@ -262,13 +262,24 @@ def _generated_contract(record: dict[str, Any], position: str, season: int = 202
     years = 4 if age <= 25 else 3 if age <= 29 else 2 if age <= 33 else 1
     role = "Franchise" if overall >= 88 else "Starter" if overall >= 78 else "Rotation" if overall >= 69 else "Depth"
     guarantee_rate = 0.58 if role == "Franchise" else 0.44 if role == "Starter" else 0.24
+    guaranteed = int(round(annual * years * guarantee_rate / 50_000) * 50_000)
     return {
         "annual_salary": annual,
-        "guaranteed_money": int(round(annual * years * guarantee_rate / 50_000) * 50_000),
+        "guaranteed_money": guaranteed,
         "years_remaining": years,
         "signed_year": season,
         "expires_after_year": season + years - 1,
         "role": role,
+        "total_contract_value": annual * years,
+        "total_guaranteed": guaranteed,
+        "yearly_cap_hits": {str(year): annual for year in range(season, season + years)},
+        "yearly_cash": {str(year): annual for year in range(season, season + years)},
+        "yearly_release_penalties": {},
+        "yearly_trade_penalties": {},
+        "contract_type": "Generated estimate",
+        "source_label": "Gridiron estimate",
+        "source_url": "",
+        "source_snapshot": "",
     }
 
 
@@ -374,19 +385,6 @@ def _build_player_from_rating(
     return player
 
 
-def _scale_payroll(players: list[dict[str, Any]], target: int = 266_000_000) -> None:
-    payroll = sum(int(player["contract"]["annual_salary"]) for player in players if player.get("contract"))
-    if payroll <= target:
-        return
-    scale = target / payroll
-    for player in players:
-        contract = player.get("contract")
-        if not contract:
-            continue
-        contract["annual_salary"] = max(800_000, round(int(contract["annual_salary"]) * scale / 50_000) * 50_000)
-        contract["guaranteed_money"] = round(int(contract.get("guaranteed_money", 0)) * scale / 50_000) * 50_000
-
-
 def _rebuild_from_madden_rosters(pack: dict[str, Any], ratings: list[dict[str, Any]]) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
     existing_index = _existing_player_index(pack)
     used_existing_ids: set[str] = set()
@@ -428,7 +426,18 @@ def _rebuild_from_madden_rosters(pack: dict[str, Any], ratings: list[dict[str, A
                     "team": team_name,
                 })
             built_players.append(_build_player_from_rating(record, str(team.get("id", "")), existing, False, season))
-        _scale_payroll(built_players)
+        payroll = sum(
+            int(player["contract"].get("yearly_cap_hits", {}).get(str(season), player["contract"]["annual_salary"]))
+            for player in built_players if player.get("contract")
+        )
+        base_cap = int(team.get("base_salary_cap", 301_200_000))
+        team["base_salary_cap"] = base_cap
+        team["salary_cap"] = max(
+            int(team.get("salary_cap", base_cap)),
+            payroll + 7_000_000 if payroll > base_cap else payroll,
+        )
+        team["salary_cap_adjustment"] = int(team["salary_cap"]) - base_cap
+        team["salary_cap_year"] = season
         team["players"] = built_players
         team.pop("depth_chart", None)
 

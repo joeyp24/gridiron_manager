@@ -126,7 +126,7 @@ func _build_contracts_card() -> PanelContainer:
 	var heading := UIFactory.hbox(8)
 	heading.add_child(UIFactory.label("CONTRACT LEDGER", "SectionTitleLabel"))
 	heading.add_child(UIFactory.spacer())
-	heading.add_child(UIFactory.label("Sorted by annual cap hit", "CaptionLabel"))
+	heading.add_child(UIFactory.label("Sorted by current cap hit", "CaptionLabel"))
 	column.add_child(heading)
 	var roster_scroll := ScrollContainer.new()
 	roster_scroll.custom_minimum_size = Vector2(0, 445)
@@ -137,7 +137,7 @@ func _build_contracts_card() -> PanelContainer:
 	roster_scroll.add_child(list)
 	var ordered := _team.all_contract_players()
 	ordered.sort_custom(func(a: PlayerData, b: PlayerData):
-		return a.contract.annual_salary > b.contract.annual_salary
+		return a.contract.current_cap_hit() > b.contract.current_cap_hit()
 	)
 	for player: PlayerData in ordered:
 		list.add_child(_contract_row(player))
@@ -156,7 +156,8 @@ func _contract_row(player: PlayerData) -> PanelContainer:
 	identity.add_child(UIFactory.label("Age %d · OVR %d · %s" % [player.age, player.overall, player.roster_status], "CaptionLabel"))
 	row.add_child(identity)
 	row.add_child(_small_metric("ROLE", player.contract.role))
-	row.add_child(_small_metric("CAP HIT", PlayerContract.money_label(player.contract.annual_salary)))
+	row.add_child(_small_metric("CAP HIT", PlayerContract.money_label(player.contract.current_cap_hit())))
+	row.add_child(_small_metric("APY", PlayerContract.money_label(player.contract.annual_salary)))
 	row.add_child(_small_metric("TERM / EXP", "%d YR · %d" % [player.contract.years_remaining, player.contract.expiration_year()]))
 	var release := UIFactory.button("RELEASE", "GhostButton")
 	release.custom_minimum_size = Vector2(86, 40)

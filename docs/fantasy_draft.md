@@ -26,7 +26,7 @@ AI clubs rank legal available players using:
 - age and expected career runway;
 - positional value and current depth shortage;
 - offensive run/pass tendency and defensive coverage preference;
-- existing contract cost;
+- standardized fantasy-draft contract cost;
 - a small deterministic club-and-pick preference adjustment.
 
 The same base board is exposed to the user, with search and position filters. The dossier shows overall, potential, contract, archetype, measurements, top detailed Madden attributes, and whether the selected player fits the managed club's current roster/cap plan. Full player profiles remain available from the war room.
@@ -38,8 +38,8 @@ The same base board is exposed to the user, with search and position filters. Th
 - preserves one player at every required position for each club that still lacks one;
 - forces missing positions when the remaining roster slots require it;
 - blocks selections after a position maximum or 53-player limit;
-- carries existing contracts with drafted players;
-- creates a normal initial contract when an unsigned free agent is drafted;
+- replaces original-club contracts with deterministic open-market fantasy-draft deals so all clubs use the same financial rules;
+- generates those deals from position, overall, age, projected role, term, and guarantees using the normal year-aware contract model;
 - reserves $1 million for every remaining roster slot so early star contracts cannot make the roster impossible to complete.
 
 Finalization uses the existing `RosterValidator` as the authoritative check boundary. Undrafted players have contracts cleared before entering the normal free-agent market.
@@ -52,4 +52,4 @@ Save schema version 11 adds `career_mode` and optional `fantasy_draft` fields. V
 
 ## Extension points
 
-The persisted pick ledger can support draft recap, roster-grade, and historical draft views without changing player ownership. Future improvements can add a user queue, favorites, board export, tradeable launch picks, position-run alerts, AI strategy profiles, draft speed controls, and an optional post-draft contract normalization rule behind the existing service boundary.
+The persisted pick ledger can support draft recap, roster-grade, and historical draft views without changing player ownership. Future improvements can add a user queue, favorites, board export, tradeable launch picks, position-run alerts, AI strategy profiles, and draft speed controls behind the existing service boundary.
