@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 14
+const SAVE_VERSION := 15
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -106,6 +106,9 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 13:
 		migrated = _migrate_v13_to_v14(migrated)
 		current_version = 14
+	if current_version == 14:
+		migrated = _migrate_v14_to_v15(migrated)
+		current_version = 15
 	migrated["save_version"] = current_version
 	return migrated
 
@@ -372,3 +375,48 @@ func _migrate_v13_to_v14(payload: Dictionary) -> Dictionary:
 	payload["career"] = career_data
 	payload["save_version"] = 14
 	return payload
+
+
+func _migrate_v14_to_v15(payload: Dictionary) -> Dictionary:
+	var career_data: Dictionary = payload.get("career", {})
+	var league_data: Dictionary = career_data.get("league", {})
+	var season_year := int(league_data.get("season_year", 2026))
+	for team_data: Dictionary in league_data.get("teams", []):
+		team_data["salary_cap_year"] = int(team_data.get("salary_cap_year", season_year))
+		var cap_floor := TeamData.DEFAULT_SALARY_CAP
+		for _year in range(2026, season_year):
+			cap_floor = roundi(float(cap_floor) * 1.07 / 100_000.0) * 100_000
+		team_data["salary_cap"] = maxi(int(team_data.get("salary_cap", cap_floor)), cap_floor)
+		team_data["base_salary_cap"] = int(team_data.get("base_salary_cap", cap_floor))
+		team_data["salary_cap_adjustment"] = int(team_data.get("salary_cap_adjustment", int(team_data["salary_cap"]) - int(team_data["base_salary_cap"])))
+		for list_name in ["players", "injured_reserve", "practice_squad"]:
+			for player_data: Dictionary in team_data.get(list_name, []):
+				_add_v15_contract_fields(player_data, season_year)
+	career_data["league"] = league_data
+	payload["career"] = career_data
+	payload["save_version"] = 15
+	return payload
+
+
+func _add_v15_contract_fields(player_data: Dictionary, season_year: int) -> void:
+	var contract_data = player_data.get("contract")
+	if not contract_data is Dictionary:
+		return
+	var annual := int(contract_data.get("annual_salary", 0))
+	var years := maxi(int(contract_data.get("years_remaining", 1)), 1)
+	var expiration := int(contract_data.get("expires_after_year", season_year + years - 1))
+	var cap_hits: Dictionary = Dictionary(contract_data.get("yearly_cap_hits", {})).duplicate(true)
+	var cash: Dictionary = Dictionary(contract_data.get("yearly_cash", {})).duplicate(true)
+	for year in range(season_year, expiration + 1):
+		cap_hits[str(year)] = int(cap_hits.get(str(year), annual))
+		cash[str(year)] = int(cash.get(str(year), annual))
+	contract_data["total_contract_value"] = int(contract_data.get("total_contract_value", annual * years))
+	contract_data["total_guaranteed"] = int(contract_data.get("total_guaranteed", contract_data.get("guaranteed_money", 0)))
+	contract_data["yearly_cap_hits"] = cap_hits
+	contract_data["yearly_cash"] = cash
+	contract_data["yearly_release_penalties"] = Dictionary(contract_data.get("yearly_release_penalties", {})).duplicate(true)
+	contract_data["yearly_trade_penalties"] = Dictionary(contract_data.get("yearly_trade_penalties", {})).duplicate(true)
+	contract_data["contract_type"] = str(contract_data.get("contract_type", "Legacy"))
+	contract_data["source_label"] = str(contract_data.get("source_label", PlayerContract.SOURCE_LEGACY))
+	contract_data["source_url"] = str(contract_data.get("source_url", ""))
+	contract_data["source_snapshot"] = str(contract_data.get("source_snapshot", ""))

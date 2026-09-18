@@ -21,12 +21,13 @@ static func market_offer(
 	var rounded_salary := maxi(750_000, roundi(salary / 100_000.0) * 100_000)
 	var role_name := projected_role(team, player)
 	var guarantee_rate := 0.56 if role_name == "Franchise" else (0.42 if role_name == "Starter" else (0.28 if role_name == "Rotation" else 0.18))
-	return PlayerContract.new(
+	return PlayerContract.generated_contract(
 		rounded_salary,
 		term,
 		roundi(float(rounded_salary * term) * guarantee_rate),
 		league.contract_start_year(),
-		role_name
+		role_name,
+		"Free Agent"
 	)
 
 
@@ -75,9 +76,11 @@ static func extend_player(
 		return _failure("Only expiring contracts can be renewed during this stage.")
 	if offer_multiplier + 0.001 < minimum_extension_multiplier(player):
 		return _failure("%s declined the extension and intends to test the market." % player.full_name)
-	var old_salary := player.contract.annual_salary
+	var cap_year := league.contract_start_year()
+	var old_cap_hit := player.contract.cap_hit_for_year(cap_year)
 	var contract := extension_offer(league, team, player, years, offer_multiplier)
-	var projected_payroll := team.payroll() - old_salary + contract.annual_salary
+	contract.contract_type = "Extension"
+	var projected_payroll := team.payroll_for_year(cap_year) - old_cap_hit + contract.cap_hit_for_year(cap_year)
 	if projected_payroll > team.salary_cap:
 		return _failure("The extension needs %s more projected cap space." % PlayerContract.money_label(projected_payroll - team.salary_cap))
 	player.contract = contract
@@ -87,7 +90,7 @@ static func extend_player(
 		PlayerContract.money_label(contract.total_value()),
 		contract.expiration_year(),
 	]
-	_record(league, "Extension", team, player, details, contract.annual_salary - old_salary)
+	_record(league, "Extension", team, player, details, contract.cap_hit_for_year(cap_year) - old_cap_hit)
 	return {"ok": true, "message": details, "contract": contract}
 
 
@@ -155,7 +158,7 @@ static func sign_free_agent(
 		PlayerContract.money_label(contract.total_value()),
 		PlayerContract.money_label(contract.guaranteed_money),
 	]
-	_record(league, "Signing", team, player, details, contract.annual_salary)
+	_record(league, "Signing", team, player, details, contract.current_cap_hit())
 	return {"ok": true, "message": details, "contract": contract}
 
 
@@ -200,7 +203,7 @@ static func _best_ai_candidate(league: LeagueState, team: TeamData) -> PlayerDat
 		if position_players.size() <= 2:
 			score += 2.5
 		var offer := market_offer(league, team, candidate, 2, 1.05)
-		if offer.annual_salary > team.cap_space():
+		if offer.current_cap_hit() > team.cap_space_for_year(offer.current_year()):
 			continue
 		if score > best_score:
 			best = candidate

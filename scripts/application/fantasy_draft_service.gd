@@ -44,6 +44,7 @@ static func initialize(league: LeagueState) -> FantasyDraftStateData:
 		return a.id < b.id
 	)
 	for player in player_pool:
+		player.contract = PlayerContract.fantasy_draft_contract(player, league.season_year)
 		player.set_roster_status(PlayerData.STATUS_FREE_AGENT, league.current_week)
 	league.free_agents = player_pool
 	league.career_mode = LeagueState.CAREER_MODE_FANTASY_DRAFT
@@ -195,7 +196,7 @@ static func _make_selection(league: LeagueState, pick: FantasyDraftPickData, pla
 		return _failure(validation_error)
 	league.free_agents.erase(player)
 	if player.contract == null:
-		player.contract = PlayerContract.initial_contract(player, league.season_year, team.players_at(player.position).size())
+		player.contract = PlayerContract.fantasy_draft_contract(player, league.season_year)
 	player.set_roster_status(PlayerData.STATUS_ACTIVE_ROSTER, league.current_week)
 	player.record_team(team.id)
 	if not team.add_player(player):
@@ -310,8 +311,8 @@ static func _selection_error_with_context(league: LeagueState, team: TeamData, p
 
 static func _selection_salary(player: PlayerData, season_year: int, depth_index: int) -> int:
 	if player.contract != null:
-		return player.contract.annual_salary
-	return PlayerContract.initial_contract(player, season_year, depth_index).annual_salary
+		return player.contract.cap_hit_for_year(season_year)
+	return PlayerContract.initial_contract(player, season_year, depth_index).cap_hit_for_year(season_year)
 
 
 static func _finalize(league: LeagueState) -> void:

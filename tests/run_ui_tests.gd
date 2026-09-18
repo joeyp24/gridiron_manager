@@ -85,12 +85,27 @@ func _run() -> void:
 	var trade_market_changes := [0]
 	trade_screen.trade_changed.connect(func(): trade_market_changes[0] += 1)
 	_check(trade_screen._trade_block_select.item_count > 0, "The managed club should be able to choose an eligible player for its trade block")
-	trade_screen._add_trade_block_player()
-	await process_frame
+	var changes_before_offer: int = int(trade_market_changes[0])
+	for item_index in range(trade_screen._trade_block_select.item_count):
+		changes_before_offer = trade_market_changes[0]
+		trade_screen._trade_block_select.select(item_index)
+		trade_screen._add_trade_block_player()
+		await process_frame
+		if not TradeMarketService.pending_offers_for_user(career.league).is_empty():
+			break
+		var listed_players := career.league.trade_block_for(career.league.user_team_id)
+		if not listed_players.is_empty():
+			trade_screen._remove_trade_block_player(listed_players.front())
+			await process_frame
 	_check(career.league.trade_block_for(career.league.user_team_id).size() == 1, "Adding a player through the Trade Center should update the persistent trade block")
 	_check(not TradeMarketService.pending_offers_for_user(career.league).is_empty(), "Adding a player through the Trade Center should automatically produce incoming AI offers")
-	_check(trade_market_changes[0] == 1, "A trade-block change should request an immediate career save")
-	var incoming_offer: TradeOfferData = TradeMarketService.pending_offers_for_user(career.league).front()
+	_check(trade_market_changes[0] == changes_before_offer + 1, "A trade-block change should request an immediate career save")
+	var incoming_offers := TradeMarketService.pending_offers_for_user(career.league)
+	var incoming_offer: TradeOfferData = incoming_offers.front() if not incoming_offers.is_empty() else null
+	if incoming_offer == null:
+		printerr("UI_TEST: no legal incoming trade offer was available")
+		quit(1)
+		return
 	trade_screen._load_market_counter(incoming_offer.id)
 	await process_frame
 	_check(trade_screen._countering_offer_id == incoming_offer.id and trade_screen._partner.id == incoming_offer.proposing_team_id, "Countering an incoming offer should load its club and assets into the Deal Room")

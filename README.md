@@ -11,9 +11,9 @@ Gridiron Manager is an extensible American football management simulation built 
 - A responsive five-tab Roster Management workspace for depth charts, the 53-man roster, game-day activation, injured reserve, practice squads, and the waiver wire
 - Configurable 48-player game-day lists with positional readiness checks, explicit inactive status, player energy, and injuries
 - Four-week injured-reserve stays, contract-preserving return eligibility, 16-player practice squads with veteran allowances, cross-club poaching, and priority-based in-season waivers
-- Player contracts with annual salary, term, guarantees, role, and expiration year
-- Contract extensions, annual contract rollover, expirations, and dead-cap relief
-- A $280 million team salary cap, 53-player rosters, 90-player offseason capacity, reserve-list cap accounting, and release dead money
+- Year-aware player contracts with APY, total value, guarantees, annual cap and cash schedules, role, source provenance, and expiration year
+- Contract extensions, annual schedule rollover, expirations, and year-specific release/trade dead money
+- The official $301.2 million 2026 base salary cap, club adjustments, 53-player rosters, 90-player offseason capacity, reserve-list cap accounting, and release dead money
 - An expanded 339-player launch free-agent market containing every rated player outside the active 53-player rosters
 - A new-career Fantasy Draft mode that randomizes all 32 clubs, places all 2,035 players into one pool, and builds complete 53-player rosters through a resumable 53-round snake draft
 - Manual Fantasy Draft selections plus cap-aware AI drafting that weighs overall, potential, age, scheme, position value, roster needs, contract cost, and league-wide positional scarcity
@@ -49,7 +49,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
 - Live play-by-play, field visualization, and team box-score statistics
-- Versioned JSON career saves with automatic migrations through schema version fourteen, persistent trade blocks and offer inboxes, weekly game plans, roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, statistics history, trade history, future-pick ownership, and data provenance
+- Versioned JSON career saves with automatic migrations through schema version fifteen, persistent trade blocks and offer inboxes, weekly game plans, roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, year-aware contracts, statistics history, trade history, future-pick ownership, and data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -93,8 +93,15 @@ To rebuild it from cached source files—or download the published nflverse asse
 python tools/nflverse_importer.py
 ```
 
+To refresh current contracts, yearly cap charges, guarantees, release/trade penalties, and adjusted team caps from nflverse identities plus Over The Cap's public tables, run:
+
+```powershell
+python tools/contract_data_importer.py --download
+```
+
 See [`docs/nflverse.md`](docs/nflverse.md) for the source manifest, rating model, refresh workflow, licensing, and full-league scope.
 See [`docs/hybrid_player_database.md`](docs/hybrid_player_database.md) for the cross-source join, roster selection, attribute schema, media cache, save migration, and rebuild workflow.
+See [`docs/contracts.md`](docs/contracts.md) for salary terminology, yearly accounting, generated AI deals, current-data refreshes, and save migration.
 
 ## Architecture
 

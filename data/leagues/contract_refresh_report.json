@@ -1,0 +1,3620 @@
+{
+  "contract_source_url": "https://overthecap.com/contracts",
+  "fallback_contract_count": 670,
+  "matched_contract_count": 1026,
+  "player_identity_source_url": "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv",
+  "salary_cap_source_url": "https://operations.nfl.com/calendar-events/nfl-free-agency/nfl-salary-cap",
+  "snapshot_date": "2026-09-16",
+  "team_caps": {
+    "ARI": {
+      "adjustment": 26309324,
+      "base_cap": 301200000,
+      "effective_cap": 327509324,
+      "payroll": 229468119,
+      "roster_snapshot_reconciliation": false
+    },
+    "ATL": {
+      "adjustment": 3646648,
+      "base_cap": 301200000,
+      "effective_cap": 304846648,
+      "payroll": 267332380,
+      "roster_snapshot_reconciliation": false
+    },
+    "BAL": {
+      "adjustment": 32443112,
+      "base_cap": 301200000,
+      "effective_cap": 333643112,
+      "payroll": 326643112,
+      "roster_snapshot_reconciliation": true
+    },
+    "BUF": {
+      "adjustment": 49105403,
+      "base_cap": 301200000,
+      "effective_cap": 350305403,
+      "payroll": 343305403,
+      "roster_snapshot_reconciliation": true
+    },
+    "CAR": {
+      "adjustment": 10783714,
+      "base_cap": 301200000,
+      "effective_cap": 311983714,
+      "payroll": 300599056,
+      "roster_snapshot_reconciliation": false
+    },
+    "CHI": {
+      "adjustment": 33515510,
+      "base_cap": 301200000,
+      "effective_cap": 334715510,
+      "payroll": 327715510,
+      "roster_snapshot_reconciliation": true
+    },
+    "CIN": {
+      "adjustment": 16164519,
+      "base_cap": 301200000,
+      "effective_cap": 317364519,
+      "payroll": 285032346,
+      "roster_snapshot_reconciliation": false
+    },
+    "CLE": {
+      "adjustment": 37247347,
+      "base_cap": 301200000,
+      "effective_cap": 338447347,
+      "payroll": 299172072,
+      "roster_snapshot_reconciliation": false
+    },
+    "DAL": {
+      "adjustment": 30153087,
+      "base_cap": 301200000,
+      "effective_cap": 331353087,
+      "payroll": 307734020,
+      "roster_snapshot_reconciliation": false
+    },
+    "DEN": {
+      "adjustment": 2317528,
+      "base_cap": 301200000,
+      "effective_cap": 303517528,
+      "payroll": 303402542,
+      "roster_snapshot_reconciliation": false
+    },
+    "DET": {
+      "adjustment": 40271731,
+      "base_cap": 301200000,
+      "effective_cap": 341471731,
+      "payroll": 334471731,
+      "roster_snapshot_reconciliation": true
+    },
+    "GB": {
+      "adjustment": 24959543,
+      "base_cap": 301200000,
+      "effective_cap": 326159543,
+      "payroll": 319159543,
+      "roster_snapshot_reconciliation": true
+    },
+    "HOU": {
+      "adjustment": 8862068,
+      "base_cap": 301200000,
+      "effective_cap": 310062068,
+      "payroll": 273932092,
+      "roster_snapshot_reconciliation": false
+    },
+    "IND": {
+      "adjustment": 52968243,
+      "base_cap": 301200000,
+      "effective_cap": 354168243,
+      "payroll": 347168243,
+      "roster_snapshot_reconciliation": true
+    },
+    "JAX": {
+      "adjustment": 8948468,
+      "base_cap": 301200000,
+      "effective_cap": 310148468,
+      "payroll": 292898770,
+      "roster_snapshot_reconciliation": false
+    },
+    "KC": {
+      "adjustment": 66283041,
+      "base_cap": 301200000,
+      "effective_cap": 367483041,
+      "payroll": 360483041,
+      "roster_snapshot_reconciliation": true
+    },
+    "LA": {
+      "adjustment": 32839597,
+      "base_cap": 301200000,
+      "effective_cap": 334039597,
+      "payroll": 327039597,
+      "roster_snapshot_reconciliation": true
+    },
+    "LAC": {
+      "adjustment": 3933430,
+      "base_cap": 301200000,
+      "effective_cap": 305133430,
+      "payroll": 301846665,
+      "roster_snapshot_reconciliation": false
+    },
+    "LV": {
+      "adjustment": 13232085,
+      "base_cap": 301200000,
+      "effective_cap": 314432085,
+      "payroll": 243688549,
+      "roster_snapshot_reconciliation": false
+    },
+    "MIA": {
+      "adjustment": 6913878,
+      "base_cap": 301200000,
+      "effective_cap": 308113878,
+      "payroll": 244951458,
+      "roster_snapshot_reconciliation": false
+    },
+    "MIN": {
+      "adjustment": 13184729,
+      "base_cap": 301200000,
+      "effective_cap": 314384729,
+      "payroll": 305925093,
+      "roster_snapshot_reconciliation": false
+    },
+    "NE": {
+      "adjustment": 51089095,
+      "base_cap": 301200000,
+      "effective_cap": 352289095,
+      "payroll": 334305119,
+      "roster_snapshot_reconciliation": false
+    },
+    "NO": {
+      "adjustment": 15805466,
+      "base_cap": 301200000,
+      "effective_cap": 317005466,
+      "payroll": 214050922,
+      "roster_snapshot_reconciliation": false
+    },
+    "NYG": {
+      "adjustment": 0,
+      "base_cap": 301200000,
+      "effective_cap": 301200000,
+      "payroll": 296936703,
+      "roster_snapshot_reconciliation": false
+    },
+    "NYJ": {
+      "adjustment": 21838428,
+      "base_cap": 301200000,
+      "effective_cap": 323038428,
+      "payroll": 204255142,
+      "roster_snapshot_reconciliation": false
+    },
+    "PHI": {
+      "adjustment": 14896635,
+      "base_cap": 301200000,
+      "effective_cap": 316096635,
+      "payroll": 271776105,
+      "roster_snapshot_reconciliation": false
+    },
+    "PIT": {
+      "adjustment": 41855833,
+      "base_cap": 301200000,
+      "effective_cap": 343055833,
+      "payroll": 336055833,
+      "roster_snapshot_reconciliation": true
+    },
+    "SEA": {
+      "adjustment": 23619906,
+      "base_cap": 301200000,
+      "effective_cap": 324819906,
+      "payroll": 317819906,
+      "roster_snapshot_reconciliation": true
+    },
+    "SF": {
+      "adjustment": 39363099,
+      "base_cap": 301200000,
+      "effective_cap": 340563099,
+      "payroll": 296990510,
+      "roster_snapshot_reconciliation": false
+    },
+    "TB": {
+      "adjustment": 39040471,
+      "base_cap": 301200000,
+      "effective_cap": 340240471,
+      "payroll": 333240471,
+      "roster_snapshot_reconciliation": true
+    },
+    "TEN": {
+      "adjustment": 41738383,
+      "base_cap": 301200000,
+      "effective_cap": 342938383,
+      "payroll": 290388739,
+      "roster_snapshot_reconciliation": false
+    },
+    "WAS": {
+      "adjustment": 57839421,
+      "base_cap": 301200000,
+      "effective_cap": 359039421,
+      "payroll": 352039421,
+      "roster_snapshot_reconciliation": true
+    }
+  },
+  "team_payrolls": {
+    "ARI": 229468119,
+    "ATL": 267332380,
+    "BAL": 326643112,
+    "BUF": 343305403,
+    "CAR": 300599056,
+    "CHI": 327715510,
+    "CIN": 285032346,
+    "CLE": 299172072,
+    "DAL": 307734020,
+    "DEN": 303402542,
+    "DET": 334471731,
+    "GB": 319159543,
+    "HOU": 273932092,
+    "IND": 347168243,
+    "JAX": 292898770,
+    "KC": 360483041,
+    "LA": 327039597,
+    "LAC": 301846665,
+    "LV": 243688549,
+    "MIA": 244951458,
+    "MIN": 305925093,
+    "NE": 334305119,
+    "NO": 214050922,
+    "NYG": 296936703,
+    "NYJ": 204255142,
+    "PHI": 271776105,
+    "PIT": 336055833,
+    "SEA": 317819906,
+    "SF": 296990510,
+    "TB": 333240471,
+    "TEN": 290388739,
+    "WAS": 352039421
+  },
+  "unmatched": [
+    {
+      "full_name": "Kyler Murray",
+      "player_id": "00-0035228",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Kedon Slovis",
+      "player_id": "madden_26_14618",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Michael Carter",
+      "player_id": "00-0036924",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Emari Demercado",
+      "player_id": "00-0038705",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Zay Jones",
+      "player_id": "madden_26_12564",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Greg Dortch",
+      "player_id": "00-0035500",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Pharaoh Brown",
+      "player_id": "madden_26_12673",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Kelvin Beachum",
+      "player_id": "madden_26_11673",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Evan Brown",
+      "player_id": "00-0034495",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Will Hernandez",
+      "player_id": "madden_26_13114",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Jonah Williams",
+      "player_id": "00-0035944",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Christian Jones",
+      "player_id": "00-0039382",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Calais Campbell",
+      "player_id": "00-0026190",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Dalvin Tomlinson",
+      "player_id": "00-0033546",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Bilal Nichols",
+      "player_id": "madden_26_13424",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Akeem Davis-Gaither",
+      "player_id": "00-0036298",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Owen Pappoe",
+      "player_id": "00-0038600",
+      "team": "ARI"
+    },
+    {
+      "full_name": "J.J. Russell",
+      "player_id": "madden_26_22669",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Sean Murphy-Bunting",
+      "player_id": "00-0035239",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Starling Thomas V",
+      "player_id": "madden_26_23078",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Jalen Thompson",
+      "player_id": "00-0035705",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Aaron Brewer",
+      "player_id": "00-0036171",
+      "team": "ARI"
+    },
+    {
+      "full_name": "Kirk Cousins",
+      "player_id": "00-0029604",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Easton Stick",
+      "player_id": "00-0035282",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Tyler Allgeier",
+      "player_id": "00-0037263",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Nate Carter",
+      "player_id": "00-0040547",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Darnell Mooney",
+      "player_id": "00-0036309",
+      "team": "ATL"
+    },
+    {
+      "full_name": "KhaDarel Hodge",
+      "player_id": "madden_26_13870",
+      "team": "ATL"
+    },
+    {
+      "full_name": "David Sills V",
+      "player_id": "madden_26_20350",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Dylan Drummond",
+      "player_id": "00-0038953",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Malik Heath",
+      "player_id": "madden_26_23126",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Teagan Quitoriano",
+      "player_id": "00-0037277",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Jack Nelson",
+      "player_id": "madden_26_15145",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Jovaughn Gwyn",
+      "player_id": "00-0038629",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Kaleb McGary",
+      "player_id": "00-0035235",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Elijah Wilkinson",
+      "player_id": "00-0033676",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Leonard Floyd",
+      "player_id": "madden_26_17554",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Arnold Ebiketie",
+      "player_id": "00-0038116",
+      "team": "ATL"
+    },
+    {
+      "full_name": "David Onyemata",
+      "player_id": "00-0033051",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Zach Harrison",
+      "player_id": "00-0038980",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Ruke Orhorhoro",
+      "player_id": "00-0039733",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Kaden Elliss",
+      "player_id": "00-0035316",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Troy Andersen",
+      "player_id": "00-0037810",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Ronnie Harrison Jr",
+      "player_id": "00-0034779",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Clark Phillips III",
+      "player_id": "00-0038568",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Dee Alford",
+      "player_id": "00-0037034",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Jammie Robinson",
+      "player_id": "madden_26_23045",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Zane Gonzalez",
+      "player_id": "00-0033862",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Bradley Pinion",
+      "player_id": "00-0032065",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Bralen Trice",
+      "player_id": "madden_26_14754",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Kentavius Street",
+      "player_id": "00-0034320",
+      "team": "ATL"
+    },
+    {
+      "full_name": "Cooper Rush",
+      "player_id": "madden_26_12931",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Patrick Ricard",
+      "player_id": "00-0033376",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Keaton Mitchell",
+      "player_id": "00-0038454",
+      "team": "BAL"
+    },
+    {
+      "full_name": "DeAndre Hopkins",
+      "player_id": "madden_26_506",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Tylan Wallace",
+      "player_id": "00-0036630",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Isaiah Likely",
+      "player_id": "00-0037838",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Charlie Kolar",
+      "player_id": "00-0038046",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Tyler Linderbaum",
+      "player_id": "00-0037825",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Corey Bullock",
+      "player_id": "madden_26_4708",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Daniel Faalele",
+      "player_id": "00-0038118",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Joe Noteboom",
+      "player_id": "madden_26_13190",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Kyle Van Noy",
+      "player_id": "madden_26_12387",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Dre'Mont Jones",
+      "player_id": "00-0035678",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Brent Urban",
+      "player_id": "madden_26_2109",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Carl Jones",
+      "player_id": "00-0039460",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Jacob Hummel",
+      "player_id": "00-0037633",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Jay Higgins IV",
+      "player_id": "madden_26_15261",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Robert Longerbeam",
+      "player_id": "madden_26_15324",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Alohi Gilman",
+      "player_id": "00-0036380",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Ar'Darius Washington",
+      "player_id": "00-0036587",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Jordan Stout",
+      "player_id": "00-0038094",
+      "team": "BAL"
+    },
+    {
+      "full_name": "David Ojabo",
+      "player_id": "00-0038142",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Adisa Isaac",
+      "player_id": "00-0039791",
+      "team": "BAL"
+    },
+    {
+      "full_name": "Mitchell Trubisky",
+      "player_id": "00-0033869",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Reggie Gilliam",
+      "player_id": "00-0036187",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Brandin Cooks",
+      "player_id": "madden_26_10847",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Joshua Palmer",
+      "player_id": "madden_26_21615",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Curtis Samuel",
+      "player_id": "madden_26_12579",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Gabe Davis",
+      "player_id": "madden_26_20935",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Ryan Van Demark",
+      "player_id": "00-0037404",
+      "team": "BUF"
+    },
+    {
+      "full_name": "David Edwards",
+      "player_id": "00-0035668",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Sedrick Van Pran-Granger",
+      "player_id": "00-0039876",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Chase Lundt",
+      "player_id": "00-0040217",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Joey Bosa",
+      "player_id": "madden_26_17537",
+      "team": "BUF"
+    },
+    {
+      "full_name": "A.J. Epenesa",
+      "player_id": "madden_26_20984",
+      "team": "BUF"
+    },
+    {
+      "full_name": "DaQuan Jones",
+      "player_id": "madden_26_12336",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Larry Ogunjobi",
+      "player_id": "madden_26_12604",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Matt Milano",
+      "player_id": "madden_26_12781",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Shaq Thompson",
+      "player_id": "madden_26_2562",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Baylon Spector",
+      "player_id": "madden_26_22412",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Taron Johnson",
+      "player_id": "00-0034376",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Tre'Davious White",
+      "player_id": "madden_26_12548",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Dane Jackson",
+      "player_id": "00-0036166",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Taylor Rapp",
+      "player_id": "madden_26_20622",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Jordan Poyer",
+      "player_id": "madden_26_12280",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Cam Lewis",
+      "player_id": "00-0035357",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Matt Prater",
+      "player_id": "madden_26_28229",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Mitch Wishnowsky",
+      "player_id": "00-0034941",
+      "team": "BUF"
+    },
+    {
+      "full_name": "Andy Dalton",
+      "player_id": "00-0027973",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Rico Dowdle",
+      "player_id": "00-0036139",
+      "team": "CAR"
+    },
+    {
+      "full_name": "David Moore",
+      "player_id": "madden_26_12859",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Austin Corbett",
+      "player_id": "00-0034261",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Cade Mays",
+      "player_id": "00-0037297",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Nick Samac",
+      "player_id": "madden_26_1149",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Chandler Zavala",
+      "player_id": "00-0038536",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Yosh Nijman",
+      "player_id": "madden_26_20677",
+      "team": "CAR"
+    },
+    {
+      "full_name": "D.J. Wonnum",
+      "player_id": "00-0036335",
+      "team": "CAR"
+    },
+    {
+      "full_name": "A'Shawn Robinson",
+      "player_id": "madden_26_17562",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Trevin Wallace",
+      "player_id": "00-0039347",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Christian Rozeboom",
+      "player_id": "00-0035942",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Krys Barnes",
+      "player_id": "madden_26_21409",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Maema Njongmeta",
+      "player_id": "madden_26_1272",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Damarri Mathis",
+      "player_id": "madden_26_22236",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Robert Rochell",
+      "player_id": "00-0036904",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Isaiah Simmons",
+      "player_id": "00-0036356",
+      "team": "CAR"
+    },
+    {
+      "full_name": "Travis Homer",
+      "player_id": "00-0035594",
+      "team": "CHI"
+    },
+    {
+      "full_name": "DJ Moore",
+      "player_id": "00-0034827",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Devin Duvernay",
+      "player_id": "00-0036331",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Olamide Zaccheaus",
+      "player_id": "00-0035208",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Durham Smythe",
+      "player_id": "00-0034798",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Drew Dalman",
+      "player_id": "madden_26_21547",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Ryan Bates",
+      "player_id": "madden_26_20538",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Kiran Amegadjie",
+      "player_id": "00-0039822",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Joe Tryon-Shoyinka",
+      "player_id": "madden_26_21519",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Gervon Dexter Sr",
+      "player_id": "00-0039070",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Andrew Billings",
+      "player_id": "00-0033066",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Tremaine Edmunds",
+      "player_id": "00-0034673",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Jalen Reeves-Maybin",
+      "player_id": "madden_26_12832",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Nahshon Wright",
+      "player_id": "00-0036986",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Nick McCloud",
+      "player_id": "madden_26_21992",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Jaylon Jones",
+      "player_id": "00-0038407",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Jaquan Brisker",
+      "player_id": "00-0038135",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Kevin Byard III",
+      "player_id": "00-0033132",
+      "team": "CHI"
+    },
+    {
+      "full_name": "C.J. Gardner-Johnson",
+      "player_id": "00-0035253",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Jonathan Owens",
+      "player_id": "00-0034485",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Scott Daly",
+      "player_id": "00-0034067",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Zah Frazier",
+      "player_id": "madden_26_15301",
+      "team": "CHI"
+    },
+    {
+      "full_name": "Jake Browning",
+      "player_id": "00-0035100",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Mitchell Tinsley",
+      "player_id": "00-0038839",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Charlie Jones",
+      "player_id": "00-0038576",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Noah Fant",
+      "player_id": "00-0035644",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Lucas Patrick",
+      "player_id": "00-0033082",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Matt Lee",
+      "player_id": "madden_26_1161",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Cody Ford",
+      "player_id": "00-0035238",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Trey Hendrickson",
+      "player_id": "00-0033935",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Joseph Ossai",
+      "player_id": "00-0036902",
+      "team": "CIN"
+    },
+    {
+      "full_name": "T.J. Slaton",
+      "player_id": "madden_26_21889",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Jordan Jefferson",
+      "player_id": "madden_26_14881",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Brian Asamoah II",
+      "player_id": "madden_26_22190",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Joe Giles-Harris",
+      "player_id": "00-0035363",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Shaka Heyward",
+      "player_id": "00-0038890",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Cam Taylor-Britt",
+      "player_id": "00-0037753",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Dax Hill",
+      "player_id": "madden_26_22263",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Marco Wilson",
+      "player_id": "00-0036884",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Geno Stone",
+      "player_id": "00-0036199",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Daijahn Anthony",
+      "player_id": "00-0039414",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Tycen Anderson",
+      "player_id": "00-0037752",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Cam Sample",
+      "player_id": "madden_26_21687",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Isaiah Foskey",
+      "player_id": "madden_26_22917",
+      "team": "CIN"
+    },
+    {
+      "full_name": "Jerome Ford",
+      "player_id": "00-0037267",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Cedric Tillman",
+      "player_id": "00-0038979",
+      "team": "CLE"
+    },
+    {
+      "full_name": "DeAndre Carter",
+      "player_id": "madden_26_13859",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Jamari Thrash",
+      "player_id": "00-0039379",
+      "team": "CLE"
+    },
+    {
+      "full_name": "David Njoku",
+      "player_id": "00-0033885",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Brenden Bates",
+      "player_id": "00-0039458",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Cam Robinson",
+      "player_id": "madden_26_12557",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Cornelius Lucas III",
+      "player_id": "madden_26_2308",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Joel Bitonio",
+      "player_id": "madden_26_10831",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Ethan Pocic",
+      "player_id": "madden_26_12644",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Wyatt Teller",
+      "player_id": "00-0034399",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Jack Conklin",
+      "player_id": "madden_26_17663",
+      "team": "CLE"
+    },
+    {
+      "full_name": "KT Leveston",
+      "player_id": "00-0039755",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Myles Garrett",
+      "player_id": "00-0033868",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Cameron Thomas",
+      "player_id": "madden_26_22312",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Shelby Harris",
+      "player_id": "madden_26_2099",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Devin Bush",
+      "player_id": "00-0035525",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Jerome Baker",
+      "player_id": "madden_26_13200",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Mohamoud Diabate",
+      "player_id": "00-0038711",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Nathaniel Watson",
+      "player_id": "00-0039406",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Martin Emerson Jr",
+      "player_id": "00-0037250",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Sam Webb",
+      "player_id": "madden_26_22271",
+      "team": "CLE"
+    },
+    {
+      "full_name": "D'Angelo Ross",
+      "player_id": "00-0034966",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Rayshawn Jenkins",
+      "player_id": "madden_26_12690",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Chris Edmonds",
+      "player_id": "madden_26_4762",
+      "team": "CLE"
+    },
+    {
+      "full_name": "Joe Milton",
+      "player_id": "00-0039398",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Miles Sanders",
+      "player_id": "madden_26_20492",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Jaydon Blue",
+      "player_id": "madden_26_15051",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Jalen Tolbert",
+      "player_id": "00-0037666",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Nathan Thomas",
+      "player_id": "00-0039422",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Robert Jones",
+      "player_id": "00-0036596",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Brock Hoffman",
+      "player_id": "00-0037336",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Jadeveon Clowney",
+      "player_id": "madden_26_10845",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Dante Fowler Jr",
+      "player_id": "00-0032052",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Sam Williams",
+      "player_id": "00-0037665",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Osa Odighizuwa",
+      "player_id": "00-0036942",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Solomon Thomas",
+      "player_id": "00-0033870",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Logan Wilson",
+      "player_id": "madden_26_21148",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Jack Sanborn",
+      "player_id": "00-0037109",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Kenneth Murray Jr",
+      "player_id": "madden_26_20998",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Josh Butler",
+      "player_id": "00-0038348",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Trikweze Bridges",
+      "player_id": "madden_26_16155",
+      "team": "DAL"
+    },
+    {
+      "full_name": "C.J. Goodwin",
+      "player_id": "madden_26_2700",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Donovan Wilson",
+      "player_id": "madden_26_20713",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Juanyeh Thomas",
+      "player_id": "00-0037578",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Payton Turner",
+      "player_id": "00-0036926",
+      "team": "DAL"
+    },
+    {
+      "full_name": "Jaleel McLaughlin",
+      "player_id": "00-0038794",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Lucas Krull",
+      "player_id": "00-0037539",
+      "team": "DEN"
+    },
+    {
+      "full_name": "John Franklin-Myers",
+      "player_id": "00-0034805",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Dre Greenlaw",
+      "player_id": "00-0034982",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Drew Sanders",
+      "player_id": "00-0039003",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Reese Taylor",
+      "player_id": "00-0038521",
+      "team": "DEN"
+    },
+    {
+      "full_name": "P.J. Locke",
+      "player_id": "00-0035227",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Mitchell Fraboni",
+      "player_id": "00-0036943",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Sam Mustipher",
+      "player_id": "madden_26_20833",
+      "team": "DEN"
+    },
+    {
+      "full_name": "Kyle Allen",
+      "player_id": "00-0034577",
+      "team": "DET"
+    },
+    {
+      "full_name": "David Montgomery",
+      "player_id": "00-0035685",
+      "team": "DET"
+    },
+    {
+      "full_name": "Kalif Raymond",
+      "player_id": "00-0032464",
+      "team": "DET"
+    },
+    {
+      "full_name": "Dominic Lovett",
+      "player_id": "madden_26_15060",
+      "team": "DET"
+    },
+    {
+      "full_name": "Shane Zylstra",
+      "player_id": "madden_26_22633",
+      "team": "DET"
+    },
+    {
+      "full_name": "Taylor Decker",
+      "player_id": "madden_26_17665",
+      "team": "DET"
+    },
+    {
+      "full_name": "Graham Glasgow",
+      "player_id": "madden_26_17700",
+      "team": "DET"
+    },
+    {
+      "full_name": "Trystan Colon",
+      "player_id": "00-0035992",
+      "team": "DET"
+    },
+    {
+      "full_name": "Michael Niese",
+      "player_id": "madden_26_1336",
+      "team": "DET"
+    },
+    {
+      "full_name": "Colby Sorsdal",
+      "player_id": "00-0038592",
+      "team": "DET"
+    },
+    {
+      "full_name": "Al-Quadin Muhammad",
+      "player_id": "00-0033964",
+      "team": "DET"
+    },
+    {
+      "full_name": "Josh Paschal",
+      "player_id": "madden_26_22151",
+      "team": "DET"
+    },
+    {
+      "full_name": "Marcus Davenport",
+      "player_id": "madden_26_13102",
+      "team": "DET"
+    },
+    {
+      "full_name": "D.J. Reader",
+      "player_id": "00-0032424",
+      "team": "DET"
+    },
+    {
+      "full_name": "Levi Onwuzurike",
+      "player_id": "00-0036954",
+      "team": "DET"
+    },
+    {
+      "full_name": "Alex Anzalone",
+      "player_id": "00-0033914",
+      "team": "DET"
+    },
+    {
+      "full_name": "Zach Cunningham",
+      "player_id": "madden_26_12581",
+      "team": "DET"
+    },
+    {
+      "full_name": "Amik Robertson",
+      "player_id": "00-0036375",
+      "team": "DET"
+    },
+    {
+      "full_name": "Terrion Arnold",
+      "player_id": "00-0039903",
+      "team": "DET"
+    },
+    {
+      "full_name": "Arthur Maulet",
+      "player_id": "madden_26_12897",
+      "team": "DET"
+    },
+    {
+      "full_name": "Jalen Mills",
+      "player_id": "madden_26_17682",
+      "team": "DET"
+    },
+    {
+      "full_name": "Roy Lopez",
+      "player_id": "00-0036568",
+      "team": "DET"
+    },
+    {
+      "full_name": "Malik Willis",
+      "player_id": "00-0038128",
+      "team": "GB"
+    },
+    {
+      "full_name": "Desmond Ridder",
+      "player_id": "madden_26_22047",
+      "team": "GB"
+    },
+    {
+      "full_name": "Emanuel Wilson",
+      "player_id": "00-0038797",
+      "team": "GB"
+    },
+    {
+      "full_name": "Romeo Doubs",
+      "player_id": "00-0037816",
+      "team": "GB"
+    },
+    {
+      "full_name": "Dontayvion Wicks",
+      "player_id": "00-0038393",
+      "team": "GB"
+    },
+    {
+      "full_name": "Bo Melton",
+      "player_id": "00-0037091",
+      "team": "GB"
+    },
+    {
+      "full_name": "Rasheed Walker",
+      "player_id": "00-0037196",
+      "team": "GB"
+    },
+    {
+      "full_name": "Elgton Jenkins",
+      "player_id": "00-0035526",
+      "team": "GB"
+    },
+    {
+      "full_name": "Darian Kinnard",
+      "player_id": "00-0037194",
+      "team": "GB"
+    },
+    {
+      "full_name": "Rashan Gary",
+      "player_id": "00-0034967",
+      "team": "GB"
+    },
+    {
+      "full_name": "Kingsley Enagbare",
+      "player_id": "00-0037083",
+      "team": "GB"
+    },
+    {
+      "full_name": "Colby Wooden",
+      "player_id": "madden_26_22929",
+      "team": "GB"
+    },
+    {
+      "full_name": "Quay Walker",
+      "player_id": "00-0037074",
+      "team": "GB"
+    },
+    {
+      "full_name": "Kristian Welch",
+      "player_id": "madden_26_21434",
+      "team": "GB"
+    },
+    {
+      "full_name": "Nate Hobbs",
+      "player_id": "00-0036871",
+      "team": "GB"
+    },
+    {
+      "full_name": "Trevon Diggs",
+      "player_id": "madden_26_21260",
+      "team": "GB"
+    },
+    {
+      "full_name": "Shemar Bartholomew",
+      "player_id": "00-0039292",
+      "team": "GB"
+    },
+    {
+      "full_name": "Brandon McManus",
+      "player_id": "madden_26_2278",
+      "team": "GB"
+    },
+    {
+      "full_name": "Joe Mixon",
+      "player_id": "madden_26_12625",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Nick Chubb",
+      "player_id": "madden_26_13129",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Jawhar Jordan",
+      "player_id": "00-0039405",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Christian Kirk",
+      "player_id": "00-0034775",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Harrison Bryant",
+      "player_id": "00-0036232",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Jarrett Kingston",
+      "player_id": "00-0039832",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Jarrett Patterson",
+      "player_id": "00-0038615",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Juice Scruggs",
+      "player_id": "00-0038936",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Tytus Howard",
+      "player_id": "00-0035234",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Denico Autry",
+      "player_id": "madden_26_2366",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Derek Barnett",
+      "player_id": "madden_26_12530",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Folorunso Fatukasi",
+      "player_id": "madden_26_13294",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Tim Settle Jr",
+      "player_id": "madden_26_13123",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Christian Harris",
+      "player_id": "00-0037823",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Damone Clark",
+      "player_id": "00-0037281",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Jimmie Ward",
+      "player_id": "madden_26_12389",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Myles Bryant",
+      "player_id": "00-0036087",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Tommy Townsend",
+      "player_id": "00-0035889",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Justin Watson",
+      "player_id": "00-0034386",
+      "team": "HOU"
+    },
+    {
+      "full_name": "Philip Rivers",
+      "player_id": "madden_26_17273",
+      "team": "IND"
+    },
+    {
+      "full_name": "Ameer Abdullah",
+      "player_id": "00-0032104",
+      "team": "IND"
+    },
+    {
+      "full_name": "Salvon Ahmed",
+      "player_id": "madden_26_20930",
+      "team": "IND"
+    },
+    {
+      "full_name": "Michael Pittman Jr",
+      "player_id": "00-0036252",
+      "team": "IND"
+    },
+    {
+      "full_name": "Anthony Gould",
+      "player_id": "00-0039816",
+      "team": "IND"
+    },
+    {
+      "full_name": "Drew Ogletree",
+      "player_id": "madden_26_22482",
+      "team": "IND"
+    },
+    {
+      "full_name": "Danny Pinter",
+      "player_id": "00-0036215",
+      "team": "IND"
+    },
+    {
+      "full_name": "Braden Smith",
+      "player_id": "00-0034836",
+      "team": "IND"
+    },
+    {
+      "full_name": "Kwity Paye",
+      "player_id": "00-0036479",
+      "team": "IND"
+    },
+    {
+      "full_name": "Samson Ebukam",
+      "player_id": "00-0033945",
+      "team": "IND"
+    },
+    {
+      "full_name": "Neville Gallimore",
+      "player_id": "00-0036366",
+      "team": "IND"
+    },
+    {
+      "full_name": "Chris Wormley",
+      "player_id": "madden_26_12586",
+      "team": "IND"
+    },
+    {
+      "full_name": "Germaine Pratt",
+      "player_id": "madden_26_20424",
+      "team": "IND"
+    },
+    {
+      "full_name": "Zaire Franklin",
+      "player_id": "00-0034431",
+      "team": "IND"
+    },
+    {
+      "full_name": "Jacob Phillips",
+      "player_id": "madden_26_20997",
+      "team": "IND"
+    },
+    {
+      "full_name": "John Bullock",
+      "player_id": "madden_26_4734",
+      "team": "IND"
+    },
+    {
+      "full_name": "Kenny Moore II",
+      "player_id": "madden_26_12965",
+      "team": "IND"
+    },
+    {
+      "full_name": "Mekhi Blackmon",
+      "player_id": "00-0038565",
+      "team": "IND"
+    },
+    {
+      "full_name": "Jaylon Jones",
+      "player_id": "madden_26_23032",
+      "team": "IND"
+    },
+    {
+      "full_name": "Nick Cross",
+      "player_id": "00-0037616",
+      "team": "IND"
+    },
+    {
+      "full_name": "Rodney Thomas II",
+      "player_id": "madden_26_22492",
+      "team": "IND"
+    },
+    {
+      "full_name": "George Odum",
+      "player_id": "madden_26_13713",
+      "team": "IND"
+    },
+    {
+      "full_name": "Blake Grupe",
+      "player_id": "00-0038905",
+      "team": "IND"
+    },
+    {
+      "full_name": "Nick Mullens",
+      "player_id": "00-0033319",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Travis Etienne Jr",
+      "player_id": "00-0036973",
+      "team": "JAX"
+    },
+    {
+      "full_name": "DeeJay Dallas",
+      "player_id": "00-0036425",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Tim Patrick",
+      "player_id": "00-0033375",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Dyami Brown",
+      "player_id": "00-0036626",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Johnny Mundt",
+      "player_id": "madden_26_13038",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Hunter Long",
+      "player_id": "00-0037004",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Chuma Edoga",
+      "player_id": "00-0035698",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Emmanuel Ogbah",
+      "player_id": "madden_26_17686",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Dawuane Smoot",
+      "player_id": "madden_26_12596",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Austin Johnson",
+      "player_id": "madden_26_17742",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Maason Smith",
+      "player_id": "00-0039889",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Devin Lloyd",
+      "player_id": "00-0037244",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Jack Kiser",
+      "player_id": "00-0040723",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Yasir Abdullah",
+      "player_id": "00-0038580",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Greg Newsome II",
+      "player_id": "00-0036996",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Keith Taylor",
+      "player_id": "00-0036561",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Andrew Wingard",
+      "player_id": "00-0035378",
+      "team": "JAX"
+    },
+    {
+      "full_name": "Gardner Minshew",
+      "player_id": "00-0035289",
+      "team": "KC"
+    },
+    {
+      "full_name": "Chris Oladokun",
+      "player_id": "madden_26_22480",
+      "team": "KC"
+    },
+    {
+      "full_name": "Kareem Hunt",
+      "player_id": "madden_26_12633",
+      "team": "KC"
+    },
+    {
+      "full_name": "Isiah Pacheco",
+      "player_id": "00-0037197",
+      "team": "KC"
+    },
+    {
+      "full_name": "Dameon Pierce",
+      "player_id": "00-0037258",
+      "team": "KC"
+    },
+    {
+      "full_name": "Marquise Brown",
+      "player_id": "00-0035662",
+      "team": "KC"
+    },
+    {
+      "full_name": "JuJu Smith-Schuster",
+      "player_id": "00-0033857",
+      "team": "KC"
+    },
+    {
+      "full_name": "Wanya Morris",
+      "player_id": "00-0038981",
+      "team": "KC"
+    },
+    {
+      "full_name": "Jawaan Taylor",
+      "player_id": "00-0035237",
+      "team": "KC"
+    },
+    {
+      "full_name": "Mike Danna",
+      "player_id": "madden_26_21231",
+      "team": "KC"
+    },
+    {
+      "full_name": "Charles Omenihu",
+      "player_id": "madden_26_20403",
+      "team": "KC"
+    },
+    {
+      "full_name": "Derrick Nnadi",
+      "player_id": "madden_26_13136",
+      "team": "KC"
+    },
+    {
+      "full_name": "Mike Pennel",
+      "player_id": "madden_26_2276",
+      "team": "KC"
+    },
+    {
+      "full_name": "Jerry Tillery",
+      "player_id": "00-0035674",
+      "team": "KC"
+    },
+    {
+      "full_name": "Leo Chenal",
+      "player_id": "00-0037819",
+      "team": "KC"
+    },
+    {
+      "full_name": "Trent McDuffie",
+      "player_id": "00-0037191",
+      "team": "KC"
+    },
+    {
+      "full_name": "Jaylen Watson",
+      "player_id": "00-0037195",
+      "team": "KC"
+    },
+    {
+      "full_name": "Joshua Williams",
+      "player_id": "00-0038043",
+      "team": "KC"
+    },
+    {
+      "full_name": "Nazeeh Johnson",
+      "player_id": "madden_26_22495",
+      "team": "KC"
+    },
+    {
+      "full_name": "Bryan Cook",
+      "player_id": "00-0037193",
+      "team": "KC"
+    },
+    {
+      "full_name": "Mike Edwards",
+      "player_id": "madden_26_20457",
+      "team": "KC"
+    },
+    {
+      "full_name": "Geno Smith",
+      "player_id": "00-0030565",
+      "team": "LV"
+    },
+    {
+      "full_name": "Kenny Pickett",
+      "player_id": "00-0038102",
+      "team": "LV"
+    },
+    {
+      "full_name": "Raheem Mostert",
+      "player_id": "madden_26_2832",
+      "team": "LV"
+    },
+    {
+      "full_name": "Zamir White",
+      "player_id": "madden_26_22340",
+      "team": "LV"
+    },
+    {
+      "full_name": "Tyler Lockett",
+      "player_id": "madden_26_2448",
+      "team": "LV"
+    },
+    {
+      "full_name": "Alex Bachman",
+      "player_id": "madden_26_20806",
+      "team": "LV"
+    },
+    {
+      "full_name": "Dylan Parham",
+      "player_id": "00-0037255",
+      "team": "LV"
+    },
+    {
+      "full_name": "Jordan Meredith",
+      "player_id": "00-0036604",
+      "team": "LV"
+    },
+    {
+      "full_name": "Will Putnam",
+      "player_id": "madden_26_4707",
+      "team": "LV"
+    },
+    {
+      "full_name": "Alex Cappa",
+      "player_id": "madden_26_13297",
+      "team": "LV"
+    },
+    {
+      "full_name": "Stone Forsythe",
+      "player_id": "00-0036653",
+      "team": "LV"
+    },
+    {
+      "full_name": "Tyree Wilson",
+      "player_id": "00-0038541",
+      "team": "LV"
+    },
+    {
+      "full_name": "Charles Snowden",
+      "player_id": "madden_26_21477",
+      "team": "LV"
+    },
+    {
+      "full_name": "Elandon Roberts",
+      "player_id": "madden_26_17854",
+      "team": "LV"
+    },
+    {
+      "full_name": "Devin White",
+      "player_id": "madden_26_20581",
+      "team": "LV"
+    },
+    {
+      "full_name": "Jamal Adams",
+      "player_id": "madden_26_12524",
+      "team": "LV"
+    },
+    {
+      "full_name": "Jon Rhattigan",
+      "player_id": "00-0036802",
+      "team": "LV"
+    },
+    {
+      "full_name": "Kyu Blu Kelly",
+      "player_id": "madden_26_23040",
+      "team": "LV"
+    },
+    {
+      "full_name": "Darnay Holmes",
+      "player_id": "00-0036394",
+      "team": "LV"
+    },
+    {
+      "full_name": "Decamerion Richardson",
+      "player_id": "00-0039357",
+      "team": "LV"
+    },
+    {
+      "full_name": "Lonnie Johnson Jr",
+      "player_id": "00-0035244",
+      "team": "LV"
+    },
+    {
+      "full_name": "Daniel Carlson",
+      "player_id": "madden_26_13382",
+      "team": "LV"
+    },
+    {
+      "full_name": "Jacob Bobenmoyer",
+      "player_id": "madden_26_24435",
+      "team": "LV"
+    },
+    {
+      "full_name": "Najee Harris",
+      "player_id": "madden_26_21829",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Keenan Allen",
+      "player_id": "madden_26_505",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Will Dissly",
+      "player_id": "madden_26_13392",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Tyler Conklin",
+      "player_id": "00-0034270",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Zion Johnson",
+      "player_id": "00-0037818",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Bradley Bozeman",
+      "player_id": "madden_26_13133",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Andre James",
+      "player_id": "madden_26_20672",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Mekhi Becton Sr",
+      "player_id": "madden_26_20969",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Jamaree Salyer",
+      "player_id": "00-0037295",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Odafe Oweh",
+      "player_id": "00-0036940",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Da'Shawn Hand",
+      "player_id": "madden_26_13241",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Junior Colson",
+      "player_id": "00-0039346",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Benjamin St-Juste",
+      "player_id": "00-0036625",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Nikko Reed",
+      "player_id": "00-0040471",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Hassan Haskins",
+      "player_id": "madden_26_22053",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Kyle Kennard",
+      "player_id": "madden_26_15183",
+      "team": "LAC"
+    },
+    {
+      "full_name": "Jimmy Garoppolo",
+      "player_id": "madden_26_10866",
+      "team": "LA"
+    },
+    {
+      "full_name": "Jarquez Hunter",
+      "player_id": "00-0040692",
+      "team": "LA"
+    },
+    {
+      "full_name": "D.J. Humphries",
+      "player_id": "madden_26_2500",
+      "team": "LA"
+    },
+    {
+      "full_name": "Justin Dedich",
+      "player_id": "madden_26_22864",
+      "team": "LA"
+    },
+    {
+      "full_name": "Rob Havenstein",
+      "player_id": "madden_26_2512",
+      "team": "LA"
+    },
+    {
+      "full_name": "Jared Verse",
+      "player_id": "00-0039852",
+      "team": "LA"
+    },
+    {
+      "full_name": "Nick Hampton",
+      "player_id": "madden_26_22979",
+      "team": "LA"
+    },
+    {
+      "full_name": "Troy Reeder",
+      "player_id": "madden_26_20838",
+      "team": "LA"
+    },
+    {
+      "full_name": "Cobie Durant",
+      "player_id": "00-0037839",
+      "team": "LA"
+    },
+    {
+      "full_name": "Roger McCreary",
+      "player_id": "00-0038125",
+      "team": "LA"
+    },
+    {
+      "full_name": "Ahkello Witherspoon",
+      "player_id": "00-0033783",
+      "team": "LA"
+    },
+    {
+      "full_name": "Darious Williams",
+      "player_id": "madden_26_13178",
+      "team": "LA"
+    },
+    {
+      "full_name": "Derion Kendrick",
+      "player_id": "00-0037842",
+      "team": "LA"
+    },
+    {
+      "full_name": "Kamren Curl",
+      "player_id": "madden_26_21012",
+      "team": "LA"
+    },
+    {
+      "full_name": "Harrison Mevis",
+      "player_id": "00-0039498",
+      "team": "LA"
+    },
+    {
+      "full_name": "Jake McQuaide",
+      "player_id": "madden_26_10983",
+      "team": "LA"
+    },
+    {
+      "full_name": "Davis Allen",
+      "player_id": "madden_26_22840",
+      "team": "LA"
+    },
+    {
+      "full_name": "Tua Tagovailoa",
+      "player_id": "00-0036212",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Zach Wilson",
+      "player_id": "00-0037013",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Quinn Ewers",
+      "player_id": "00-0040234",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Alexander Mattison",
+      "player_id": "madden_26_20641",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Alec Ingold",
+      "player_id": "madden_26_20390",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Tyreek Hill",
+      "player_id": "madden_26_17838",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Jaylen Waddle",
+      "player_id": "00-0036613",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Nick Westbrook-Ikhine",
+      "player_id": "00-0036182",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Cedrick Wilson Jr",
+      "player_id": "00-0034418",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Dee Eskridge",
+      "player_id": "madden_26_21614",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Darren Waller",
+      "player_id": "madden_26_2457",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Julian Hill",
+      "player_id": "00-0038720",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Kendall Lamm",
+      "player_id": "madden_26_2807",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Liam Eichenberg",
+      "player_id": "madden_26_21650",
+      "team": "MIA"
+    },
+    {
+      "full_name": "James Daniels",
+      "player_id": "madden_26_13137",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Cole Strange",
+      "player_id": "00-0038103",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Larry Borom",
+      "player_id": "00-0036905",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Bradley Chubb",
+      "player_id": "00-0034832",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Cameron Goode",
+      "player_id": "madden_26_21898",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Quinton Bell",
+      "player_id": "madden_26_20743",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Benito Jones",
+      "player_id": "madden_26_21132",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Tyrel Dodson",
+      "player_id": "00-0035352",
+      "team": "MIA"
+    },
+    {
+      "full_name": "K.J. Britt",
+      "player_id": "00-0036643",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Jordan Colbert",
+      "player_id": "madden_26_4748",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Rasul Douglas",
+      "player_id": "madden_26_12609",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Kader Kohou",
+      "player_id": "00-0037353",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Jack Jones",
+      "player_id": "00-0038039",
+      "team": "MIA"
+    },
+    {
+      "full_name": "JuJu Brents",
+      "player_id": "madden_26_23062",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Artie Burns",
+      "player_id": "madden_26_17657",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Minkah Fitzpatrick",
+      "player_id": "00-0034789",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Ifeatu Melifonwu",
+      "player_id": "madden_26_21471",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Ashtyn Davis",
+      "player_id": "00-0036329",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Jason Sanders",
+      "player_id": "00-0034794",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Jake Bailey",
+      "player_id": "00-0035280",
+      "team": "MIA"
+    },
+    {
+      "full_name": "Joe Cardona",
+      "player_id": "00-0032228",
+      "team": "MIA"
+    },
+    {
+      "full_name": "John Wolford",
+      "player_id": "madden_26_21367",
+      "team": "MIN"
+    },
+    {
+      "full_name": "C.J. Ham",
+      "player_id": "00-0032918",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Ty Chandler",
+      "player_id": "00-0037276",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Jalen Nailor",
+      "player_id": "00-0037291",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Rondale Moore",
+      "player_id": "madden_26_21600",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Justin Skule",
+      "player_id": "00-0034989",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Ryan Kelly",
+      "player_id": "madden_26_17679",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Walter Rouse",
+      "player_id": "00-0039828",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Jonathan Greenard",
+      "player_id": "00-0036224",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Jonathan Allen",
+      "player_id": "00-0033523",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Javon Hargrave",
+      "player_id": "00-0033109",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Fabian Moreau",
+      "player_id": "madden_26_12724",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Jeff Okudah",
+      "player_id": "madden_26_21010",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Dwight McGlothern",
+      "player_id": "00-0039714",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Tavierre Thomas",
+      "player_id": "00-0034488",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Ryan Wright",
+      "player_id": "00-0037500",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Zavier Scott",
+      "player_id": "00-0038440",
+      "team": "MIN"
+    },
+    {
+      "full_name": "Joshua Dobbs",
+      "player_id": "madden_26_12708",
+      "team": "NE"
+    },
+    {
+      "full_name": "Antonio Gibson",
+      "player_id": "madden_26_21048",
+      "team": "NE"
+    },
+    {
+      "full_name": "Jack Westover",
+      "player_id": "madden_26_4728",
+      "team": "NE"
+    },
+    {
+      "full_name": "Stefon Diggs",
+      "player_id": "madden_26_2454",
+      "team": "NE"
+    },
+    {
+      "full_name": "Kayshon Boutte",
+      "player_id": "00-0038608",
+      "team": "NE"
+    },
+    {
+      "full_name": "Austin Hooper",
+      "player_id": "00-0032392",
+      "team": "NE"
+    },
+    {
+      "full_name": "CJ Dippre",
+      "player_id": "madden_26_15111",
+      "team": "NE"
+    },
+    {
+      "full_name": "Vederian Lowe",
+      "player_id": "00-0037287",
+      "team": "NE"
+    },
+    {
+      "full_name": "Caedan Wallace",
+      "player_id": "00-0039863",
+      "team": "NE"
+    },
+    {
+      "full_name": "Garrett Bradbury",
+      "player_id": "00-0035588",
+      "team": "NE"
+    },
+    {
+      "full_name": "Thayer Munford Jr",
+      "player_id": "madden_26_21844",
+      "team": "NE"
+    },
+    {
+      "full_name": "Anfernee Jennings",
+      "player_id": "00-0036193",
+      "team": "NE"
+    },
+    {
+      "full_name": "K'Lavon Chaisson",
+      "player_id": "00-0036286",
+      "team": "NE"
+    },
+    {
+      "full_name": "Bradyn Swinson",
+      "player_id": "madden_26_15173",
+      "team": "NE"
+    },
+    {
+      "full_name": "Khyiris Tonga",
+      "player_id": "00-0036909",
+      "team": "NE"
+    },
+    {
+      "full_name": "Jahlani Tavai",
+      "player_id": "madden_26_20592",
+      "team": "NE"
+    },
+    {
+      "full_name": "Jack Gibbens",
+      "player_id": "00-0037596",
+      "team": "NE"
+    },
+    {
+      "full_name": "Marte Mapu",
+      "player_id": "00-0039054",
+      "team": "NE"
+    },
+    {
+      "full_name": "Chad Muma",
+      "player_id": "00-0037811",
+      "team": "NE"
+    },
+    {
+      "full_name": "Alex Austin",
+      "player_id": "00-0038646",
+      "team": "NE"
+    },
+    {
+      "full_name": "Marcellas Dial Jr",
+      "player_id": "00-0039390",
+      "team": "NE"
+    },
+    {
+      "full_name": "Kobee Minor",
+      "player_id": "madden_26_16154",
+      "team": "NE"
+    },
+    {
+      "full_name": "Jaylinn Hawkins",
+      "player_id": "00-0036302",
+      "team": "NE"
+    },
+    {
+      "full_name": "Jaquelin Roy",
+      "player_id": "madden_26_22923",
+      "team": "NE"
+    },
+    {
+      "full_name": "Devin Neal",
+      "player_id": "madden_26_14835",
+      "team": "NO"
+    },
+    {
+      "full_name": "Ja'Lynn Polk",
+      "player_id": "madden_26_14655",
+      "team": "NO"
+    },
+    {
+      "full_name": "Trey Palmer",
+      "player_id": "00-0039052",
+      "team": "NO"
+    },
+    {
+      "full_name": "Dante Pettis",
+      "player_id": "madden_26_13222",
+      "team": "NO"
+    },
+    {
+      "full_name": "Taysom Hill",
+      "player_id": "madden_26_12922",
+      "team": "NO"
+    },
+    {
+      "full_name": "Foster Moreau",
+      "player_id": "00-0034981",
+      "team": "NO"
+    },
+    {
+      "full_name": "Luke Fortner",
+      "player_id": "00-0037814",
+      "team": "NO"
+    },
+    {
+      "full_name": "Jonathan Bullard",
+      "player_id": "00-0033093",
+      "team": "NO"
+    },
+    {
+      "full_name": "Demario Davis",
+      "player_id": "00-0029607",
+      "team": "NO"
+    },
+    {
+      "full_name": "Alontae Taylor",
+      "player_id": "00-0038121",
+      "team": "NO"
+    },
+    {
+      "full_name": "Ugo Amadi",
+      "player_id": "madden_26_20623",
+      "team": "NO"
+    },
+    {
+      "full_name": "Isaac Yiadom",
+      "player_id": "00-0034780",
+      "team": "NO"
+    },
+    {
+      "full_name": "Michael Davis",
+      "player_id": "madden_26_13007",
+      "team": "NO"
+    },
+    {
+      "full_name": "Charlie Smyth",
+      "player_id": "00-0039229",
+      "team": "NO"
+    },
+    {
+      "full_name": "Kai Kroeger",
+      "player_id": "00-0040654",
+      "team": "NO"
+    },
+    {
+      "full_name": "Terrell Burgess",
+      "player_id": "00-0036421",
+      "team": "NO"
+    },
+    {
+      "full_name": "Bub Means",
+      "player_id": "00-0039386",
+      "team": "NO"
+    },
+    {
+      "full_name": "Jonah Williams",
+      "player_id": "madden_26_21996",
+      "team": "NO"
+    },
+    {
+      "full_name": "Russell Wilson",
+      "player_id": "madden_26_11217",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Eric Gray",
+      "player_id": "madden_26_22736",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Wan'Dale Robinson",
+      "player_id": "00-0038117",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Darius Slayton",
+      "player_id": "00-0035535",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Isaiah Hodgins",
+      "player_id": "madden_26_20937",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Jalin Hyatt",
+      "player_id": "madden_26_22696",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Bryce Ford-Wheaton",
+      "player_id": "madden_26_22795",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Daniel Bellinger",
+      "player_id": "00-0038115",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Joshua Ezeudu",
+      "player_id": "00-0037807",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Austin Schlottmann",
+      "player_id": "00-0034112",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Greg Van Roten",
+      "player_id": "madden_26_11842",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Evan Neal",
+      "player_id": "00-0037612",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Dexter Lawrence II",
+      "player_id": "00-0035683",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Rakeem Nunez-Roches Sr",
+      "player_id": "00-0031957",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Bobby Okereke",
+      "player_id": "madden_26_20425",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Darius Muasau",
+      "player_id": "00-0039829",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Neville Hewitt",
+      "player_id": "madden_26_2816",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Chris Board",
+      "player_id": "madden_26_13850",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Cor'Dale Flott",
+      "player_id": "00-0037758",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Dru Phillips",
+      "player_id": "madden_26_14968",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Dane Belton",
+      "player_id": "00-0038123",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Beau Brade",
+      "player_id": "madden_26_14952",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Graham Gano",
+      "player_id": "madden_26_28887",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Jamie Gillan",
+      "player_id": "madden_26_20794",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Casey Kreiter",
+      "player_id": "00-0030957",
+      "team": "NYG"
+    },
+    {
+      "full_name": "Justin Fields",
+      "player_id": "00-0036945",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Tyrod Taylor",
+      "player_id": "00-0028118",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Brady Cook",
+      "player_id": "madden_26_14784",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Khalil Herbert",
+      "player_id": "madden_26_21628",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Josh Reynolds",
+      "player_id": "madden_26_12662",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "John Metchie III",
+      "player_id": "madden_26_22361",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Tyler Johnson",
+      "player_id": "00-0036427",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "John Simpson",
+      "player_id": "00-0036369",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Alijah Vera-Tucker",
+      "player_id": "00-0036979",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Xavier Newman",
+      "player_id": "madden_26_22429",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Jermaine Johnson II",
+      "player_id": "00-0037663",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Micheal Clemons",
+      "player_id": "00-0038107",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Mazi Smith",
+      "player_id": "madden_26_22931",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Khalen Saunders",
+      "player_id": "madden_26_20409",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Quincy Williams",
+      "player_id": "00-0035680",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Mykal Walker",
+      "player_id": "00-0036300",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Kobe King",
+      "player_id": "00-0040214",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Cam Jones",
+      "player_id": "madden_26_23020",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Ja'Sir Taylor",
+      "player_id": "00-0037307",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Kris Boyd",
+      "player_id": "madden_26_20449",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Tony Adams",
+      "player_id": "00-0037155",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Isaiah Oliver",
+      "player_id": "00-0034357",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Nick Folk",
+      "player_id": "00-0025565",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Jay Tufele",
+      "player_id": "00-0036881",
+      "team": "NYJ"
+    },
+    {
+      "full_name": "Sam Howell",
+      "player_id": "00-0037077",
+      "team": "PHI"
+    },
+    {
+      "full_name": "A.J. Dillon",
+      "player_id": "00-0036265",
+      "team": "PHI"
+    },
+    {
+      "full_name": "A.J. Brown",
+      "player_id": "00-0035676",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Jahan Dotson",
+      "player_id": "00-0037741",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Britain Covey",
+      "player_id": "00-0037132",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Kylen Granson",
+      "player_id": "00-0036876",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Brett Toth",
+      "player_id": "00-0035743",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Willie Lampkin IV",
+      "player_id": "madden_26_4639",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Matt Pryor",
+      "player_id": "00-0034417",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Jaelan Phillips",
+      "player_id": "00-0036934",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Brandon Graham",
+      "player_id": "madden_26_9837",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Joshua Uche",
+      "player_id": "00-0036159",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Nakobe Dean",
+      "player_id": "00-0037615",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Jaire Alexander",
+      "player_id": "madden_26_13109",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Adoree' Jackson",
+      "player_id": "madden_26_12563",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Reed Blankenship",
+      "player_id": "00-0037130",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Sydney Brown",
+      "player_id": "00-0039002",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Charley Hughlett",
+      "player_id": "madden_26_2769",
+      "team": "PHI"
+    },
+    {
+      "full_name": "Skylar Thompson",
+      "player_id": "madden_26_22385",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Kenneth Gainwell",
+      "player_id": "00-0036919",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Kaleb Johnson",
+      "player_id": "00-0040142",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Calvin Austin",
+      "player_id": "00-0037837",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Adam Thielen",
+      "player_id": "00-0030035",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Marquez Valdes-Scantling",
+      "player_id": "00-0034272",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Jonnu Smith",
+      "player_id": "madden_26_12700",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Andrus Peat",
+      "player_id": "madden_26_2498",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Broderick Jones",
+      "player_id": "00-0039109",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Isaac Seumalo",
+      "player_id": "00-0032954",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Calvin Anderson",
+      "player_id": "madden_26_20365",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Dean Lowry",
+      "player_id": "00-0032412",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Malik Harrison",
+      "player_id": "00-0036280",
+      "team": "PIT"
+    },
+    {
+      "full_name": "James Pierre",
+      "player_id": "00-0035795",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Cory Trice Jr",
+      "player_id": "madden_26_23149",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Chuck Clark",
+      "player_id": "madden_26_12785",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Kyle Dugger",
+      "player_id": "00-0036231",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Corliss Waitman",
+      "player_id": "00-0035821",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Jabrill Peppers",
+      "player_id": "madden_26_12531",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Daniel Ekuale",
+      "player_id": "madden_26_13552",
+      "team": "PIT"
+    },
+    {
+      "full_name": "Brian Robinson Jr",
+      "player_id": "00-0037746",
+      "team": "SF"
+    },
+    {
+      "full_name": "Jauan Jennings",
+      "player_id": "00-0036259",
+      "team": "SF"
+    },
+    {
+      "full_name": "Kendrick Bourne",
+      "player_id": "00-0033307",
+      "team": "SF"
+    },
+    {
+      "full_name": "Skyy Moore",
+      "player_id": "00-0038090",
+      "team": "SF"
+    },
+    {
+      "full_name": "Spencer Burford",
+      "player_id": "00-0037829",
+      "team": "SF"
+    },
+    {
+      "full_name": "Ben Bartch",
+      "player_id": "00-0036272",
+      "team": "SF"
+    },
+    {
+      "full_name": "Matt Hennessy",
+      "player_id": "00-0036295",
+      "team": "SF"
+    },
+    {
+      "full_name": "Bryce Huff",
+      "player_id": "madden_26_21239",
+      "team": "SF"
+    },
+    {
+      "full_name": "Yetur Gross-Matos",
+      "player_id": "madden_26_20995",
+      "team": "SF"
+    },
+    {
+      "full_name": "Kevin Givens",
+      "player_id": "madden_26_20682",
+      "team": "SF"
+    },
+    {
+      "full_name": "Jordan Elliott",
+      "player_id": "00-0036266",
+      "team": "SF"
+    },
+    {
+      "full_name": "Dee Winters",
+      "player_id": "00-0038625",
+      "team": "SF"
+    },
+    {
+      "full_name": "Eric Kendricks",
+      "player_id": "madden_26_2559",
+      "team": "SF"
+    },
+    {
+      "full_name": "Darrell Luter Jr",
+      "player_id": "madden_26_23086",
+      "team": "SF"
+    },
+    {
+      "full_name": "Chase Lucas",
+      "player_id": "00-0037321",
+      "team": "SF"
+    },
+    {
+      "full_name": "Jason Pinnock",
+      "player_id": "00-0036502",
+      "team": "SF"
+    },
+    {
+      "full_name": "Thomas Morstead",
+      "player_id": "madden_26_20305",
+      "team": "SF"
+    },
+    {
+      "full_name": "Clelin Ferrell",
+      "player_id": "madden_26_20567",
+      "team": "SF"
+    },
+    {
+      "full_name": "Kenneth Walker III",
+      "player_id": "00-0038134",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Dareke Young",
+      "player_id": "00-0037093",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Amari Kight",
+      "player_id": "madden_26_4700",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Bryce Cabeldue",
+      "player_id": "00-0040650",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Boye Mafe",
+      "player_id": "00-0038133",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Tariq Woolen",
+      "player_id": "madden_26_22247",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Coby Bryant",
+      "player_id": "00-0038136",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Kenny McIntosh",
+      "player_id": "00-0038636",
+      "team": "SEA"
+    },
+    {
+      "full_name": "Teddy Bridgewater",
+      "player_id": "00-0031237",
+      "team": "TB"
+    },
+    {
+      "full_name": "Connor Bazelak",
+      "player_id": "00-0040415",
+      "team": "TB"
+    },
+    {
+      "full_name": "Rachaad White",
+      "player_id": "00-0037256",
+      "team": "TB"
+    },
+    {
+      "full_name": "Mike Evans",
+      "player_id": "00-0031408",
+      "team": "TB"
+    },
+    {
+      "full_name": "Sterling Shepard",
+      "player_id": "madden_26_17592",
+      "team": "TB"
+    },
+    {
+      "full_name": "Charlie Heck",
+      "player_id": "00-0036195",
+      "team": "TB"
+    },
+    {
+      "full_name": "Michael Jordan",
+      "player_id": "madden_26_20541",
+      "team": "TB"
+    },
+    {
+      "full_name": "Haason Reddick",
+      "player_id": "madden_26_12560",
+      "team": "TB"
+    },
+    {
+      "full_name": "Chris Braswell",
+      "player_id": "00-0039902",
+      "team": "TB"
+    },
+    {
+      "full_name": "Logan Hall",
+      "player_id": "00-0038127",
+      "team": "TB"
+    },
+    {
+      "full_name": "Greg Gaines",
+      "player_id": "madden_26_20408",
+      "team": "TB"
+    },
+    {
+      "full_name": "Lavonte David",
+      "player_id": "madden_26_11306",
+      "team": "TB"
+    },
+    {
+      "full_name": "Anthony Walker Jr",
+      "player_id": "madden_26_12598",
+      "team": "TB"
+    },
+    {
+      "full_name": "Deion Jones",
+      "player_id": "madden_26_17677",
+      "team": "TB"
+    },
+    {
+      "full_name": "Jamel Dean",
+      "player_id": "00-0035699",
+      "team": "TB"
+    },
+    {
+      "full_name": "Christian Izien",
+      "player_id": "madden_26_23287",
+      "team": "TB"
+    },
+    {
+      "full_name": "Kindle Vildor",
+      "player_id": "00-0036307",
+      "team": "TB"
+    },
+    {
+      "full_name": "JJ Roberts",
+      "player_id": "madden_26_4614",
+      "team": "TB"
+    },
+    {
+      "full_name": "Rashad Wisdom",
+      "player_id": "00-0039596",
+      "team": "TB"
+    },
+    {
+      "full_name": "Elijah Klein",
+      "player_id": "00-0039411",
+      "team": "TB"
+    },
+    {
+      "full_name": "Will Levis",
+      "player_id": "00-0039152",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Brandon Allen",
+      "player_id": "00-0032434",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Kalel Mullings",
+      "player_id": "00-0040205",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Van Jefferson",
+      "player_id": "00-0036415",
+      "team": "TEN"
+    },
+    {
+      "full_name": "James Proche II",
+      "player_id": "madden_26_21082",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Bryce Oliver",
+      "player_id": "00-0039650",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Chigoziem Okonkwo",
+      "player_id": "madden_26_22347",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Olisaemeka Udoh",
+      "player_id": "00-0034994",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Lloyd Cushenberry III",
+      "player_id": "00-0036391",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Corey Levin",
+      "player_id": "00-0033793",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Kevin Zeitler",
+      "player_id": "madden_26_11489",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Blake Hance",
+      "player_id": "madden_26_21479",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Arden Key",
+      "player_id": "00-0034825",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Jihad Ward",
+      "player_id": "madden_26_17692",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Ali Gaye",
+      "player_id": "00-0038724",
+      "team": "TEN"
+    },
+    {
+      "full_name": "T'Vondre Sweat",
+      "player_id": "00-0039886",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Sebastian Joseph-Day",
+      "player_id": "madden_26_13466",
+      "team": "TEN"
+    },
+    {
+      "full_name": "James Lynch",
+      "player_id": "madden_26_20988",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Joe Bachie",
+      "player_id": "madden_26_21276",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Dorian Mausi Jr",
+      "player_id": "madden_26_4620",
+      "team": "TEN"
+    },
+    {
+      "full_name": "L'Jarius Sneed",
+      "player_id": "00-0036374",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Darrell Baker",
+      "player_id": "00-0037549",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Kaiir Elam",
+      "player_id": "00-0037242",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Jalyn Armour-Davis",
+      "player_id": "madden_26_22254",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Xavier Woods",
+      "player_id": "madden_26_12846",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Erick Hallett II",
+      "player_id": "00-0038620",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Johnny Hekker",
+      "player_id": "00-0028872",
+      "team": "TEN"
+    },
+    {
+      "full_name": "Josh Johnson",
+      "player_id": "madden_26_28334",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Austin Ekeler",
+      "player_id": "madden_26_12948",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Chris Rodriguez Jr",
+      "player_id": "00-0038611",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Deebo Samuel Sr",
+      "player_id": "madden_26_20348",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Noah Brown",
+      "player_id": "madden_26_12645",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Chris Moore",
+      "player_id": "madden_26_17628",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Zach Ertz",
+      "player_id": "madden_26_857",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Trent Scott",
+      "player_id": "00-0034571",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Tyler Biadasz",
+      "player_id": "00-0036376",
+      "team": "WAS"
+    },
+    {
+      "full_name": "George Fant",
+      "player_id": "madden_26_12448",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Von Miller",
+      "player_id": "madden_26_10737",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Preston Smith",
+      "player_id": "madden_26_2534",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Jacob Martin",
+      "player_id": "00-0034163",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Eddie Goldman",
+      "player_id": "madden_26_2546",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Bobby Wagner",
+      "player_id": "madden_26_11567",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Nick Bellore",
+      "player_id": "madden_26_10939",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Ale Kaho",
+      "player_id": "madden_26_4735",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Marshon Lattimore",
+      "player_id": "madden_26_12528",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Jonathan Jones",
+      "player_id": "madden_26_17711",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Antonio Hamilton Sr",
+      "player_id": "00-0032933",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Noah Igbinoghene",
+      "player_id": "00-0036287",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Will Harris",
+      "player_id": "00-0035655",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Jake Moody",
+      "player_id": "00-0038562",
+      "team": "WAS"
+    },
+    {
+      "full_name": "Deatrich Wise Jr",
+      "player_id": "madden_26_12607",
+      "team": "WAS"
+    }
+  ]
+}

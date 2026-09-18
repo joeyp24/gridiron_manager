@@ -473,13 +473,13 @@ static func _projected_payroll(
 		var player := team.player_by_id(str(player_id))
 		if player == null or player.contract == null:
 			continue
-		projected -= player.contract.annual_salary
-		projected += player.contract.trade_penalty()
+		projected -= player.contract.cap_hit_for_year(team.salary_cap_year)
+		projected += player.contract.trade_penalty(team.salary_cap_year)
 	if incoming_team != null:
 		for player_id in incoming_ids:
 			var player := incoming_team.player_by_id(str(player_id))
 			if player != null and player.contract != null:
-				projected += player.contract.annual_salary
+				projected += player.contract.cap_hit_for_year(team.salary_cap_year)
 	return projected
 
 
@@ -573,7 +573,7 @@ static func _package_label(labels: Array[String]) -> String:
 static func _apply_trade_contract_charge(team: TeamData, player: PlayerData) -> void:
 	if player.contract == null:
 		return
-	var penalty := player.contract.trade_penalty()
+	var penalty := player.contract.trade_penalty(team.salary_cap_year)
 	team.dead_cap += penalty
 	player.contract.guaranteed_money = maxi(player.contract.guaranteed_money - penalty, 0)
 

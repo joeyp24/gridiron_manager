@@ -9,6 +9,12 @@ SPEC = importlib.util.spec_from_file_location("nflverse_importer", ROOT / "tools
 IMPORTER = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(IMPORTER)
+CONTRACT_SPEC = importlib.util.spec_from_file_location(
+    "contract_data_importer", ROOT / "tools" / "contract_data_importer.py"
+)
+CONTRACT_IMPORTER = importlib.util.module_from_spec(CONTRACT_SPEC)
+assert CONTRACT_SPEC.loader is not None
+CONTRACT_SPEC.loader.exec_module(CONTRACT_IMPORTER)
 
 
 class NflverseImporterTests(unittest.TestCase):
@@ -75,6 +81,40 @@ class NflverseImporterTests(unittest.TestCase):
                 self.assertNotIn(game["week"], weeks_by_team[team_id])
                 weeks_by_team[team_id].add(game["week"])
         self.assertTrue(all(count == 17 for count in games_by_team.values()))
+
+    def test_current_contract_snapshot_separates_apy_and_cap_hit(self):
+        errors = CONTRACT_IMPORTER.validate_pack(self.pack, 2026)
+        self.assertEqual([], errors)
+        chase = next(
+            player
+            for team in self.pack["teams"]
+            for player in team["players"]
+            if player["full_name"] == "Ja'Marr Chase"
+        )
+        contract = chase["contract"]
+        self.assertEqual(40_250_000, contract["annual_salary"])
+        self.assertEqual(26_171_176, contract["yearly_cap_hits"]["2026"])
+        self.assertEqual(161_000_000, contract["total_contract_value"])
+        self.assertEqual(73_900_000, contract["total_guaranteed"])
+        self.assertEqual(2029, contract["expires_after_year"])
+        self.assertEqual(
+            "Over The Cap current contracts and team cap tables",
+            contract["source_label"],
+        )
+
+    def test_contract_refresh_never_scales_player_values_for_cap_compliance(self):
+        for team in self.pack["teams"]:
+            self.assertEqual(301_200_000, team["base_salary_cap"])
+            cap_year = str(team["salary_cap_year"])
+            payroll = sum(
+                player["contract"]["yearly_cap_hits"][cap_year]
+                for player in team["players"]
+            )
+            self.assertLessEqual(payroll, team["salary_cap"])
+            self.assertEqual(
+                team["salary_cap"] - team["base_salary_cap"],
+                team["salary_cap_adjustment"],
+            )
 
 
 if __name__ == "__main__":

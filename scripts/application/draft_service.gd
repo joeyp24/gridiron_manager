@@ -281,7 +281,7 @@ static func _draft_order(league: LeagueState) -> Array[String]:
 
 
 static func _record_selection(league: LeagueState, team: TeamData, player: PlayerData, pick: DraftPickData) -> void:
-	var details := "Selected %s with pick #%d in round %d; rookie cap hit %s." % [player.full_name, pick.overall_pick, pick.round_number, PlayerContract.money_label(player.contract.annual_salary)]
+	var details := "Selected %s with pick #%d in round %d; rookie cap hit %s." % [player.full_name, pick.overall_pick, pick.round_number, PlayerContract.money_label(player.contract.current_cap_hit())]
 	var transaction := TransactionData.new(
 		"draft_transaction_%d_%d" % [pick.draft_year, pick.overall_pick],
 		league.season_year,
@@ -291,7 +291,7 @@ static func _record_selection(league: LeagueState, team: TeamData, player: Playe
 		player.id,
 		player.full_name,
 		details,
-		player.contract.annual_salary
+		player.contract.current_cap_hit()
 	)
 	league.record_transaction(transaction, "%s select %s at #%d." % [team.display_name(), player.full_name, pick.overall_pick])
 

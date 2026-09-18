@@ -345,7 +345,7 @@ func _waiver_row(entry: WaiverEntryData) -> PanelContainer:
 	var player: PlayerData = entry.player
 	var former := _career.league.team_by_id(entry.waived_by_team_id)
 	var former_label := former.abbreviation if former != null else "FORMER CLUB"
-	var salary := player.contract.annual_salary if player.contract != null else 0
+	var salary := player.contract.current_cap_hit() if player.contract != null else 0
 	var panel := UIFactory.card("InsetPanel")
 	var column := UIFactory.vbox(8)
 	panel.add_child(column)
@@ -372,7 +372,7 @@ func _player_identity_row(player: PlayerData, status_text: String, status_color:
 	identity.add_child(UIFactory.label(player.full_name, "BodyLabel"))
 	var contract_text := ""
 	if player.contract != null:
-		contract_text = " · %s/YR · %d YR" % [PlayerContract.money_label(player.contract.annual_salary), player.contract.years_remaining]
+		contract_text = " · %s CAP · %s APY · %d YR" % [PlayerContract.money_label(player.contract.current_cap_hit()), PlayerContract.money_label(player.contract.annual_salary), player.contract.years_remaining]
 	identity.add_child(UIFactory.label("%s · Age %d · %d years pro%s" % [status_text, player.age, player.experience_years, contract_text], "CaptionLabel"))
 	row.add_child(identity)
 	for entry in [["SPD", player.speed], ["PWR", player.power], ["TEC", player.technique], ["AWR", player.awareness]]:

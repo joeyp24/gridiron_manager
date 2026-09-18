@@ -67,8 +67,10 @@ static func signing_error(team: TeamData, player: PlayerData, contract: PlayerCo
 		return "That player is already controlled by the club."
 	if not team.has_roster_space():
 		return "The roster is already at its %d-player limit." % team.roster_limit
-	if contract.annual_salary > team.cap_space():
-		return "The signing needs %s more cap space." % PlayerContract.money_label(contract.annual_salary - team.cap_space())
+	var cap_hit := contract.current_cap_hit()
+	var cap_space := team.cap_space_for_year(contract.current_year())
+	if cap_hit > cap_space:
+		return "The signing needs %s more cap space." % PlayerContract.money_label(cap_hit - cap_space)
 	return ""
 
 
