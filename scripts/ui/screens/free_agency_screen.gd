@@ -59,8 +59,7 @@ func _build_interface() -> void:
 
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge("FA", GridironTheme.WARM))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("FREE AGENCY", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("PERSONNEL MARKET", "Free Agency")
 	_header_subtitle = UIFactory.label("Evaluate the market, structure an offer, and improve the active roster.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
@@ -73,7 +72,7 @@ func _build_interface() -> void:
 	header.add_child(_back_button)
 	page.add_child(header)
 
-	var cap_card := UIFactory.card("AccentPanel")
+	var cap_card := UIFactory.card("HeroPanel")
 	var cap_row := UIFactory.hbox(18)
 	cap_card.add_child(cap_row)
 	var cap_metric := _metric("CAP SPACE", PlayerContract.money_label(_team.cap_space()))
@@ -124,7 +123,7 @@ func _build_interface() -> void:
 	var list_column := UIFactory.vbox(10)
 	list_card.add_child(list_column)
 	var list_heading := UIFactory.hbox(8)
-	list_heading.add_child(UIFactory.label("AVAILABLE PLAYERS", "SectionTitleLabel"))
+	list_heading.add_child(UIFactory.section_heading("AVAILABLE PLAYERS", "Explore the live market by positional need."))
 	list_heading.add_child(UIFactory.spacer())
 	_list_caption = UIFactory.label("OVR · AGE · ASKING", "CaptionLabel")
 	list_heading.add_child(_list_caption)

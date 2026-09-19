@@ -35,9 +35,7 @@ func _build_interface() -> void:
 
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(_team.abbreviation, _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("TEAM STRATEGY", "PageTitleLabel"))
-	copy.add_child(UIFactory.label("Set the identity that persists from one game week to the next.", "MutedLabel"))
+	var copy := UIFactory.page_heading("COACHING", "Team Strategy", "Set the identity that persists from one game week to the next.")
 	header.add_child(copy)
 	header.add_child(UIFactory.spacer())
 	var back := UIFactory.button("←  CAREER HUB", "GhostButton")
@@ -45,7 +43,7 @@ func _build_interface() -> void:
 	header.add_child(back)
 	page.add_child(header)
 
-	var overview := UIFactory.card("AccentPanel")
+	var overview := UIFactory.card("HeroPanel")
 	page.add_child(overview)
 	var overview_row := UIFactory.hbox(18)
 	overview.add_child(overview_row)
@@ -82,8 +80,7 @@ func _build_offense_card() -> PanelContainer:
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var column := UIFactory.vbox(11)
 	card.add_child(column)
-	column.add_child(UIFactory.label("OFFENSIVE PLAN", "SectionTitleLabel"))
-	column.add_child(UIFactory.label("Shape play calling and game pace", "CaptionLabel"))
+	column.add_child(UIFactory.section_heading("OFFENSIVE PLAN", "Shape play calling and game pace"))
 	_run_menu = _setting_menu(column, "RUN / PASS BALANCE", ["Air attack", "Balanced", "Ground control"], _trinary_index(_team.run_tendency))
 	_tempo_menu = _setting_menu(column, "TEMPO", ["Methodical", "Balanced", "Up-tempo"], _trinary_index(_team.tempo))
 	_depth_menu = _setting_menu(column, "PASSING DEPTH", ["Short", "Balanced", "Vertical"], _trinary_index(_team.passing_depth))
@@ -97,8 +94,7 @@ func _build_defense_card() -> PanelContainer:
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var column := UIFactory.vbox(11)
 	card.add_child(column)
-	column.add_child(UIFactory.label("DEFENSIVE PLAN", "SectionTitleLabel"))
-	column.add_child(UIFactory.label("Control pressure and coverage risk", "CaptionLabel"))
+	column.add_child(UIFactory.section_heading("DEFENSIVE PLAN", "Control pressure and coverage risk"))
 	_blitz_menu = _setting_menu(column, "BLITZ FREQUENCY", ["Selective", "Balanced", "Pressure-heavy"], _trinary_index(_team.blitz_rate))
 	_coverage_menu = _setting_menu(column, "COVERAGE PREFERENCE", ["Zone", "Balanced", "Man"], ["Zone", "Balanced", "Man"].find(_team.coverage_preference))
 	column.add_child(UIFactory.spacer(0, 12))

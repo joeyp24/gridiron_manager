@@ -55,8 +55,7 @@ func _build_interface() -> void:
 
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(_team.abbreviation, _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("ROSTER MANAGEMENT", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("TEAM OPERATIONS", "Roster Management")
 	_header_subtitle = UIFactory.label("Build the 53, set the game-day list, and manage every reserve pathway.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
@@ -401,7 +400,7 @@ func _action_button(text_value: String, callback: Callable) -> Button:
 
 
 func _summary_card(title: String, key: String, detail: String) -> PanelContainer:
-	var card := UIFactory.card("RaisedCardPanel")
+	var card := UIFactory.card("MetricPanel")
 	card.custom_minimum_size = Vector2(160, 0)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var column := UIFactory.vbox(2)
@@ -414,11 +413,8 @@ func _summary_card(title: String, key: String, detail: String) -> PanelContainer
 	return card
 
 
-func _section_heading(title: String, detail: String) -> VBoxContainer:
-	var heading := UIFactory.vbox(2)
-	heading.add_child(UIFactory.label(title, "SectionTitleLabel"))
-	heading.add_child(UIFactory.wrapped_label(detail, "MutedLabel"))
-	return heading
+func _section_heading(title: String, detail: String) -> HBoxContainer:
+	return UIFactory.section_heading(title, detail)
 
 
 func _subheading(title: String, detail: String) -> HBoxContainer:
@@ -431,9 +427,7 @@ func _subheading(title: String, detail: String) -> HBoxContainer:
 
 
 func _empty_state(message: String) -> PanelContainer:
-	var panel := UIFactory.card("InsetPanel")
-	panel.add_child(UIFactory.wrapped_label(message, "MutedLabel"))
-	return panel
+	return UIFactory.empty_state("NOTHING TO SHOW", message)
 
 
 func _small_metric(title: String, value: String) -> VBoxContainer:

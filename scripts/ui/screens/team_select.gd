@@ -39,12 +39,10 @@ func _build_interface() -> void:
 	scroll.add_child(page)
 
 	var heading := UIFactory.hbox(12)
-	var heading_copy := UIFactory.vbox(2)
-	heading_copy.add_child(UIFactory.label("CHOOSE YOUR CLUB", "PageTitleLabel"))
-	heading_copy.add_child(UIFactory.label("Compare personnel, appoint your opponent, and set the game plan.", "MutedLabel"))
+	var heading_copy := UIFactory.page_heading("QUICK EXHIBITION", "Choose Your Club", "Compare personnel, appoint your opponent, and set the game plan.")
 	heading.add_child(heading_copy)
 	heading.add_child(UIFactory.spacer())
-	heading.add_child(UIFactory.badge("EXHIBITION", GridironTheme.WARM))
+	heading.add_child(UIFactory.status_pill("EXHIBITION", GridironTheme.WARM))
 	page.add_child(heading)
 
 	_body_grid = GridContainer.new()

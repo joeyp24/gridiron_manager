@@ -47,9 +47,8 @@ func _build_interface() -> void:
 	var header := UIFactory.hbox(12)
 	var team := _career.user_team()
 	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
-	var heading := UIFactory.vbox(1)
+	var heading := UIFactory.page_heading("WEEKLY PREPARATION", "Game Plan")
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	heading.add_child(UIFactory.label("WEEKLY GAME PLAN", "PageTitleLabel"))
 	var opponent := _career.next_opponent()
 	heading.add_child(UIFactory.label(
 		"Prepare for %s · %s" % [opponent.display_name(), _career.current_week_label()] if opponent != null else "No managed-club matchup this week",
@@ -100,7 +99,7 @@ func _build_interface() -> void:
 
 
 func _build_briefing_banner(opponent: TeamData) -> PanelContainer:
-	var card := UIFactory.card("AccentPanel")
+	var card := UIFactory.card("HeroPanel")
 	var row := UIFactory.hbox(16)
 	card.add_child(row)
 	var copy := UIFactory.vbox(3)

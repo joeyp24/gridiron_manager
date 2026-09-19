@@ -4,6 +4,7 @@ Gridiron Manager is an extensible American football management simulation built 
 
 ## Prototype features
 
+- A professional, Football Manager-inspired responsive interface with a persistent club navigation rail, contextual season header, reusable dashboard system, full keyboard focus states, and layouts that reflow from compact laptop windows to widescreen displays
 - One deterministic hybrid 2026 database: nflverse league structure, schedules, identities, and contracts joined to Madden NFL 26 ratings
 - Full 53-player rosters with offensive, defensive, kicking, punting, and long-snapping position groups
 - All 2,035 rated players with complete 54-field Madden attribute records, stable source IDs, archetypes, jersey numbers, and cached remote headshot/team-mark references
@@ -129,6 +130,7 @@ See [`docs/roster_management.md`](docs/roster_management.md) for roster states, 
 See [`docs/trades.md`](docs/trades.md) for AI front-office direction, team needs, trade blocks, incoming offers, CPU deals, valuation, validation, and persistence.
 See [`docs/simulation_loading.md`](docs/simulation_loading.md) for the incremental week workflow, responsive overlay, save boundary, and extension points.
 See [`docs/play_presentation.md`](docs/play_presentation.md) for the deterministic 22-player animation model, Match Center playback controls, responsive field camera, and extension path.
+See [`docs/ui_design_system.md`](docs/ui_design_system.md) for interface tokens, reusable components, responsive breakpoints, navigation conventions, and screen-extension guidance.
 
 ## Current limitations
 

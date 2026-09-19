@@ -85,8 +85,7 @@ func _rebuild() -> void:
 func _build_header() -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(str(_career.league.season_year), _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("OFFSEASON CONTROL ROOM", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("YEAR-ROUND OPERATIONS", "Offseason Control Room")
 	_header_subtitle = UIFactory.label("Close one campaign, make personnel decisions, and prepare the next.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)

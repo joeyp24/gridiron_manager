@@ -40,15 +40,13 @@ func _build_interface() -> void:
 	scroll.add_child(page)
 
 	var heading := UIFactory.hbox(12)
-	var copy := UIFactory.vbox(2)
-	copy.add_child(UIFactory.label("BEGIN YOUR CAREER", "PageTitleLabel"))
-	copy.add_child(UIFactory.label("Select one of 32 clubs to lead through the 2026 season and beyond.", "MutedLabel"))
+	var copy := UIFactory.page_heading("CAREER SETUP", "Choose Your Club", "Select one of 32 clubs to lead through the 2026 season and beyond.")
 	heading.add_child(copy)
 	heading.add_child(UIFactory.spacer())
-	heading.add_child(UIFactory.badge("2026 SEASON", GridironTheme.ACCENT))
+	heading.add_child(UIFactory.status_pill("2026 SEASON", GridironTheme.ACCENT))
 	page.add_child(heading)
 
-	var source_card := UIFactory.card("InsetPanel")
+	var source_card := UIFactory.card("RaisedCardPanel")
 	var source_row := UIFactory.hbox(14)
 	source_card.add_child(source_row)
 	var source_copy := UIFactory.vbox(2)
@@ -65,7 +63,7 @@ func _build_interface() -> void:
 	source_row.add_child(_source_selector)
 	page.add_child(source_card)
 
-	var mode_card := UIFactory.card("InsetPanel")
+	var mode_card := UIFactory.card("RaisedCardPanel")
 	var mode_row := UIFactory.hbox(14)
 	mode_card.add_child(mode_row)
 	var mode_copy := UIFactory.vbox(2)

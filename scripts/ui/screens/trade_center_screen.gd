@@ -90,8 +90,7 @@ func _rebuild() -> void:
 func _build_header() -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(_team.abbreviation, _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("TRADE CENTER", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("LEAGUE MARKET", "Trade Center")
 	_header_subtitle = UIFactory.label("Manage the trade block, review incoming offers, and negotiate across the league.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
@@ -108,10 +107,7 @@ func _build_header() -> void:
 
 func _build_market_dashboard() -> void:
 	var section_header := UIFactory.hbox(10)
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("LIVE TRADE MARKET", "SectionTitleLabel"))
-	copy.add_child(UIFactory.label("Team needs, competitive direction, and roster value drive every offer.", "CaptionLabel"))
-	section_header.add_child(copy)
+	section_header.add_child(UIFactory.section_heading("LIVE TRADE MARKET", "Team needs, competitive direction, and roster value drive every offer."))
 	section_header.add_child(UIFactory.spacer())
 	section_header.add_child(UIFactory.badge("%d ACTIVE OFFER%s" % [
 		TradeMarketService.pending_offers_for_user(_career.league).size(),

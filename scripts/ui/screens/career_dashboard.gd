@@ -40,56 +40,57 @@ func _build_interface() -> void:
 
 	var team := _career.user_team()
 	var standing := _career.league.standing_for(team.id)
-	var header := UIFactory.hbox(12)
+	var header := UIFactory.hbox(14)
 	header.add_child(UIFactory.badge(team.abbreviation, team.primary_color))
-	var identity := UIFactory.vbox(1)
-	identity.add_child(UIFactory.label(_career.league.data_source_label, "EyebrowLabel"))
-	identity.add_child(UIFactory.label(team.display_name(), "PageTitleLabel"))
 	var competition := "%s · %s" % [team.conference, team.division] if not team.division.is_empty() else "%s Conference" % team.conference
-	identity.add_child(UIFactory.label("%s · %s" % [competition, _career.current_week_label()], "MutedLabel"))
+	var identity := UIFactory.page_heading(
+		"%d SEASON · %s" % [_career.league.season_year, competition],
+		team.display_name(),
+		"Your command center for %s." % _career.current_week_label()
+	)
 	header.add_child(identity)
 	header.add_child(UIFactory.spacer())
-	header.add_child(_header_metric("RECORD", standing.record_label()))
-	header.add_child(_header_metric("OVR", str(team.overall_rating())))
-	header.add_child(_header_metric("GAME DAY", "%d/%d" % [team.active_roster_count(), team.game_day_active_limit]))
-	header.add_child(_header_metric("CAP SPACE", PlayerContract.money_label(team.cap_space())))
+	var readiness := "ACTION REQUIRED" if not _career.game_day_errors().is_empty() and not _career.league.is_offseason() else "CLUB READY"
+	header.add_child(UIFactory.status_pill(readiness, GridironTheme.DANGER if readiness == "ACTION REQUIRED" else GridironTheme.ACCENT))
 	page.add_child(header)
+
+	var metrics := GridContainer.new()
+	metrics.columns = 4
+	metrics.add_theme_constant_override("h_separation", 12)
+	metrics.add_theme_constant_override("v_separation", 12)
+	metrics.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.add_child(metrics)
+	metrics.add_child(UIFactory.metric_card("Club record", standing.record_label(), "%+d point differential" % standing.point_differential(), team.primary_color))
+	metrics.add_child(UIFactory.metric_card("Team rating", str(team.overall_rating()), "OFF %d  ·  DEF %d" % [team.effective_offense_rating(), team.effective_defense_rating()], GridironTheme.BLUE))
+	metrics.add_child(UIFactory.metric_card("Cap space", PlayerContract.money_label(team.cap_space()), "%s payroll" % PlayerContract.money_label(team.payroll()), GridironTheme.ACCENT))
+	metrics.add_child(UIFactory.metric_card("Game-day roster", "%d / %d" % [team.active_roster_count(), team.game_day_active_limit], "%d players under contract" % team.players.size(), GridironTheme.WARM))
+	metrics.resized.connect(func(): metrics.columns = 4 if metrics.size.x >= 880 else (2 if metrics.size.x >= 440 else 1))
 
 	page.add_child(_build_next_game_card())
 
+	var decision_card := UIFactory.card("RaisedCardPanel")
+	page.add_child(decision_card)
+	var decision_column := UIFactory.vbox(10)
+	decision_card.add_child(decision_column)
+	decision_column.add_child(UIFactory.section_heading("NEXT DECISION", "Move the club forward or open a focused workspace."))
 	var actions := HFlowContainer.new()
 	actions.add_theme_constant_override("h_separation", 10)
 	actions.add_theme_constant_override("v_separation", 10)
-	var portal := UIFactory.button("←  PORTAL", "GhostButton")
-	portal.pressed.connect(func(): portal_requested.emit())
-	actions.add_child(portal)
-	var roster := UIFactory.button("ROSTER MANAGEMENT", "SecondaryButton")
+	var roster := UIFactory.button("ROSTER", "SecondaryButton")
 	roster.pressed.connect(func(): roster_requested.emit())
 	actions.add_child(roster)
-	var strategy := UIFactory.button("STRATEGY", "SecondaryButton")
-	strategy.pressed.connect(func(): strategy_requested.emit())
-	actions.add_child(strategy)
 	if not _career.league.is_offseason():
-		var game_plan := UIFactory.button("WEEKLY GAME PLAN", "SecondaryButton")
+		var game_plan := UIFactory.button("GAME PLAN", "SecondaryButton")
 		game_plan.disabled = _career.current_matchup() == null
 		game_plan.pressed.connect(func(): game_plan_requested.emit())
 		actions.add_child(game_plan)
-	var office := UIFactory.button("FRONT OFFICE", "SecondaryButton")
+	var office := UIFactory.button("CONTRACTS & CAP", "SecondaryButton")
 	office.pressed.connect(func(): front_office_requested.emit())
 	actions.add_child(office)
-	var market := UIFactory.button("FREE AGENCY", "SecondaryButton")
-	market.pressed.connect(func(): free_agency_requested.emit())
-	actions.add_child(market)
 	var trades := UIFactory.button("TRADE CENTER", "SecondaryButton")
 	trades.pressed.connect(func(): trade_center_requested.emit())
 	actions.add_child(trades)
-	var statistics := UIFactory.button("STATISTICS", "SecondaryButton")
-	statistics.pressed.connect(func(): statistics_requested.emit())
-	actions.add_child(statistics)
-	var players := UIFactory.button("PLAYERS", "SecondaryButton")
-	players.pressed.connect(func(): players_requested.emit())
-	actions.add_child(players)
-	var save := UIFactory.button("SAVE CAREER", "SecondaryButton")
+	var save := UIFactory.button("SAVE", "GhostButton")
 	save.pressed.connect(func(): save_requested.emit())
 	actions.add_child(save)
 	var matchup := _career.current_matchup()
@@ -112,7 +113,7 @@ func _build_interface() -> void:
 		simulate.disabled = has_active_game or (matchup != null and not roster_ready)
 		simulate.pressed.connect(func(): simulate_requested.emit())
 		actions.add_child(simulate)
-	page.add_child(actions)
+	decision_column.add_child(actions)
 
 	_dashboard_grid = GridContainer.new()
 	_dashboard_grid.columns = 2
@@ -130,7 +131,7 @@ func _build_interface() -> void:
 
 
 func _build_next_game_card() -> PanelContainer:
-	var card := UIFactory.card("AccentPanel")
+	var card := UIFactory.card("HeroPanel")
 	var row := UIFactory.hbox(18)
 	card.add_child(row)
 	var league := _career.league
@@ -347,8 +348,7 @@ func _dashboard_card(title: String, subtitle: String) -> PanelContainer:
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var column := UIFactory.vbox(9)
 	card.add_child(column)
-	column.add_child(UIFactory.label(title, "SectionTitleLabel"))
-	column.add_child(UIFactory.label(subtitle, "CaptionLabel"))
+	column.add_child(UIFactory.section_heading(title, subtitle))
 	return card
 
 
@@ -366,4 +366,4 @@ func _header_metric(title: String, value: String) -> VBoxContainer:
 
 func _apply_responsive_layout() -> void:
 	if _dashboard_grid != null:
-		_dashboard_grid.columns = 2 if size.x >= 900 else 1
+		_dashboard_grid.columns = 3 if size.x >= 1220 else (2 if size.x >= 820 else 1)

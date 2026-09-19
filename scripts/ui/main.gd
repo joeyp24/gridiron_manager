@@ -23,10 +23,20 @@ var _save_repository := SaveRepository.new()
 var _route_host: Control
 var _simulation_overlay: SimulationLoadingOverlay
 var _section_label: Label
-var _brand: VBoxContainer
+var _section_context: Label
+var _sidebar: PanelContainer
+var _sidebar_margin: MarginContainer
+var _brand_copy: VBoxContainer
+var _nav_section_labels: Array[Label] = []
+var _nav_buttons: Dictionary = {}
+var _nav_titles: Dictionary = {}
+var _nav_short_titles: Dictionary = {}
 var _version_badge: PanelContainer
 var _content_margin: MarginContainer
 var _top_margin: MarginContainer
+var _team_context_badge: PanelContainer
+var _team_context_label: Label
+var _week_context_label: Label
 var _career_button: Button
 var _roster_button: Button
 var _statistics_button: Button
@@ -34,6 +44,8 @@ var _players_button: Button
 var _strategy_button: Button
 var _game_plan_button: Button
 var _office_button: Button
+var _free_agency_button: Button
+var _trade_button: Button
 var _match_button: Button
 
 
@@ -52,80 +64,103 @@ func _build_shell() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
 
-	var shell := UIFactory.vbox(0)
+	var atmosphere := ColorRect.new()
+	atmosphere.color = Color(GridironTheme.BLUE, 0.035)
+	atmosphere.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	atmosphere.custom_minimum_size = Vector2(0, 320)
+	atmosphere.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(atmosphere)
+
+	var shell := UIFactory.hbox(0)
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shell)
 
-	var top_bar := UIFactory.card("TopBarPanel")
-	top_bar.custom_minimum_size = Vector2(0, 68)
-	shell.add_child(top_bar)
-	_top_margin = MarginContainer.new()
-	_top_margin.add_theme_constant_override("margin_left", 24)
-	_top_margin.add_theme_constant_override("margin_right", 24)
-	_top_margin.add_theme_constant_override("margin_top", 10)
-	_top_margin.add_theme_constant_override("margin_bottom", 10)
-	top_bar.add_child(_top_margin)
+	_sidebar = UIFactory.card("SidebarPanel")
+	_sidebar.custom_minimum_size = Vector2(238, 0)
+	shell.add_child(_sidebar)
+	_sidebar_margin = MarginContainer.new()
+	_sidebar_margin.add_theme_constant_override("margin_left", 14)
+	_sidebar_margin.add_theme_constant_override("margin_right", 14)
+	_sidebar_margin.add_theme_constant_override("margin_top", 16)
+	_sidebar_margin.add_theme_constant_override("margin_bottom", 14)
+	_sidebar.add_child(_sidebar_margin)
+	var sidebar_column := UIFactory.vbox(7)
+	_sidebar_margin.add_child(sidebar_column)
 
-	var top_row := UIFactory.hbox(8)
-	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	_top_margin.add_child(top_row)
+	var brand_row := UIFactory.hbox(10)
+	brand_row.custom_minimum_size = Vector2(0, 48)
 	var mark := TextureRect.new()
 	mark.texture = load("res://assets/branding/gridiron_mark.svg")
 	mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	mark.custom_minimum_size = Vector2(40, 40)
-	top_row.add_child(mark)
-	_brand = UIFactory.vbox(0)
-	_brand.custom_minimum_size = Vector2(170, 0)
-	_brand.add_child(UIFactory.label("GRIDIRON", "SectionTitleLabel"))
-	_brand.add_child(UIFactory.label("MANAGER", "CaptionLabel"))
-	top_row.add_child(_brand)
+	mark.custom_minimum_size = Vector2(38, 38)
+	brand_row.add_child(mark)
+	_brand_copy = UIFactory.vbox(0)
+	_brand_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_brand_copy.add_child(UIFactory.label("GRIDIRON", "SectionTitleLabel"))
+	_brand_copy.add_child(UIFactory.label("FRONT OFFICE", "NavSectionLabel"))
+	brand_row.add_child(_brand_copy)
+	sidebar_column.add_child(brand_row)
+	sidebar_column.add_child(UIFactory.spacer(0, 5))
 
-	var portal := UIFactory.button("PORTAL", "GhostButton")
-	portal.pressed.connect(_show_main_menu)
-	top_row.add_child(portal)
-	_career_button = UIFactory.button("CAREER", "GhostButton")
-	_career_button.disabled = true
-	_career_button.pressed.connect(_show_career_dashboard)
-	top_row.add_child(_career_button)
-	_roster_button = UIFactory.button("ROSTER", "GhostButton")
-	_roster_button.disabled = true
-	_roster_button.pressed.connect(_show_roster)
-	top_row.add_child(_roster_button)
-	_players_button = UIFactory.button("PLAYERS", "GhostButton")
-	_players_button.disabled = true
-	_players_button.pressed.connect(_show_players)
-	top_row.add_child(_players_button)
-	_statistics_button = UIFactory.button("STATS", "GhostButton")
-	_statistics_button.disabled = true
-	_statistics_button.pressed.connect(_show_statistics)
-	top_row.add_child(_statistics_button)
-	_strategy_button = UIFactory.button("STRATEGY", "GhostButton")
-	_strategy_button.disabled = true
-	_strategy_button.pressed.connect(_show_strategy)
-	top_row.add_child(_strategy_button)
-	_game_plan_button = UIFactory.button("GAME PLAN", "GhostButton")
-	_game_plan_button.disabled = true
-	_game_plan_button.pressed.connect(_show_game_plan)
-	top_row.add_child(_game_plan_button)
-	_office_button = UIFactory.button("OFFICE", "GhostButton")
-	_office_button.disabled = true
-	_office_button.pressed.connect(_show_front_office)
-	top_row.add_child(_office_button)
-	_match_button = UIFactory.button("MATCHDAY", "GhostButton")
-	_match_button.disabled = true
-	_match_button.pressed.connect(_show_current_match)
-	top_row.add_child(_match_button)
+	_add_nav_section(sidebar_column, "SYSTEM")
+	_add_nav_button(sidebar_column, "portal", "Portal", "P", _show_main_menu)
+	_add_nav_section(sidebar_column, "CLUB")
+	_career_button = _add_nav_button(sidebar_column, "career", "Career Hub", "H", _show_career_dashboard)
+	_roster_button = _add_nav_button(sidebar_column, "roster", "Roster", "R", _show_roster)
+	_players_button = _add_nav_button(sidebar_column, "players", "Player Database", "D", _show_players)
+	_add_nav_section(sidebar_column, "PERFORMANCE")
+	_strategy_button = _add_nav_button(sidebar_column, "strategy", "Team Strategy", "T", _show_strategy)
+	_game_plan_button = _add_nav_button(sidebar_column, "game_plan", "Weekly Game Plan", "G", _show_game_plan)
+	_statistics_button = _add_nav_button(sidebar_column, "statistics", "Statistics", "S", _show_statistics)
+	_add_nav_section(sidebar_column, "FRONT OFFICE")
+	_office_button = _add_nav_button(sidebar_column, "office", "Contracts", "C", _show_front_office)
+	_free_agency_button = _add_nav_button(sidebar_column, "free_agency", "Free Agency", "F", _show_free_agency)
+	_trade_button = _add_nav_button(sidebar_column, "trades", "Trade Center", "X", _show_trade_center)
+	_match_button = _add_nav_button(sidebar_column, "match", "Matchday", "M", _show_current_match)
+	sidebar_column.add_child(UIFactory.spacer())
+	var save_state := UIFactory.status_pill("LOCAL CAREER", GridironTheme.ACCENT)
+	sidebar_column.add_child(save_state)
+	_version_badge = UIFactory.status_pill("BUILD 0.9", GridironTheme.TEXT_MUTED)
+	sidebar_column.add_child(_version_badge)
+
+	var content_column := UIFactory.vbox(0)
+	content_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	shell.add_child(content_column)
+	var top_bar := UIFactory.card("TopBarPanel")
+	top_bar.custom_minimum_size = Vector2(0, 72)
+	content_column.add_child(top_bar)
+	_top_margin = MarginContainer.new()
+	_top_margin.add_theme_constant_override("margin_left", 26)
+	_top_margin.add_theme_constant_override("margin_right", 26)
+	_top_margin.add_theme_constant_override("margin_top", 11)
+	_top_margin.add_theme_constant_override("margin_bottom", 11)
+	top_bar.add_child(_top_margin)
+
+	var top_row := UIFactory.hbox(12)
+	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_top_margin.add_child(top_row)
+	var section_copy := UIFactory.vbox(1)
+	section_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_section_context = UIFactory.label("GRIDIRON MANAGER", "NavSectionLabel")
+	section_copy.add_child(_section_context)
+	_section_label = UIFactory.label("PORTAL", "SectionTitleLabel")
+	section_copy.add_child(_section_label)
+	top_row.add_child(section_copy)
 	top_row.add_child(UIFactory.spacer())
-	_section_label = UIFactory.label("PORTAL", "EyebrowLabel")
-	_section_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	top_row.add_child(_section_label)
-	_version_badge = UIFactory.badge("CAREER 0.8", GridironTheme.ACCENT)
-	top_row.add_child(_version_badge)
+	_week_context_label = UIFactory.label("NO ACTIVE CAREER", "CaptionLabel")
+	_week_context_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	top_row.add_child(_week_context_label)
+	_team_context_label = UIFactory.label("FRONT OFFICE", "BodyLabel")
+	_team_context_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	top_row.add_child(_team_context_label)
+	_team_context_badge = UIFactory.status_pill("GM", GridironTheme.BLUE)
+	top_row.add_child(_team_context_badge)
 
 	_content_margin = MarginContainer.new()
 	_content_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	shell.add_child(_content_margin)
+	content_column.add_child(_content_margin)
 	_route_host = Control.new()
 	_route_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_route_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -133,10 +168,32 @@ func _build_shell() -> void:
 
 	_simulation_overlay = SimulationLoadingOverlay.new()
 	add_child(_simulation_overlay)
+	_set_section("PORTAL", "portal")
+	_enable_career_navigation()
+
+
+func _add_nav_section(parent: VBoxContainer, title: String) -> void:
+	var section := UIFactory.label(title, "NavSectionLabel")
+	section.custom_minimum_size = Vector2(0, 20)
+	_nav_section_labels.append(section)
+	parent.add_child(section)
+
+
+func _add_nav_button(parent: VBoxContainer, key: String, title: String, short_title: String, callback: Callable) -> Button:
+	var button := UIFactory.button(title, "NavButton")
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.custom_minimum_size = Vector2(0, 39)
+	button.tooltip_text = title
+	button.pressed.connect(callback)
+	parent.add_child(button)
+	_nav_buttons[key] = button
+	_nav_titles[key] = title
+	_nav_short_titles[key] = short_title
+	return button
 
 
 func _show_main_menu() -> void:
-	_section_label.text = "PORTAL"
+	_set_section("PORTAL", "portal")
 	var screen := MAIN_MENU_SCENE.instantiate()
 	screen.setup(_save_repository.has_save())
 	screen.new_career_requested.connect(_show_career_select)
@@ -146,7 +203,7 @@ func _show_main_menu() -> void:
 
 
 func _show_career_select() -> void:
-	_section_label.text = "CAREER / CLUB SELECTION"
+	_set_section("NEW CAREER / CLUB SELECTION", "portal")
 	var screen := CAREER_SELECT_SCENE.instantiate()
 	screen.setup()
 	screen.back_requested.connect(_show_main_menu)
@@ -186,7 +243,7 @@ func _show_career_dashboard() -> void:
 		_show_fantasy_draft()
 		return
 	_game_plan_button.disabled = _career.league.is_offseason()
-	_section_label.text = "CAREER / HUB"
+	_set_section("CAREER HUB", "career")
 	var screen := CAREER_DASHBOARD_SCENE.instantiate()
 	screen.setup(_career)
 	screen.portal_requested.connect(_show_main_menu)
@@ -212,7 +269,7 @@ func _show_fantasy_draft() -> void:
 		_enable_career_navigation()
 		_show_career_dashboard()
 		return
-	_section_label.text = "CAREER / FANTASY DRAFT"
+	_set_section("FANTASY DRAFT", "career")
 	var screen := FANTASY_DRAFT_SCENE.instantiate()
 	screen.setup(_career)
 	screen.portal_requested.connect(_show_main_menu)
@@ -231,7 +288,7 @@ func _finish_fantasy_draft() -> void:
 func _show_roster() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / ROSTER MANAGEMENT"
+	_set_section("ROSTER MANAGEMENT", "roster")
 	var screen := ROSTER_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -244,7 +301,7 @@ func _show_roster() -> void:
 func _show_statistics(initial_player_id: String = "") -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / STATISTICS"
+	_set_section("LEAGUE STATISTICS", "statistics")
 	var screen := STATISTICS_CENTER_SCENE.instantiate()
 	screen.setup(_career, initial_player_id)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -255,7 +312,7 @@ func _show_statistics(initial_player_id: String = "") -> void:
 func _show_players(initial_player_id: String = "") -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / PLAYERS"
+	_set_section("PLAYER DATABASE", "players")
 	var screen := PLAYERS_SCENE.instantiate()
 	screen.setup(_career, initial_player_id)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -266,7 +323,7 @@ func _show_players(initial_player_id: String = "") -> void:
 func _show_strategy() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / STRATEGY"
+	_set_section("TEAM STRATEGY", "strategy")
 	var screen := STRATEGY_SCENE.instantiate()
 	screen.setup(_career.user_team())
 	screen.back_requested.connect(_show_career_dashboard)
@@ -277,7 +334,7 @@ func _show_strategy() -> void:
 func _show_game_plan() -> void:
 	if _career == null or _career.league.is_offseason():
 		return
-	_section_label.text = "CAREER / WEEKLY GAME PLAN"
+	_set_section("WEEKLY GAME PLAN", "game_plan")
 	var screen := GAME_PLAN_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -289,7 +346,7 @@ func _show_game_plan() -> void:
 func _show_front_office() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / FRONT OFFICE"
+	_set_section("CONTRACTS & CAP", "office")
 	var screen := FRONT_OFFICE_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -302,7 +359,7 @@ func _show_front_office() -> void:
 func _show_free_agency() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / FREE AGENCY"
+	_set_section("FREE AGENCY", "free_agency")
 	var screen := FREE_AGENCY_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -315,7 +372,7 @@ func _show_free_agency() -> void:
 func _show_trade_center() -> void:
 	if _career == null:
 		return
-	_section_label.text = "CAREER / TRADE CENTER"
+	_set_section("TRADE CENTER", "trades")
 	var screen := TRADE_CENTER_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -327,7 +384,7 @@ func _show_trade_center() -> void:
 func _show_offseason() -> void:
 	if _career == null or not _career.league.is_offseason():
 		return
-	_section_label.text = "CAREER / OFFSEASON"
+	_set_section("OFFSEASON CONTROL ROOM", "office")
 	var screen := OFFSEASON_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_career_dashboard)
@@ -341,7 +398,7 @@ func _show_offseason() -> void:
 func _show_draft_center() -> void:
 	if _career == null or _career.league.current_draft == null:
 		return
-	_section_label.text = "CAREER / DRAFT CENTER"
+	_set_section("DRAFT CENTER", "office")
 	var screen := DRAFT_CENTER_SCENE.instantiate()
 	screen.setup(_career)
 	screen.back_requested.connect(_show_offseason)
@@ -379,7 +436,7 @@ func _begin_career_game() -> void:
 func _show_career_match() -> void:
 	if _career == null or _career.active_simulator == null:
 		return
-	_section_label.text = "CAREER / MATCHDAY"
+	_set_section("MATCHDAY", "match")
 	_match_button.disabled = false
 	var screen := MATCH_CENTER_SCENE.instantiate()
 	screen.setup(_career.active_simulator, _career.user_team(), true)
@@ -421,7 +478,7 @@ func _save_career() -> void:
 
 
 func _show_team_select() -> void:
-	_section_label.text = "EXHIBITION / SETUP"
+	_set_section("QUICK EXHIBITION", "portal")
 	var screen := TEAM_SELECT_SCENE.instantiate()
 	screen.setup(_exhibition_session.teams)
 	screen.back_requested.connect(_show_main_menu)
@@ -439,7 +496,7 @@ func _start_exhibition(team: TeamData, opponent: TeamData, strategy: Dictionary)
 func _show_exhibition_match() -> void:
 	if _exhibition_session.simulator == null:
 		return
-	_section_label.text = "EXHIBITION / MATCHDAY"
+	_set_section("EXHIBITION MATCHDAY", "match")
 	var screen := MATCH_CENTER_SCENE.instantiate()
 	screen.setup(_exhibition_session.simulator, _exhibition_session.user_team, false)
 	screen.exit_requested.connect(_show_team_select)
@@ -466,15 +523,66 @@ func _start_rematch() -> void:
 
 
 func _enable_career_navigation() -> void:
+	var has_career := _career != null
 	var draft_active := _career != null and _career.league.is_fantasy_draft_active()
-	_career_button.disabled = false
-	_roster_button.disabled = draft_active
-	_players_button.disabled = draft_active
-	_statistics_button.disabled = draft_active
-	_strategy_button.disabled = draft_active
-	_game_plan_button.disabled = draft_active or (_career != null and _career.league.is_offseason())
-	_office_button.disabled = draft_active
+	_career_button.disabled = not has_career
+	_roster_button.disabled = not has_career or draft_active
+	_players_button.disabled = not has_career or draft_active
+	_statistics_button.disabled = not has_career or draft_active
+	_strategy_button.disabled = not has_career or draft_active
+	_game_plan_button.disabled = not has_career or draft_active or (_career != null and _career.league.is_offseason())
+	_office_button.disabled = not has_career or draft_active
+	_free_agency_button.disabled = not has_career or draft_active
+	_trade_button.disabled = not has_career or draft_active
 	_match_button.disabled = true
+	_refresh_shell_context()
+
+
+func _set_section(title: String, nav_key: String) -> void:
+	if _section_label != null:
+		_section_label.text = title
+	for key in _nav_buttons:
+		var nav_button: Button = _nav_buttons[key]
+		nav_button.theme_type_variation = "NavButtonActive" if str(key) == nav_key else "NavButton"
+	_refresh_shell_context()
+
+
+func _refresh_shell_context() -> void:
+	if _team_context_label == null:
+		return
+	if _career == null:
+		_section_context.text = "GRIDIRON MANAGER / COMMAND CENTER"
+		_team_context_label.text = "FRONT OFFICE"
+		_week_context_label.text = "NO ACTIVE CAREER"
+		_set_context_badge("GM", GridironTheme.BLUE)
+		return
+	var team := _career.user_team()
+	var standing := _career.league.standing_for(team.id)
+	var record := standing.record_label() if standing != null else "0-0"
+	_section_context.text = "%d SEASON / %s" % [_career.league.season_year, team.abbreviation]
+	_team_context_label.text = "%s  ·  %s" % [team.display_name(), record]
+	_week_context_label.text = _career.current_week_label().to_upper()
+	_set_context_badge(team.abbreviation, team.primary_color)
+
+
+func _set_context_badge(text_value: String, color: Color) -> void:
+	if _team_context_badge == null:
+		return
+	var badge_label: Label = _team_context_badge.get_child(0)
+	badge_label.text = text_value
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	_team_context_badge.add_theme_stylebox_override("panel", style)
+	var luminance := color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722
+	badge_label.add_theme_color_override("font_color", GridironTheme.INK if luminance > 0.52 else GridironTheme.TEXT)
 
 
 func _mount(screen: Control) -> void:
@@ -482,25 +590,37 @@ func _mount(screen: Control) -> void:
 		_route_host.remove_child(child)
 		child.queue_free()
 	_route_host.add_child(screen)
+	screen.modulate = Color(1, 1, 1, 0)
+	screen.position.x = 10
+	var transition := create_tween().set_parallel(true)
+	transition.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	transition.tween_property(screen, "modulate", Color.WHITE, 0.16)
+	transition.tween_property(screen, "position:x", 0.0, 0.16)
+	_refresh_shell_context()
 
 
 func _apply_responsive_shell() -> void:
 	if _content_margin == null:
 		return
-	var compact := size.x < 1050
-	var margin := 14 if compact else 28
+	var compact := size.x < 1160
+	var narrow := size.x < 760
+	var margin := 10 if narrow else (16 if compact else 28)
 	_content_margin.add_theme_constant_override("margin_left", margin)
 	_content_margin.add_theme_constant_override("margin_right", margin)
-	_content_margin.add_theme_constant_override("margin_top", 16 if compact else 22)
-	_content_margin.add_theme_constant_override("margin_bottom", 16 if compact else 24)
+	_content_margin.add_theme_constant_override("margin_top", 12 if compact else 22)
+	_content_margin.add_theme_constant_override("margin_bottom", 12 if compact else 22)
 	_top_margin.add_theme_constant_override("margin_left", margin)
 	_top_margin.add_theme_constant_override("margin_right", margin)
-	_brand.custom_minimum_size.x = 112 if compact else 170
-	_brand.get_child(1).visible = not compact
-	_section_label.visible = not compact
-	_version_badge.visible = size.x >= 880
-	_strategy_button.visible = size.x >= 900
-	_game_plan_button.visible = size.x >= 1180
-	_statistics_button.visible = size.x >= 760
-	_players_button.visible = size.x >= 1080
-	_match_button.visible = not compact or not _match_button.disabled
+	_sidebar.custom_minimum_size.x = 66 if narrow else (78 if compact else 238)
+	_sidebar_margin.add_theme_constant_override("margin_left", 9 if compact else 14)
+	_sidebar_margin.add_theme_constant_override("margin_right", 9 if compact else 14)
+	_brand_copy.visible = not compact
+	for section in _nav_section_labels:
+		section.visible = not compact
+	for key in _nav_buttons:
+		var nav_button: Button = _nav_buttons[key]
+		nav_button.text = str(_nav_short_titles[key]) if compact else str(_nav_titles[key])
+		nav_button.alignment = HORIZONTAL_ALIGNMENT_CENTER if compact else HORIZONTAL_ALIGNMENT_LEFT
+	_version_badge.visible = not compact
+	_team_context_label.visible = size.x >= 920
+	_week_context_label.visible = size.x >= 780
