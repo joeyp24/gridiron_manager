@@ -26,32 +26,37 @@ func _build_interface() -> void:
 	scroll.add_child(page)
 
 	var intro := UIFactory.hbox(12)
-	intro.add_child(UIFactory.label("FRONT OFFICE", "EyebrowLabel"))
-	intro.add_child(UIFactory.label("  /  ", "CaptionLabel"))
-	intro.add_child(UIFactory.label("2026 GRIDIRON LEAGUE", "CaptionLabel"))
+	intro.add_child(UIFactory.page_heading("GRIDIRON MANAGER", "Front Office Command", "Build a club identity, control every decision, and own the season."))
 	intro.add_child(UIFactory.spacer())
-	intro.add_child(UIFactory.badge("CAREER SYSTEMS ONLINE", GridironTheme.ACCENT))
+	intro.add_child(UIFactory.status_pill("CAREER SYSTEMS ONLINE", GridironTheme.ACCENT))
 	page.add_child(intro)
 
-	var hero := UIFactory.card("AccentPanel")
+	var hero := UIFactory.card("HeroPanel")
 	hero.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(hero)
-	var hero_row := UIFactory.hbox(32)
+	var hero_row := GridContainer.new()
+	hero_row.columns = 2
+	hero_row.add_theme_constant_override("h_separation", 30)
+	hero_row.add_theme_constant_override("v_separation", 18)
+	hero_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hero.add_child(hero_row)
 
 	var hero_copy := UIFactory.vbox(14)
 	hero_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hero_copy.size_flags_stretch_ratio = 1.3
 	hero_row.add_child(hero_copy)
-	hero_copy.add_child(UIFactory.label("BUILD THE STANDARD.", "DisplayLabel"))
+	var hero_title := UIFactory.label("RUN THE FRANCHISE.", "DisplayLabel")
+	hero_copy.add_child(hero_title)
 	var summary := UIFactory.wrapped_label(
-		"Take control of any of 32 clubs across a complete pro football season. Shape a 53-player roster, navigate injuries, and chase the championship.",
+		"Control all 32 clubs through a complete pro football universe. Build the roster, manage the cap, shape the game plan, and create a championship standard.",
 		"BodyLabel"
 	)
 	summary.modulate = Color(1, 1, 1, 0.84)
 	hero_copy.add_child(summary)
 	hero_copy.add_child(UIFactory.spacer(0, 6))
-	var action_row := UIFactory.hbox(10)
+	var action_row := HFlowContainer.new()
+	action_row.add_theme_constant_override("h_separation", 10)
+	action_row.add_theme_constant_override("v_separation", 10)
 	var primary_text := "CONTINUE CAREER" if _has_save else "START NEW CAREER"
 	var primary_action := UIFactory.button(primary_text, "PrimaryButton")
 	primary_action.custom_minimum_size = Vector2(210, 48)
@@ -67,7 +72,6 @@ func _build_interface() -> void:
 	var exhibition := UIFactory.button("QUICK EXHIBITION", "GhostButton")
 	exhibition.pressed.connect(func(): exhibition_requested.emit())
 	action_row.add_child(exhibition)
-	action_row.add_child(UIFactory.spacer())
 	hero_copy.add_child(action_row)
 
 	var overview := UIFactory.card("InsetPanel")
@@ -83,6 +87,10 @@ func _build_interface() -> void:
 	overview_column.add_child(_feature_row("18", "Regular-season weeks", "The published 2026, 272-game schedule"))
 	overview_column.add_child(UIFactory.divider())
 	overview_column.add_child(_feature_row("53", "Players per roster", "Full depth, specialists, energy, and availability"))
+	hero_row.resized.connect(func():
+		hero_row.columns = 2 if hero_row.size.x >= 820 else 1
+		hero_title.add_theme_font_size_override("font_size", 46 if hero_row.size.x >= 650 else 34)
+	)
 
 	var lower_grid := GridContainer.new()
 	lower_grid.columns = 4
@@ -90,10 +98,10 @@ func _build_interface() -> void:
 	lower_grid.add_theme_constant_override("v_separation", 16)
 	lower_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.add_child(lower_grid)
-	lower_grid.add_child(_info_card("SEASON MODE", "Every week matters", "Play your matchup or simulate the slate, then track the standings and the championship race."))
-	lower_grid.add_child(_info_card("ROSTER CONTROL", "Build the depth chart", "Order starters and backups, manage active status, and respond when injuries change the plan."))
-	lower_grid.add_child(_info_card("FRONT OFFICE", "Build within the cap", "Negotiate contracts, sign free agents, release players, and follow every league transaction."))
-	lower_grid.add_child(_info_card("PERSISTENT CAREER", "Continue where you left off", "Versioned saves preserve results, tactics, contracts, cap state, transactions, fatigue, and injuries."))
+	lower_grid.add_child(_info_card("MATCHDAY", "Every week matters", "Call individual plays, watch the 2D field, or simulate the league slate from one shared football engine."))
+	lower_grid.add_child(_info_card("PERSONNEL", "Build the depth chart", "Manage the active roster, reserve lists, development, contracts, trades, and the complete player market."))
+	lower_grid.add_child(_info_card("FRONT OFFICE", "Think in seasons", "Navigate yearly cap charges, free agency, scouting, the draft, retirements, and long-term club building."))
+	lower_grid.add_child(_info_card("LEAGUE WORLD", "Every result lives on", "Track complete player and team statistics, histories, game books, standings, and career milestones."))
 	resized.connect(func(): lower_grid.columns = 4 if size.x >= 1180 else (2 if size.x >= 720 else 1))
 
 

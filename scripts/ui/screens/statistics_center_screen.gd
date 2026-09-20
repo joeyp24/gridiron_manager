@@ -75,10 +75,8 @@ func _build_interface() -> void:
 
 	var header := UIFactory.hbox(14)
 	header.add_child(UIFactory.badge("DATA", _league.user_team().primary_color))
-	var identity := UIFactory.vbox(1)
+	var identity := UIFactory.page_heading("LEAGUE INTELLIGENCE", "Statistics Center")
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	identity.add_child(UIFactory.label("LEAGUE INTELLIGENCE", "EyebrowLabel"))
-	identity.add_child(UIFactory.label("Statistics Center", "PageTitleLabel"))
 	identity.add_child(UIFactory.label("Every game, every club, every player — from weekly form to career production.", "MutedLabel"))
 	header.add_child(identity)
 	var back := UIFactory.button("←  CAREER HUB", "GhostButton")
@@ -88,7 +86,7 @@ func _build_interface() -> void:
 
 	var current_season := _league.statistics.season(_league.season_year)
 	var game_count := current_season.game_books.size() if current_season != null else 0
-	var coverage := UIFactory.card("RaisedCardPanel")
+	var coverage := UIFactory.card("HeroPanel")
 	page.add_child(coverage)
 	var coverage_flow := HFlowContainer.new()
 	coverage_flow.add_theme_constant_override("h_separation", 28)

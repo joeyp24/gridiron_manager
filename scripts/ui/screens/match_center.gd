@@ -80,7 +80,7 @@ func _build_interface() -> void:
 	context.add_child(_final_label)
 	page.add_child(context)
 
-	var scoreboard := UIFactory.card("RaisedCardPanel")
+	var scoreboard := UIFactory.card("HeroPanel")
 	page.add_child(scoreboard)
 	var score_row := UIFactory.hbox(20)
 	scoreboard.add_child(score_row)
@@ -122,7 +122,7 @@ func _build_interface() -> void:
 	var field_column := UIFactory.vbox(8)
 	field_card.add_child(field_column)
 	var field_header := UIFactory.hbox(8)
-	field_header.add_child(UIFactory.label("2D PLAY VIEW", "SectionTitleLabel"))
+	field_header.add_child(UIFactory.section_heading("2D PLAY VIEW", "Live tactical movement and assignments"))
 	field_header.add_child(UIFactory.spacer())
 	_field_legend = UIFactory.label("GOLD: GAIN / SPY  ·  BLUE: SCRIMMAGE / COVERAGE  ·  RED: PRESSURE", "CaptionLabel")
 	field_header.add_child(_field_legend)
@@ -160,11 +160,10 @@ func _build_interface() -> void:
 	var feed_column := UIFactory.vbox(10)
 	feed_card.add_child(feed_column)
 	var feed_header := UIFactory.hbox(8)
-	feed_header.add_child(UIFactory.label("PLAY-BY-PLAY", "SectionTitleLabel"))
+	feed_header.add_child(UIFactory.section_heading("PLAY-BY-PLAY", "Newest events appear first"))
 	feed_header.add_child(UIFactory.spacer())
 	feed_header.add_child(UIFactory.badge("LIVE", GridironTheme.DANGER))
 	feed_column.add_child(feed_header)
-	feed_column.add_child(UIFactory.label("Newest events appear first", "CaptionLabel"))
 	var feed_scroll := ScrollContainer.new()
 	feed_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	feed_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

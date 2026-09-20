@@ -58,8 +58,7 @@ func _rebuild() -> void:
 func _build_header() -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(_team.abbreviation, _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("FRONT OFFICE", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("CLUB OPERATIONS", "Contracts & Cap")
 	_header_subtitle = UIFactory.label("Manage contracts, cap space, roster legality, and club transactions.", "MutedLabel")
 	copy.add_child(_header_subtitle)
 	header.add_child(copy)
@@ -90,7 +89,7 @@ func _build_finance_summary() -> void:
 	_summary_grid.add_child(_summary_card("DEAD CAP", PlayerContract.money_label(_team.dead_cap), "Committed to released players"))
 	_summary_grid.add_child(_summary_card("ROSTER", "%d / %d" % [_team.players.size(), _team.roster_limit], "%d-player minimum" % TeamData.MIN_ROSTER_SIZE))
 	var usage := roundi(float(_team.payroll()) / float(_team.salary_cap) * 100.0)
-	var usage_card := UIFactory.card("AccentPanel")
+	var usage_card := UIFactory.card("HeroPanel")
 	var usage_column := UIFactory.vbox(8)
 	usage_card.add_child(usage_column)
 	var usage_header := UIFactory.hbox(8)
@@ -159,7 +158,7 @@ func _contract_row(player: PlayerData) -> PanelContainer:
 	row.add_child(_small_metric("CAP HIT", PlayerContract.money_label(player.contract.current_cap_hit())))
 	row.add_child(_small_metric("APY", PlayerContract.money_label(player.contract.annual_salary)))
 	row.add_child(_small_metric("TERM / EXP", "%d YR · %d" % [player.contract.years_remaining, player.contract.expiration_year()]))
-	var release := UIFactory.button("RELEASE", "GhostButton")
+	var release := UIFactory.button("RELEASE", "DangerButton")
 	release.custom_minimum_size = Vector2(86, 40)
 	release.disabled = _team.player_by_id(player.id) == null or not RosterValidator.release_error(_team, player).is_empty() or _career.active_simulator != null
 	release.pressed.connect(_release_player.bind(player.id))

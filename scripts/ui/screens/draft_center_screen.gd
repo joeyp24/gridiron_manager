@@ -77,8 +77,7 @@ func _build_empty_state() -> void:
 func _build_header(draft: DraftStateData) -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge(str(draft.draft_year), _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("GRIDIRON DRAFT CENTER", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("COLLEGE PERSONNEL", "Draft Center")
 	_header_detail = UIFactory.label(_draft_subtitle(draft), "MutedLabel")
 	copy.add_child(_header_detail)
 	header.add_child(copy)

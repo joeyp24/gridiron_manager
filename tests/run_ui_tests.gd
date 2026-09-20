@@ -277,8 +277,24 @@ func _run() -> void:
 	await process_frame
 	_check(play_simulator.state.is_final, "The existing Finish Game control should still complete an automatically called game")
 	match_screen.queue_free()
+
+	var main_scene: PackedScene = load("res://scenes/main.tscn")
+	var main_screen := main_scene.instantiate()
+	root.add_child(main_screen)
+	await process_frame
+	_check(main_screen._nav_buttons.size() == 11, "The application shell should expose every primary career workspace from one navigation rail")
+	_check(main_screen._nav_buttons["portal"].theme_type_variation == "NavButtonActive", "The shell should visually identify the active workspace")
+	main_screen.size = Vector2(540, 900)
+	main_screen._apply_responsive_shell()
+	_check(main_screen._sidebar.custom_minimum_size.x == 66, "The navigation rail should collapse on narrow displays")
+	_check(main_screen._nav_buttons["career"].text == "H" and not main_screen._brand_copy.visible, "Compact navigation should preserve every route with short labels and tooltips")
+	main_screen.size = Vector2(1440, 900)
+	main_screen._apply_responsive_shell()
+	_check(main_screen._sidebar.custom_minimum_size.x == 238, "The navigation rail should restore its full professional layout on wide displays")
+	_check(main_screen._nav_buttons["career"].text == "Career Hub" and main_screen._brand_copy.visible, "Wide navigation should restore full route and brand labels")
+	main_screen.queue_free()
 	if _failures.is_empty():
-		print("PASS: %d assertions across responsive career creation, Fantasy Draft, Trade Center, Statistics Center, Player Database, free agency, and playcalling checks." % _assertions)
+		print("PASS: %d assertions across the responsive shell, career creation, Fantasy Draft, Trade Center, Statistics Center, Player Database, free agency, and playcalling checks." % _assertions)
 		quit(0)
 	else:
 		for failure in _failures:

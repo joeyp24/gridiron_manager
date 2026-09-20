@@ -82,8 +82,7 @@ func _build_unavailable_state() -> void:
 func _build_header(draft: FantasyDraftStateData) -> void:
 	var header := UIFactory.hbox(12)
 	header.add_child(UIFactory.badge("53 ROUNDS", _team.primary_color))
-	var copy := UIFactory.vbox(1)
-	copy.add_child(UIFactory.label("FANTASY DRAFT WAR ROOM", "PageTitleLabel"))
+	var copy := UIFactory.page_heading("LEAGUE RESET", "Fantasy Draft War Room")
 	_header_detail = UIFactory.label(_draft_subtitle(draft), "MutedLabel")
 	copy.add_child(_header_detail)
 	header.add_child(copy)
@@ -110,7 +109,7 @@ func _build_metrics(draft: FantasyDraftStateData) -> void:
 
 
 func _build_ready_state(draft: FantasyDraftStateData) -> void:
-	var hero := UIFactory.card("AccentPanel")
+	var hero := UIFactory.card("HeroPanel")
 	var hero_row := UIFactory.hbox(16)
 	hero.add_child(hero_row)
 	var copy := UIFactory.vbox(6)
