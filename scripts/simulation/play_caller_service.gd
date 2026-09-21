@@ -221,6 +221,9 @@ static func matchup_modifiers(
 		)
 		for modifier_name in preparation:
 			modifiers[modifier_name] = float(modifiers.get(modifier_name, 0.0)) + float(preparation[modifier_name])
+		var coaching := CoachEffectService.snap_modifiers(state, play, defense)
+		for modifier_name in coaching:
+			modifiers[modifier_name] = float(modifiers.get(modifier_name, 0.0)) + float(coaching[modifier_name])
 	if play.play_type == "run":
 		modifiers["yardage"] = float(modifiers["yardage"]) + defense.run_yards_modifier
 		modifiers["fumble"] = float(modifiers["fumble"]) + defense.fumble_modifier
@@ -280,6 +283,7 @@ static func matchup_modifiers(
 static func _recommendation_score(state: GameStateData, play: PlayDefinitionData) -> float:
 	var score := 50.0
 	score += GamePlanningService.offensive_recommendation_adjustment(play, state.game_plan_for(state.offense().id))
+	score += CoachEffectService.recommendation_adjustment(state, play)
 	var distance := state.yards_to_first
 	if play.play_type == "run":
 		score += state.offense().run_tendency * 18.0
@@ -321,6 +325,7 @@ static func _recommendation_score(state: GameStateData, play: PlayDefinitionData
 static func _defensive_recommendation_score(state: GameStateData, call: DefensiveCallData) -> float:
 	var score := 50.0
 	score += GamePlanningService.defensive_recommendation_adjustment(call, state.game_plan_for(state.defense().id))
+	score += CoachEffectService.defensive_recommendation_adjustment(state, call)
 	var distance := state.yards_to_first
 	var likely_run := clampf(state.offense().run_tendency, 0.20, 0.80)
 	if state.down == 3 and distance >= 7:

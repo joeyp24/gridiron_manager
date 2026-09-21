@@ -147,7 +147,7 @@ func _build_scouting_card(opponent: TeamData) -> PanelContainer:
 
 
 func _build_plan_card() -> PanelContainer:
-	var card := _section_card("PREPARATION BOARD", "Allocate six points across the two units")
+	var card := _section_card("PREPARATION BOARD", "Allocate %d points across the two units" % _plan.preparation_budget)
 	var column: VBoxContainer = card.get_child(0)
 	column.add_child(UIFactory.label("OFFENSIVE PRIORITY", "EyebrowLabel"))
 	_offense_menu = _focus_menu(WeeklyGamePlanData.OFFENSIVE_FOCUSES, true, _plan.offensive_focus)
@@ -172,7 +172,7 @@ func _build_plan_card() -> PanelContainer:
 	budget.add_child(budget_column)
 	_points_label = UIFactory.label("", "SectionTitleLabel")
 	budget_column.add_child(_points_label)
-	budget_column.add_child(UIFactory.wrapped_label("Intensive preparation creates a larger focused effect. Unused points provide no benefit, and both units cannot receive four points.", "MutedLabel"))
+	budget_column.add_child(UIFactory.wrapped_label("Intensive preparation creates a larger focused effect. Unused points provide no benefit. Film Room grants one additional point; each unit remains limited to four.", "MutedLabel"))
 	column.add_child(budget)
 
 	column.add_child(UIFactory.label("EXPECTED EFFECT", "EyebrowLabel"))
@@ -317,7 +317,7 @@ func _refresh_plan_preview() -> void:
 	_offense_description.text = WeeklyGamePlanData.offensive_focus_description(draft.offensive_focus)
 	_defense_description.text = WeeklyGamePlanData.defensive_focus_description(draft.defensive_focus)
 	var remaining := draft.points_remaining()
-	_points_label.text = "%d / %d POINTS USED" % [draft.points_used(), WeeklyGamePlanData.TOTAL_PREPARATION_POINTS]
+	_points_label.text = "%d / %d POINTS USED" % [draft.points_used(), draft.preparation_budget]
 	_points_label.modulate = GridironTheme.DANGER if remaining < 0 else GridironTheme.ACCENT
 	for child in _effects_host.get_children():
 		child.queue_free()
