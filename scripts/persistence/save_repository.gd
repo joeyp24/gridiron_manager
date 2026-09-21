@@ -1,7 +1,7 @@
 class_name SaveRepository
 extends RefCounted
 
-const SAVE_VERSION := 15
+const SAVE_VERSION := 16
 const DEFAULT_PATH := "user://gridiron_manager/career.json"
 
 var save_path: String
@@ -109,6 +109,13 @@ func _migrate(payload: Dictionary, version: int) -> Dictionary:
 	if current_version == 14:
 		migrated = _migrate_v14_to_v15(migrated)
 		current_version = 15
+	if current_version == 15:
+		# CareerSession initializes neutral user progression and seeded AI coaches
+		# only where missing. No historical XP is fabricated.
+		for team in migrated.get("career", {}).get("league", {}).get("teams", []):
+			if not team.has("coach"):
+				team["coach"] = null
+		current_version = 16
 	migrated["save_version"] = current_version
 	return migrated
 

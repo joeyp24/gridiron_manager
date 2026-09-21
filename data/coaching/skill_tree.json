@@ -1,0 +1,1040 @@
+{
+  "version": 1,
+  "branches": [
+    {
+      "id": "offense",
+      "name": "Offensive Architect"
+    },
+    {
+      "id": "defense",
+      "name": "Defensive Strategist"
+    },
+    {
+      "id": "development",
+      "name": "Player Developer"
+    },
+    {
+      "id": "management",
+      "name": "Game Manager"
+    }
+  ],
+  "skills": [
+    {
+      "id": "offense_ground_1",
+      "name": "Run Installation",
+      "branch": "offense",
+      "lane": "ground",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.12
+          },
+          "filter": "run",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_air_1",
+      "name": "Passing Fundamentals",
+      "branch": "offense",
+      "lane": "air",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.003
+          },
+          "filter": "pass",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_ground_2",
+      "name": "Outside Leverage",
+      "branch": "offense",
+      "lane": "ground",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "offense_ground_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.22
+          },
+          "filter": "outside_run",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_air_2",
+      "name": "Quick Answers",
+      "branch": "offense",
+      "lane": "air",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "offense_air_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.005,
+            "sack": -0.002
+          },
+          "filter": "quick",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_ground_3",
+      "name": "Ground Control",
+      "branch": "offense",
+      "lane": "ground",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "offense_ground_2"
+      ],
+      "exclusive_group": "offense_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.3
+          },
+          "filter": "run",
+          "condition": "always",
+          "scope": "offense"
+        },
+        {
+          "values": {
+            "completion": -0.002
+          },
+          "filter": "pass",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_air_3",
+      "name": "Vertical Identity",
+      "branch": "offense",
+      "lane": "air",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "offense_air_2"
+      ],
+      "exclusive_group": "offense_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.45,
+            "interception": 0.001
+          },
+          "filter": "deep",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_ground_4",
+      "name": "Play-Action Teacher",
+      "branch": "offense",
+      "lane": "ground",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "offense_ground_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.018,
+            "sack": -0.004
+          },
+          "filter": "play_action",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_air_4",
+      "name": "Protection Architect",
+      "branch": "offense",
+      "lane": "air",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "offense_air_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "sack": -0.012
+          },
+          "filter": "pass",
+          "condition": "long",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_ground_5",
+      "name": "Closer",
+      "branch": "offense",
+      "lane": "ground",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "offense_ground_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.65,
+            "fumble": -0.002
+          },
+          "filter": "run",
+          "condition": "leading_late",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "offense_air_5",
+      "name": "Air Raid",
+      "branch": "offense",
+      "lane": "air",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "offense_air_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.014,
+            "explosive": 0.012,
+            "sack": 0.004
+          },
+          "filter": "pass",
+          "condition": "trailing",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "defense_pressure_1",
+      "name": "Run Fits",
+      "branch": "defense",
+      "lane": "pressure",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": -0.12
+          },
+          "filter": "run",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_coverage_1",
+      "name": "Coverage Fundamentals",
+      "branch": "defense",
+      "lane": "coverage",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": -0.003
+          },
+          "filter": "pass",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_pressure_2",
+      "name": "Edge Discipline",
+      "branch": "defense",
+      "lane": "pressure",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "defense_pressure_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": -0.3
+          },
+          "filter": "qb_run",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_coverage_2",
+      "name": "Third-Down Disguise",
+      "branch": "defense",
+      "lane": "coverage",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "defense_coverage_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": -0.007
+          },
+          "filter": "pass",
+          "condition": "long",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_pressure_3",
+      "name": "Pressure Identity",
+      "branch": "defense",
+      "lane": "pressure",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "defense_pressure_2"
+      ],
+      "exclusive_group": "defense_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "sack": 0.006,
+            "explosive": 0.002
+          },
+          "filter": "blitz",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_coverage_3",
+      "name": "Shell Identity",
+      "branch": "defense",
+      "lane": "coverage",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "defense_coverage_2"
+      ],
+      "exclusive_group": "defense_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "explosive": -0.006,
+            "yardage": 0.08
+          },
+          "filter": "pass",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_pressure_4",
+      "name": "Strip Specialists",
+      "branch": "defense",
+      "lane": "pressure",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "defense_pressure_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "fumble": 0.003
+          },
+          "filter": "run",
+          "condition": "always",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_coverage_4",
+      "name": "Ball Hawks",
+      "branch": "defense",
+      "lane": "coverage",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "defense_coverage_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "interception": 0.005
+          },
+          "filter": "pass",
+          "condition": "long",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_pressure_5",
+      "name": "Red Wall",
+      "branch": "defense",
+      "lane": "pressure",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "defense_pressure_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "yardage": -0.55,
+            "sack": 0.008
+          },
+          "filter": "scrimmage",
+          "condition": "red_zone",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "defense_coverage_5",
+      "name": "No Fly Zone",
+      "branch": "defense",
+      "lane": "coverage",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "defense_coverage_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "completion": -0.018,
+            "explosive": -0.012
+          },
+          "filter": "pass",
+          "condition": "leading_late",
+          "scope": "defense"
+        }
+      ]
+    },
+    {
+      "id": "development_youth_1",
+      "name": "Young Foundations",
+      "branch": "development",
+      "lane": "youth",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "development": 0.05
+          },
+          "filter": "young",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_veteran_1",
+      "name": "Recovery Routine",
+      "branch": "development",
+      "lane": "veteran",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "recovery": 1
+          },
+          "filter": "all",
+          "condition": "always",
+          "scope": "weekly"
+        }
+      ]
+    },
+    {
+      "id": "development_youth_2",
+      "name": "Quarterback Mentor",
+      "branch": "development",
+      "lane": "youth",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "development_youth_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "development": 0.1
+          },
+          "filter": "QB",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_veteran_2",
+      "name": "Veteran Craft",
+      "branch": "development",
+      "lane": "veteran",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "development_veteran_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "retention": 0.08
+          },
+          "filter": "veteran",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_youth_3",
+      "name": "Youth Academy",
+      "branch": "development",
+      "lane": "youth",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "development_youth_2"
+      ],
+      "exclusive_group": "development_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "development": 0.12
+          },
+          "filter": "young",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_veteran_3",
+      "name": "Longevity Program",
+      "branch": "development",
+      "lane": "veteran",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "development_veteran_2"
+      ],
+      "exclusive_group": "development_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "retention": 0.15
+          },
+          "filter": "veteran",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_youth_4",
+      "name": "Trench School",
+      "branch": "development",
+      "lane": "youth",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "development_youth_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "development": 0.25
+          },
+          "filter": "trench",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_veteran_4",
+      "name": "Workload Science",
+      "branch": "development",
+      "lane": "veteran",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "development_veteran_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "injury": -0.08
+          },
+          "filter": "all",
+          "condition": "always",
+          "scope": "weekly"
+        }
+      ]
+    },
+    {
+      "id": "development_youth_5",
+      "name": "Next Generation",
+      "branch": "development",
+      "lane": "youth",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "development_youth_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "development": 0.3
+          },
+          "filter": "young",
+          "condition": "always",
+          "scope": "development"
+        }
+      ]
+    },
+    {
+      "id": "development_veteran_5",
+      "name": "Durable Dynasty",
+      "branch": "development",
+      "lane": "veteran",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "development_veteran_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "retention": 0.3
+          },
+          "filter": "veteran",
+          "condition": "always",
+          "scope": "development"
+        },
+        {
+          "values": {
+            "recovery": 2
+          },
+          "filter": "all",
+          "condition": "always",
+          "scope": "weekly"
+        }
+      ]
+    },
+    {
+      "id": "management_tempo_1",
+      "name": "Opening Script",
+      "branch": "management",
+      "lane": "tempo",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.003,
+            "yardage": 0.08
+          },
+          "filter": "scrimmage",
+          "condition": "opening",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_control_1",
+      "name": "Situational Drills",
+      "branch": "management",
+      "lane": "control",
+      "tier": 1,
+      "max_rank": 3,
+      "cost": 1,
+      "branch_points": 0,
+      "requires": [],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.004
+          },
+          "filter": "pass",
+          "condition": "third_down",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_tempo_2",
+      "name": "Two-Minute Specialist",
+      "branch": "management",
+      "lane": "tempo",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "management_tempo_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.008,
+            "sack": -0.002
+          },
+          "filter": "pass",
+          "condition": "two_minute",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_control_2",
+      "name": "Goal-Line Rehearsal",
+      "branch": "management",
+      "lane": "control",
+      "tier": 2,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 2,
+      "requires": [
+        "management_control_1"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.2
+          },
+          "filter": "run",
+          "condition": "red_zone",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_tempo_3",
+      "name": "Aggressive Identity",
+      "branch": "management",
+      "lane": "tempo",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "management_tempo_2"
+      ],
+      "exclusive_group": "management_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "yardage": 0.25,
+            "interception": 0.001
+          },
+          "filter": "scrimmage",
+          "condition": "fourth_down",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_control_3",
+      "name": "Ball Security Identity",
+      "branch": "management",
+      "lane": "control",
+      "tier": 3,
+      "max_rank": 2,
+      "cost": 1,
+      "branch_points": 5,
+      "requires": [
+        "management_control_2"
+      ],
+      "exclusive_group": "management_identity",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "interception": -0.002,
+            "fumble": -0.001,
+            "yardage": -0.05
+          },
+          "filter": "scrimmage",
+          "condition": "always",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_tempo_4",
+      "name": "Halftime Adjustments",
+      "branch": "management",
+      "lane": "tempo",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "management_tempo_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.01,
+            "yardage": 0.15
+          },
+          "filter": "scrimmage",
+          "condition": "second_half",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_control_4",
+      "name": "Special Teams School",
+      "branch": "management",
+      "lane": "control",
+      "tier": 4,
+      "max_rank": 1,
+      "cost": 1,
+      "branch_points": 8,
+      "requires": [
+        "management_control_3"
+      ],
+      "exclusive_group": "",
+      "signature": false,
+      "effects": [
+        {
+          "values": {
+            "field_goal": 0.018
+          },
+          "filter": "all",
+          "condition": "always",
+          "scope": "special"
+        }
+      ]
+    },
+    {
+      "id": "management_tempo_5",
+      "name": "Comeback Engineer",
+      "branch": "management",
+      "lane": "tempo",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "management_tempo_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "completion": 0.018,
+            "explosive": 0.008
+          },
+          "filter": "pass",
+          "condition": "trailing_late",
+          "scope": "offense"
+        }
+      ]
+    },
+    {
+      "id": "management_control_5",
+      "name": "Film Room",
+      "branch": "management",
+      "lane": "control",
+      "tier": 5,
+      "max_rank": 1,
+      "cost": 2,
+      "branch_points": 12,
+      "requires": [
+        "management_control_4"
+      ],
+      "exclusive_group": "",
+      "signature": true,
+      "effects": [
+        {
+          "values": {
+            "preparation": 1
+          },
+          "filter": "all",
+          "condition": "always",
+          "scope": "weekly"
+        }
+      ]
+    }
+  ]
+}

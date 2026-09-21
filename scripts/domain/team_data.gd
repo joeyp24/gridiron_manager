@@ -41,6 +41,7 @@ var practice_squad_limit := 16
 var practice_squad_veteran_limit := 6
 var injured_reserve_minimum_weeks := 4
 var dead_cap := 0
+var coach: CoachProgressData
 
 
 func _init(
@@ -331,6 +332,7 @@ func clone_with_strategy(strategy: Dictionary) -> TeamData:
 	clone.injured_reserve_minimum_weeks = injured_reserve_minimum_weeks
 	clone.dead_cap = dead_cap
 	clone.logo_url = logo_url
+	clone.coach = CoachProgressData.from_dict(coach.to_dict()) if coach != null else null
 	for player in injured_reserve:
 		clone.injured_reserve.append(PlayerData.from_dict(player.to_dict()))
 	for player in practice_squad:
@@ -416,6 +418,7 @@ func to_dict() -> Dictionary:
 		"practice_squad_veteran_limit": practice_squad_veteran_limit,
 		"injured_reserve_minimum_weeks": injured_reserve_minimum_weeks,
 		"dead_cap": dead_cap,
+		"coach": coach.to_dict() if coach != null else null,
 	}
 
 
@@ -450,6 +453,8 @@ static func from_dict(data: Dictionary) -> TeamData:
 	team.injured_reserve_minimum_weeks = int(data.get("injured_reserve_minimum_weeks", 4))
 	team.dead_cap = int(data.get("dead_cap", 0))
 	team.logo_url = str(data.get("logo_url", ""))
+	if data.get("coach") is Dictionary:
+		team.coach = CoachProgressData.from_dict(data["coach"])
 	for player_data in data.get("injured_reserve", []):
 		team.injured_reserve.append(PlayerData.from_dict(player_data))
 	for player_data in data.get("practice_squad", []):

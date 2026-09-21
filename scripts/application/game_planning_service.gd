@@ -29,16 +29,30 @@ static func plan_for_matchup(
 		return null
 	var key := plan_key(league.season_year, matchup.week, matchup.id, team_id)
 	var existing: WeeklyGamePlanData = league.weekly_game_plans.get(key)
+	if existing != null and not matchup.played and matchup.week == league.current_week:
+		existing.preparation_budget = CoachEffectService.preparation_budget(league.team_by_id(team_id))
+		# Retraining can remove Film Room. Preserve as much of the saved plan as possible.
+		while existing.points_used() > existing.preparation_budget:
+			if existing.offensive_points >= existing.defensive_points:
+				existing.offensive_points -= 1
+			else:
+				existing.defensive_points -= 1
 	if existing != null or not create_if_missing:
 		return existing
 	var opponent_id := matchup.opponent_id(team_id)
 	var report := build_report(league, opponent_id, team_id, matchup.week)
 	var plan := WeeklyGamePlanData.new(league.season_year, matchup.week, matchup.id, team_id, opponent_id)
+	plan.preparation_budget = CoachEffectService.preparation_budget(league.team_by_id(team_id))
 	plan.created_from_games = report.games_analyzed
 	plan.scouting_confidence = report.confidence
 	plan.ai_controlled = team_id != league.user_team_id
 	if plan.ai_controlled:
 		_configure_ai_plan(plan, league.team_by_id(team_id), league.team_by_id(opponent_id), report)
+		if plan.preparation_budget > plan.points_used():
+			if plan.offensive_points < WeeklyGamePlanData.MAX_UNIT_POINTS:
+				plan.offensive_points += 1
+			else:
+				plan.defensive_points += 1
 	league.weekly_game_plans[key] = plan
 	return plan
 

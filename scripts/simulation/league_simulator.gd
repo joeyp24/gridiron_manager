@@ -45,6 +45,7 @@ static func prepare_current_week(league: LeagueState) -> void:
 	for team in league.teams:
 		for player in team.players:
 			player.recover_for_new_week()
+			player.energy = mini(100, player.energy + CoachEffectService.recovery_bonus(team))
 	league.prepared_week = league.current_week
 
 
@@ -56,13 +57,17 @@ static func simulate_matchup(league: LeagueState, matchup: MatchupData) -> GameS
 	var simulator := FootballSimulator.new(home, away, game_seed, matchup.phase != "Regular Season", null, null, plans)
 	simulator.simulate_to_end()
 	league.record_game(matchup, simulator.state)
+	CoachProgressionService.award_game(league, matchup, simulator.state)
 	_process_postgame(home, game_seed + 17)
 	_process_postgame(away, game_seed + 31)
 	return simulator.state
 
 
 static func process_played_matchup(league: LeagueState, matchup: MatchupData, game: GameStateData) -> void:
+	if matchup.played or not game.is_final:
+		return
 	league.record_game(matchup, game)
+	CoachProgressionService.award_game(league, matchup, game)
 	var game_seed := _matchup_seed(league, matchup)
 	_process_postgame(league.team_by_id(matchup.home_team_id), game_seed + 17)
 	_process_postgame(league.team_by_id(matchup.away_team_id), game_seed + 31)
@@ -101,6 +106,7 @@ static func _process_postgame(team: TeamData, seed: int) -> void:
 		var durability_risk := float(100 - player.durability) * 0.00034
 		var fatigue_risk := float(100 - player.energy) * 0.00020
 		var injury_chance := (0.004 + durability_risk + fatigue_risk) * starter_multiplier
+		injury_chance *= 1.0 + clampf(CoachEffectService.value(team, "injury", "weekly"), -0.15, 0.0)
 		if rng.randf() < injury_chance:
 			var injury_label := INJURIES[rng.randi_range(0, INJURIES.size() - 1)]
 			var weeks := rng.randi_range(1, 4)

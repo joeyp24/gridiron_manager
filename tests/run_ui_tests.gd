@@ -282,7 +282,7 @@ func _run() -> void:
 	var main_screen := main_scene.instantiate()
 	root.add_child(main_screen)
 	await process_frame
-	_check(main_screen._nav_buttons.size() == 11, "The application shell should expose every primary career workspace from one navigation rail")
+	_check(main_screen._nav_buttons.size() == 12, "The application shell should expose every primary career workspace from one navigation rail")
 	_check(main_screen._nav_buttons["portal"].theme_type_variation == "NavButtonActive", "The shell should visually identify the active workspace")
 	main_screen.size = Vector2(540, 900)
 	main_screen._apply_responsive_shell()

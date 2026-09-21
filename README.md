@@ -4,6 +4,8 @@ Gridiron Manager is an extensible American football management simulation built 
 
 ## Prototype features
 
+- Deep coach progression with 40 ranked skills, eight specialization paths, four backgrounds, seeded AI builds, seasonal objectives, six career milestones, and once-per-offseason retraining
+- Coaching effects on manual/automatic plays, recommendations, player development, recovery, injury risk, field goals, and weekly preparation, with a responsive Coach Skills screen and opponent-build inspection
 - A professional, Football Manager-inspired responsive interface with a persistent club navigation rail, contextual season header, reusable dashboard system, full keyboard focus states, and layouts that reflow from compact laptop windows to widescreen displays
 - One deterministic hybrid 2026 database: nflverse league structure, schedules, identities, and contracts joined to Madden NFL 26 ratings
 - Full 53-player rosters with offensive, defensive, kicking, punting, and long-snapping position groups
@@ -50,7 +52,7 @@ Gridiron Manager is an extensible American football management simulation built 
 - Automatic weekly player/team totals, regular-season/postseason splits, traded-player club splits, and permanent career statistics
 - A responsive Statistics Center with sortable league leaders, team rankings, season/postseason filters, player profiles, weekly game logs, club splits, career history, and completed-game box scores
 - Live play-by-play, field visualization, and team box-score statistics
-- Versioned JSON career saves with automatic migrations through schema version fifteen, persistent trade blocks and offer inboxes, weekly game plans, roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, year-aware contracts, statistics history, trade history, future-pick ownership, and data provenance
+- Versioned JSON career saves with automatic migrations through schema version sixteen, persistent coach progression, trade blocks and offer inboxes, weekly game plans, roster/IR/practice-squad/waiver state, resumable Fantasy Draft state, hybrid player ratings, year-aware contracts, statistics history, trade history, future-pick ownership, and data provenance
 - Responsive layouts that reflow and scroll cleanly across desktop window sizes
 - Quick exhibition mode for one-off games
 
@@ -78,6 +80,7 @@ godot --headless --path . --script res://tests/run_simulation_loading_tests.gd
 godot --headless --path . --script res://tests/run_play_presentation_tests.gd
 godot --headless --path . --script res://tests/run_defensive_playcalling_tests.gd
 godot --headless --path . --script res://tests/run_game_planning_tests.gd
+godot --headless --path . --script res://tests/run_coach_skill_tests.gd
 ```
 
 The checks cover deterministic automatic and manually called matches; real offensive and defensive personnel packages; direct-attribute matchup calibration; playcalling, opponent scouting, weekly preparation, AI game plans, 22-player animation composition, playback controls, and clock management; staged week and postgame progress; responsive loading behavior; player/team stat reconciliation; statistics filtering and sorting; 53-man and 48-player game-day legality; injured reserve, practice squads, waiver priority and claims, AI reserve management, and roster-state persistence; contracts and the salary cap; manual and AI trades, trade blocks, incoming offers, CPU-to-CPU deals, and future-pick ownership; Fantasy Draft completion and save/resume; development, retirement, draft scouting, and the rookie draft; free-agent population balance; the complete 2,035-player league; schedules and playoffs; multi-season advancement; responsive career screens; serialization; and save migration.
@@ -131,6 +134,7 @@ See [`docs/trades.md`](docs/trades.md) for AI front-office direction, team needs
 See [`docs/simulation_loading.md`](docs/simulation_loading.md) for the incremental week workflow, responsive overlay, save boundary, and extension points.
 See [`docs/play_presentation.md`](docs/play_presentation.md) for the deterministic 22-player animation model, Match Center playback controls, responsive field camera, and extension path.
 See [`docs/ui_design_system.md`](docs/ui_design_system.md) for interface tokens, reusable components, responsive breakpoints, navigation conventions, and screen-extension guidance.
+See [`docs/coaching.md`](docs/coaching.md) for skill paths, XP, backgrounds, objectives, AI builds, exact gameplay effects, and save migration.
 
 ## Current limitations
 

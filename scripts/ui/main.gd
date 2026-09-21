@@ -16,6 +16,7 @@ const TRADE_CENTER_SCENE := preload("res://scenes/screens/trade_center_screen.ts
 const STATISTICS_CENTER_SCENE := preload("res://scenes/screens/statistics_center_screen.tscn")
 const PLAYERS_SCENE := preload("res://scenes/screens/players_screen.tscn")
 const FANTASY_DRAFT_SCENE := preload("res://scenes/screens/fantasy_draft_screen.tscn")
+const COACH_SKILLS_SCENE := preload("res://scenes/screens/coach_skills_screen.tscn")
 
 var _exhibition_session := GameSession.new()
 var _career: CareerSession
@@ -47,6 +48,8 @@ var _office_button: Button
 var _free_agency_button: Button
 var _trade_button: Button
 var _match_button: Button
+var _coach_button: Button
+var _save_state_badge: PanelContainer
 
 
 func _ready() -> void:
@@ -85,7 +88,12 @@ func _build_shell() -> void:
 	_sidebar_margin.add_theme_constant_override("margin_bottom", 14)
 	_sidebar.add_child(_sidebar_margin)
 	var sidebar_column := UIFactory.vbox(7)
-	_sidebar_margin.add_child(sidebar_column)
+	var nav_scroll := ScrollContainer.new()
+	nav_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	nav_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_sidebar_margin.add_child(nav_scroll)
+	sidebar_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nav_scroll.add_child(sidebar_column)
 
 	var brand_row := UIFactory.hbox(10)
 	brand_row.custom_minimum_size = Vector2(0, 48)
@@ -110,6 +118,7 @@ func _build_shell() -> void:
 	_roster_button = _add_nav_button(sidebar_column, "roster", "Roster", "R", _show_roster)
 	_players_button = _add_nav_button(sidebar_column, "players", "Player Database", "D", _show_players)
 	_add_nav_section(sidebar_column, "PERFORMANCE")
+	_coach_button = _add_nav_button(sidebar_column, "coach", "Coach Skills", "K", _show_coach_skills)
 	_strategy_button = _add_nav_button(sidebar_column, "strategy", "Team Strategy", "T", _show_strategy)
 	_game_plan_button = _add_nav_button(sidebar_column, "game_plan", "Weekly Game Plan", "G", _show_game_plan)
 	_statistics_button = _add_nav_button(sidebar_column, "statistics", "Statistics", "S", _show_statistics)
@@ -119,8 +128,8 @@ func _build_shell() -> void:
 	_trade_button = _add_nav_button(sidebar_column, "trades", "Trade Center", "X", _show_trade_center)
 	_match_button = _add_nav_button(sidebar_column, "match", "Matchday", "M", _show_current_match)
 	sidebar_column.add_child(UIFactory.spacer())
-	var save_state := UIFactory.status_pill("LOCAL CAREER", GridironTheme.ACCENT)
-	sidebar_column.add_child(save_state)
+	_save_state_badge = UIFactory.status_pill("LOCAL CAREER", GridironTheme.ACCENT)
+	sidebar_column.add_child(_save_state_badge)
 	_version_badge = UIFactory.status_pill("BUILD 0.9", GridironTheme.TEXT_MUTED)
 	sidebar_column.add_child(_version_badge)
 
@@ -257,6 +266,7 @@ func _show_career_dashboard() -> void:
 	screen.trade_center_requested.connect(_show_trade_center)
 	screen.statistics_requested.connect(_show_statistics)
 	screen.players_requested.connect(_show_players)
+	screen.coach_requested.connect(_show_coach_skills)
 	screen.offseason_requested.connect(_show_offseason)
 	screen.save_requested.connect(_save_career)
 	_mount(screen)
@@ -328,6 +338,17 @@ func _show_strategy() -> void:
 	screen.setup(_career.user_team())
 	screen.back_requested.connect(_show_career_dashboard)
 	screen.strategy_saved.connect(_save_strategy)
+	_mount(screen)
+
+
+func _show_coach_skills() -> void:
+	if _career == null or _career.league.is_fantasy_draft_active():
+		return
+	_set_section("COACH SKILL TREE", "coach")
+	var screen := COACH_SKILLS_SCENE.instantiate()
+	screen.setup(_career)
+	screen.back_requested.connect(_show_career_dashboard)
+	screen.coach_changed.connect(_save_career)
 	_mount(screen)
 
 
@@ -526,6 +547,7 @@ func _enable_career_navigation() -> void:
 	var has_career := _career != null
 	var draft_active := _career != null and _career.league.is_fantasy_draft_active()
 	_career_button.disabled = not has_career
+	_coach_button.disabled = not has_career or draft_active
 	_roster_button.disabled = not has_career or draft_active
 	_players_button.disabled = not has_career or draft_active
 	_statistics_button.disabled = not has_career or draft_active
@@ -622,5 +644,6 @@ func _apply_responsive_shell() -> void:
 		nav_button.text = str(_nav_short_titles[key]) if compact else str(_nav_titles[key])
 		nav_button.alignment = HORIZONTAL_ALIGNMENT_CENTER if compact else HORIZONTAL_ALIGNMENT_LEFT
 	_version_badge.visible = not compact
+	_save_state_badge.visible = not compact
 	_team_context_label.visible = size.x >= 920
 	_week_context_label.visible = size.x >= 780

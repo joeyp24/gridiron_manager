@@ -13,6 +13,7 @@ signal statistics_requested
 signal players_requested
 signal offseason_requested
 signal save_requested
+signal coach_requested
 
 var _career: CareerSession
 var _dashboard_grid: GridContainer
@@ -79,6 +80,10 @@ func _build_interface() -> void:
 	var roster := UIFactory.button("ROSTER", "SecondaryButton")
 	roster.pressed.connect(func(): roster_requested.emit())
 	actions.add_child(roster)
+	if team.coach != null:
+		var coach_button := UIFactory.button("COACH SKILLS · %d PTS" % CoachProgressionService.available_points(team.coach), "SecondaryButton")
+		coach_button.pressed.connect(func(): coach_requested.emit())
+		actions.add_child(coach_button)
 	if not _career.league.is_offseason():
 		var game_plan := UIFactory.button("GAME PLAN", "SecondaryButton")
 		game_plan.disabled = _career.current_matchup() == null

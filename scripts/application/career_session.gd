@@ -24,12 +24,14 @@ static func new_career(
 		FantasyDraftService.initialize(state)
 	if state != null:
 		TradeMarketService.initialize_market(state)
+		CoachProgressionService.initialize(state)
 	return CareerSession.new(state)
 
 
 static func from_dict(data: Dictionary) -> CareerSession:
 	var state := LeagueState.from_dict(data.get("league", {}))
 	TradeMarketService.initialize_market(state)
+	CoachProgressionService.initialize(state)
 	return CareerSession.new(state)
 
 
@@ -39,6 +41,35 @@ func to_dict() -> Dictionary:
 
 func user_team() -> TeamData:
 	return league.user_team()
+
+
+func coach_change_error() -> String:
+	if active_simulator != null or active_week_simulation != null:
+		return "Complete the active game or week before changing coaching skills."
+	if league.is_fantasy_draft_active():
+		return "Complete the fantasy draft before developing your coach."
+	return ""
+
+
+func learn_coach_skill(skill_id: String) -> Dictionary:
+	var error := coach_change_error()
+	if not error.is_empty():
+		return {"ok": false, "message": error}
+	return CoachProgressionService.unlock(user_team().coach, skill_id)
+
+
+func choose_coach_background(background: String) -> Dictionary:
+	var error := coach_change_error()
+	if not error.is_empty():
+		return {"ok": false, "message": error}
+	return CoachProgressionService.choose_background(user_team().coach, background)
+
+
+func retrain_coach() -> Dictionary:
+	var error := coach_change_error()
+	if not error.is_empty():
+		return {"ok": false, "message": error}
+	return CoachProgressionService.respec(league, user_team().coach)
 
 
 func current_matchup() -> MatchupData:

@@ -107,6 +107,7 @@ func simulate_next_play(
 	var result := _new_result()
 	_populate_call_context(result, call, play, defensive_call)
 	var modifiers := PlayCallerService.matchup_modifiers(play, defensive_call, state.play_history, state)
+	var coaching := CoachEffectService.snap_modifiers(state, play, defensive_call)
 	match play.play_type:
 		"run":
 			_resolve_run(result, call, play, defensive_call, modifiers)
@@ -124,6 +125,8 @@ func simulate_next_play(
 			return null
 
 	_append_game_plan_context(result)
+	if not coaching.is_empty():
+		result.matchup_context["coaching"] = coaching
 	GameStatAccumulator.record_play(state, result)
 	state.play_count += 1
 	result.sequence = state.play_count
@@ -496,7 +499,13 @@ func _resolve_field_goal(result: PlayResult, call: PlayCallData, play: PlayDefin
 	_append_player_id(result.special_teams_participant_ids, long_snapper)
 	var profile := AttributeMatchupService.field_goal_profile(kicker, kick_distance)
 	var kick_chance := float(profile["chance"])
+	var coaching_bonus := clampf(CoachEffectService.value(offense, "field_goal", "special"), 0.0, 0.025)
+	if coaching_bonus > 0:
+		kick_chance = clampf(kick_chance + coaching_bonus, 0.01, 0.99)
 	result.matchup_context = profile.duplicate(true)
+	if coaching_bonus > 0:
+		result.matchup_context["coaching"] = {"field_goal": coaching_bonus}
+		result.matchup_context["chance"] = kick_chance
 	result.matchup_context.merge({"model": "attribute_simulation_v2", "distance": kick_distance}, true)
 	result.play_type = "field_goal"
 	result.drive_ended = true

@@ -87,9 +87,14 @@ static func develop_players(league: LeagueState) -> int:
 			return 0
 	var report_count := 0
 	for team in league.teams:
+		var improved := 0
 		for player in team.all_contract_players():
+			var before := player.overall
 			league.development_reports.append(_develop_player(league, player, team.id, report_year))
+			if player.overall > before:
+				improved += 1
 			report_count += 1
+		CoachProgressionService.award_development(league, team, improved)
 	for player in league.free_agents:
 		league.development_reports.append(_develop_player(league, player, "", report_year))
 		report_count += 1
@@ -288,6 +293,7 @@ static func _develop_player(league: LeagueState, player: PlayerData, team_id: St
 	var old_age := player.age
 	var old_overall := player.overall
 	var overall_delta := _development_delta(player, rng)
+	overall_delta += CoachEffectService.development_adjustment(league.team_by_id(team_id), player, overall_delta, league.season_seed + report_year)
 	player.overall = clampi(player.overall + overall_delta, 45, 99)
 	if overall_delta > 0:
 		player.overall = mini(player.overall, player.potential)

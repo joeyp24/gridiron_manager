@@ -44,6 +44,7 @@ var defensive_points := 3
 var created_from_games := 0
 var scouting_confidence := 25
 var ai_controlled := false
+var preparation_budget := TOTAL_PREPARATION_POINTS
 
 
 func _init(
@@ -65,7 +66,7 @@ func points_used() -> int:
 
 
 func points_remaining() -> int:
-	return TOTAL_PREPARATION_POINTS - points_used()
+	return preparation_budget - points_used()
 
 
 func validation_error() -> String:
@@ -77,8 +78,8 @@ func validation_error() -> String:
 		return "Offensive preparation must use between one and four points."
 	if defensive_points < MIN_UNIT_POINTS or defensive_points > MAX_UNIT_POINTS:
 		return "Defensive preparation must use between one and four points."
-	if points_used() > TOTAL_PREPARATION_POINTS:
-		return "This plan uses more than six weekly preparation points."
+	if points_used() > preparation_budget:
+		return "This plan uses more than %s weekly preparation points." % ("six" if preparation_budget == 6 else "seven")
 	return ""
 
 
@@ -112,6 +113,7 @@ func to_dict() -> Dictionary:
 		"created_from_games": created_from_games,
 		"scouting_confidence": scouting_confidence,
 		"ai_controlled": ai_controlled,
+		"preparation_budget": preparation_budget,
 	}
 
 
@@ -130,6 +132,7 @@ static func from_dict(data: Dictionary) -> WeeklyGamePlanData:
 	plan.created_from_games = int(data.get("created_from_games", 0))
 	plan.scouting_confidence = int(data.get("scouting_confidence", 25))
 	plan.ai_controlled = bool(data.get("ai_controlled", false))
+	plan.preparation_budget = clampi(int(data.get("preparation_budget", TOTAL_PREPARATION_POINTS)), 6, 7)
 	return plan
 
 
